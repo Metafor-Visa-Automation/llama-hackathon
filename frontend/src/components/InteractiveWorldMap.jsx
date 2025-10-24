@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import { ArrowRight } from 'lucide-react';
+import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 
 // Schengen countries ISO codes with names
 const SCHENGEN_COUNTRIES = {
@@ -48,20 +49,19 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
 
   /**
    * Determines the fill color of a country based on its state
-   * @param {Object} geo - Geography object
+   * @param {string} isoCode - Country ISO code
+   * @param {boolean} isSchengen - Whether country is in Schengen zone
+   * @param {boolean} isHovered - Whether country is currently hovered
    * @returns {string} - CSS color value
    */
-  const getFillColor = (geo) => {
-    const isoCode = geo.id;
-    const isSchengen = SCHENGEN_CODES.includes(isoCode);
-
+  const getFillColor = (isoCode, isSchengen, isHovered = false) => {
     // Selected state - vibrant emerald green (fully painted)
     if (destinationCountry === isoCode) {
       return '#059669';
     }
 
     // Hovered state - medium green (noticeable hover effect)
-    if (hoveredCountry === isoCode && isSchengen) {
+    if (isHovered && isSchengen) {
       return '#10B981';
     }
 
@@ -75,7 +75,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
   };
 
   /**
-   * Handles country click event
+   * Handles country click event from map
    * @param {Object} geo - Geography object
    */
   const handleCountryClick = (geo) => {
@@ -84,8 +84,20 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
 
     // Only allow selection of Schengen countries
     if (isSchengen) {
+      // Update destination country state - this will update both map and dropdown
       setDestinationCountry(isoCode);
+      console.log('Country selected from map:', isoCode, SCHENGEN_COUNTRIES[isoCode]);
     }
+  };
+
+  /**
+   * Handles destination country change from dropdown
+   * @param {string} countryCode - ISO code of selected country
+   */
+  const handleDestinationChange = (countryCode) => {
+    // Update destination country state - this will update both map and dropdown
+    setDestinationCountry(countryCode);
+    console.log('Country selected from dropdown:', countryCode, SCHENGEN_COUNTRIES[countryCode]);
   };
 
   /**
@@ -93,6 +105,10 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
    */
   const handleStartApplication = () => {
     if (originCountry && destinationCountry) {
+      console.log('Starting application:', {
+        from: ORIGIN_COUNTRIES[originCountry],
+        to: SCHENGEN_COUNTRIES[destinationCountry]
+      });
       onStartApplication({ originCountry, destinationCountry });
     }
   };
@@ -121,7 +137,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
     <div className="relative w-full">
       {/* Tooltip - shows country name on hover */}
       {hoveredCountry && (
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-emerald-800 to-emerald-700 text-white px-6 py-3 rounded-xl text-sm font-bold z-20 pointer-events-none shadow-2xl whitespace-nowrap backdrop-blur-sm border border-emerald-600">
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-emerald-800 to-emerald-700 text-white px-6 py-3 rounded-xl text-sm font-bold z-20 pointer-events-none shadow-2xl whitespace-nowrap backdrop-blur-sm border border-emerald-600" style={{ fontFamily: '"Playfair Display", serif' }}>
           {SCHENGEN_COUNTRIES[hoveredCountry]}
         </div>
       )}
@@ -183,7 +199,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
                         onMouseLeave={handleMouseLeave}
                         style={{
                           default: {
-                            fill: getFillColor(geo),
+                            fill: getFillColor(isoCode, isSchengen, hoveredCountry === isoCode),
                             stroke: destinationCountry === isoCode ? '#047857' : (isSchengen ? '#86EFAC' : '#9CA3AF'),
                             strokeWidth: destinationCountry === isoCode ? 3 : (isSchengen ? 1.5 : 1),
                             outline: 'none',
@@ -191,7 +207,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
                             filter: destinationCountry === isoCode ? 'drop-shadow(0 6px 20px rgba(5, 150, 105, 0.35))' : 'none',
                           },
                           hover: {
-                            fill: getFillColor(geo),
+                            fill: getFillColor(isoCode, isSchengen, true),
                             stroke: isSchengen ? '#059669' : '#9CA3AF',
                             strokeWidth: isSchengen ? 3 : 1,
                             outline: 'none',
@@ -200,7 +216,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
                             filter: isSchengen ? 'drop-shadow(0 6px 16px rgba(5, 150, 105, 0.3))' : 'none',
                           },
                           pressed: {
-                            fill: getFillColor(geo),
+                            fill: getFillColor(isoCode, isSchengen, false),
                             stroke: '#047857',
                             strokeWidth: 3.5,
                             outline: 'none',
@@ -227,89 +243,134 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
           flexWrap: 'wrap'
         }}>
           {/* Origin Country Dropdown */}
-          <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#064E3B',
-              marginBottom: '0.5rem'
-            }}>
-              Nereden
-            </label>
-            <select
-              value={originCountry}
-              onChange={(e) => setOriginCountry(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.75rem 1rem',
-                fontSize: '1rem',
-                fontWeight: '500',
-                color: '#064E3B',
-                backgroundColor: '#F0FDF4',
-                border: '2px solid #A7F3D0',
+          <FormControl 
+            sx={{ 
+              flex: '1 1 200px', 
+              minWidth: '200px',
+              '& .MuiOutlinedInput-root': {
                 borderRadius: '12px',
-                outline: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#10B981';
-                e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = '#A7F3D0';
-                e.target.style.boxShadow = 'none';
-              }}
+                backgroundColor: '#F0FDF4',
+                fontWeight: 500,
+                fontFamily: '"Playfair Display", serif',
+                '& fieldset': {
+                  borderColor: '#A7F3D0',
+                  borderWidth: '2px',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#10B981',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#10B981',
+                  borderWidth: '2px',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: '#064E3B',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                fontFamily: '"Playfair Display", serif',
+                '&.Mui-focused': {
+                  color: '#059669',
+                },
+                '&.MuiInputLabel-shrink': {
+                  color: '#059669',
+                },
+              },
+              '& .MuiSelect-select': {
+                color: '#064E3B',
+                padding: '0.75rem 1rem',
+                fontFamily: '"Playfair Display", serif',
+              }
+            }}
+          >
+            <InputLabel id="origin-country-label">Nereden</InputLabel>
+            <Select
+              labelId="origin-country-label"
+              value={originCountry}
+              label="Nereden"
+              onChange={(e) => setOriginCountry(e.target.value)}
             >
               {Object.entries(ORIGIN_COUNTRIES).map(([code, name]) => (
-                <option key={code} value={code}>{name}</option>
+                <MenuItem 
+                  key={code} 
+                  value={code}
+                  sx={{ fontFamily: '"Playfair Display", serif' }}
+                >
+                  {name}
+                </MenuItem>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormControl>
 
           {/* Destination Country Dropdown */}
-          <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              color: '#064E3B',
-              marginBottom: '0.5rem'
-            }}>
-              Nereye
-            </label>
-            <select
-              value={destinationCountry || ''}
-              onChange={(e) => setDestinationCountry(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.75rem 1rem',
-                fontSize: '1rem',
-                fontWeight: '500',
-                color: destinationCountry ? '#064E3B' : '#9CA3AF',
-                backgroundColor: destinationCountry ? '#F0FDF4' : '#F9FAFB',
-                border: destinationCountry ? '2px solid #A7F3D0' : '2px solid #E5E7EB',
+          <FormControl 
+            sx={{ 
+              flex: '1 1 200px', 
+              minWidth: '200px',
+              '& .MuiOutlinedInput-root': {
                 borderRadius: '12px',
-                outline: 'none',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = '#10B981';
-                e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = destinationCountry ? '#A7F3D0' : '#E5E7EB';
-                e.target.style.boxShadow = 'none';
+                backgroundColor: destinationCountry ? '#F0FDF4' : '#F9FAFB',
+                fontWeight: 500,
+                fontFamily: '"Playfair Display", serif',
+                '& fieldset': {
+                  borderColor: destinationCountry ? '#A7F3D0' : '#E5E7EB',
+                  borderWidth: '2px',
+                },
+                '&:hover fieldset': {
+                  borderColor: '#10B981',
+                },
+                '&.Mui-focused fieldset': {
+                  borderColor: '#10B981',
+                  borderWidth: '2px',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                color: '#064E3B',
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                fontFamily: '"Playfair Display", serif',
+                '&.Mui-focused': {
+                  color: '#059669',
+                },
+                '&.MuiInputLabel-shrink': {
+                  color: '#059669',
+                },
+              },
+              '& .MuiSelect-select': {
+                color: destinationCountry ? '#064E3B' : '#9CA3AF',
+                padding: '0.75rem 1rem',
+                fontFamily: '"Playfair Display", serif',
+              }
+            }}
+          >
+            <InputLabel id="destination-country-label" shrink={!!destinationCountry || undefined}>
+              Nereye
+            </InputLabel>
+            <Select
+              labelId="destination-country-label"
+              value={destinationCountry || ''}
+              label="Nereye"
+              onChange={(e) => handleDestinationChange(e.target.value)}
+              displayEmpty
+              notched={!!destinationCountry}
+              renderValue={(selected) => {
+                if (!selected) {
+                  return <span style={{ color: '#9CA3AF', fontFamily: '"Playfair Display", serif' }}>Ülke Seçiniz</span>;
+                }
+                return SCHENGEN_COUNTRIES[selected];
               }}
             >
-              <option value="" disabled>Ülke Seçiniz</option>
               {Object.entries(SCHENGEN_COUNTRIES).map(([code, name]) => (
-                <option key={code} value={code}>{name}</option>
+                <MenuItem 
+                  key={code} 
+                  value={code}
+                  sx={{ fontFamily: '"Playfair Display", serif' }}
+                >
+                  {name}
+                </MenuItem>
               ))}
-            </select>
-          </div>
+            </Select>
+          </FormControl>
 
           {/* CTA Button */}
           <button
@@ -333,7 +394,8 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
                 : 'none',
               border: 'none',
               whiteSpace: 'nowrap',
-              flex: '0 0 auto'
+              flex: '0 0 auto',
+              fontFamily: '"Playfair Display", serif'
             }}
           >
             Başvuruya Başla
