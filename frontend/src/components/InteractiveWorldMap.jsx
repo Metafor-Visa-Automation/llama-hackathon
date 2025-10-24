@@ -283,12 +283,13 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
               }
             }}
           >
-            <InputLabel id="origin-country-label">Nereden</InputLabel>
+            <InputLabel id="origin-country-label" shrink>Nereden</InputLabel>
             <Select
               labelId="origin-country-label"
               value={originCountry}
               label="Nereden"
               onChange={(e) => setOriginCountry(e.target.value)}
+              notched
             >
               {Object.entries(ORIGIN_COUNTRIES).map(([code, name]) => (
                 <MenuItem 
@@ -343,7 +344,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
               }
             }}
           >
-            <InputLabel id="destination-country-label" shrink={!!destinationCountry || undefined}>
+            <InputLabel id="destination-country-label" shrink>
               Nereye
             </InputLabel>
             <Select
@@ -352,7 +353,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
               label="Nereye"
               onChange={(e) => handleDestinationChange(e.target.value)}
               displayEmpty
-              notched={!!destinationCountry}
+              notched
               renderValue={(selected) => {
                 if (!selected) {
                   return <span style={{ color: '#9CA3AF', fontFamily: '"Playfair Display", serif' }}>Ülke Seçiniz</span>;
