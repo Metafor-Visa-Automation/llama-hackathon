@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { ArrowRight } from 'lucide-react';
 import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
+import { setOriginCountry, setDestinationCountry } from '../store/countrySlice';
 
 // Schengen countries ISO codes with names (ISO2 format for SimpleMaps)
 const SCHENGEN_COUNTRIES = {
@@ -58,8 +60,10 @@ const ORIGIN_COUNTRIES = {
  * @param {Function} props.onStartApplication - Callback when application is started
  */
 const InteractiveWorldMap = ({ onStartApplication }) => {
-  const [originCountry, setOriginCountry] = useState('TR'); // Default to Turkey
-  const [destinationCountry, setDestinationCountry] = useState(null);
+  const dispatch = useDispatch();
+  const originCountry = useSelector((state) => state.country.originCountry);
+  const destinationCountry = useSelector((state) => state.country.destinationCountry);
+  
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapInitialized = useRef(false);
   const scriptsLoaded = useRef(false);
@@ -195,7 +199,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
     // Create global click handler function
     window.handleSchengenCountryClick = (countryCode) => {
       if (SCHENGEN_CODES.includes(countryCode)) {
-        setDestinationCountry(countryCode);
+        dispatch(setDestinationCountry(countryCode));
         console.log('Country selected from map:', countryCode, SCHENGEN_COUNTRIES[countryCode]);
       }
     };
@@ -203,7 +207,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
     return () => {
       delete window.handleSchengenCountryClick;
     };
-  }, []);
+  }, [dispatch]);
 
   /**
    * Setup click handlers for countries
@@ -261,7 +265,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
    * Handle destination country change from dropdown
    */
   const handleDestinationChange = (countryCode) => {
-    setDestinationCountry(countryCode);
+    dispatch(setDestinationCountry(countryCode));
     console.log('Country selected from dropdown:', countryCode, SCHENGEN_COUNTRIES[countryCode]);
   };
 
@@ -452,7 +456,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
               labelId="origin-country-label"
               value={originCountry}
               label="Nereden"
-              onChange={(e) => setOriginCountry(e.target.value)}
+              onChange={(e) => dispatch(setOriginCountry(e.target.value))}
               notched
             >
               {Object.entries(ORIGIN_COUNTRIES).map(([code, name]) => (
