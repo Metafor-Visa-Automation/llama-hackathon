@@ -345,7 +345,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
           padding: 0,
           background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
           position: 'relative',
-          height: '650px' // Set a fixed height for the map area
+          height: '600px' // Set a fixed height for the map area
         }}>
           {/* Decorative Elements */}
           <div style={{
@@ -562,7 +562,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
               fontFamily: '"Playfair Display", serif'
             }}
           >
-            Başvuruya Başla
+            Hazırlamaya Başla
             <ArrowRight size={18} />
           </button>
         </div>
