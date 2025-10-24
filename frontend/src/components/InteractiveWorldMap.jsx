@@ -343,9 +343,10 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
         {/* Map with Gradient Background */}
         <div style={{
           padding: 0,
+          margin: 0,
           background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
           position: 'relative',
-          height: '600px' // Set a fixed height for the map area
+          display: 'block'
         }}>
           {/* Decorative Elements */}
           <div style={{
@@ -398,7 +399,7 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
         {/* Country Selection and CTA Section */}
         <div style={{
           backgroundColor: '#FFFFFF',
-          padding: '2rem 2.5rem',
+          padding: '1.5rem 2.5rem',
           borderTop: '1px solid #E5E7EB',
           display: 'flex',
           alignItems: 'center',
