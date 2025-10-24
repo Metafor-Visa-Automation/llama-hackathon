@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import { setOriginCountry, setDestinationCountry } from '../store/countrySlice';
@@ -61,8 +62,10 @@ const ORIGIN_COUNTRIES = {
  */
 const InteractiveWorldMap = ({ onStartApplication }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const originCountry = useSelector((state) => state.country.originCountry);
   const destinationCountry = useSelector((state) => state.country.destinationCountry);
+  const { isAuthenticated } = useSelector((state) => state.auth);
   
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapInitialized = useRef(false);
@@ -273,13 +276,23 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
    * Handle start application button click
    */
   const handleStartApplication = () => {
-    if (originCountry && destinationCountry) {
-      console.log('Starting application:', {
-        from: ORIGIN_COUNTRIES[originCountry],
-        to: SCHENGEN_COUNTRIES[destinationCountry]
-      });
-      onStartApplication({ originCountry, destinationCountry });
+    if (!originCountry || !destinationCountry) {
+      return;
     }
+
+    // Check if user is logged in
+    if (!isAuthenticated) {
+      // Redirect to login page if not authenticated
+      navigate('/login');
+      return;
+    }
+
+    // User is authenticated, proceed with application
+    console.log('Starting application:', {
+      from: ORIGIN_COUNTRIES[originCountry],
+      to: SCHENGEN_COUNTRIES[destinationCountry]
+    });
+    onStartApplication({ originCountry, destinationCountry });
   };
 
   return (

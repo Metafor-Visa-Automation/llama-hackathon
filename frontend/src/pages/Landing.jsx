@@ -1,6 +1,8 @@
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import InteractiveWorldMap from '../components/InteractiveWorldMap';
 import ProcessSteps from '../components/ProcessSteps';
+import UserGreeting from '../components/UserGreeting';
+import PageTransition from '../components/PageTransition';
 import vibeBg from '../assets/vibe-bg1.webp';
 
 /**
@@ -18,7 +20,7 @@ const Landing = () => {
   };
 
   return (
-    <>
+    <PageTransition>
       <style>
         {`
           @keyframes pulse {
@@ -33,6 +35,10 @@ const Landing = () => {
           }
         `}
       </style>
+      
+      {/* User Greeting - Dynamic Island */}
+      <UserGreeting />
+      
       <div className="min-h-screen" style={{
         backgroundImage: `url(${vibeBg})`,
         backgroundSize: 'cover',
@@ -132,7 +138,7 @@ const Landing = () => {
       </footer>
       */}
       </div>
-    </>
+    </PageTransition>
   );
 };
 
