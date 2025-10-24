@@ -42,3 +42,8 @@ Platformumuz, vize başvurusunun her aşamasını otomatize ederek verimliliği 
 * **Database:** Firebase (Kullanıcı verileri, ülke bazlı gereksinimler ve dinamik kontrol listeleri için Firestore/Realtime Database)
 * **AI Platform:** Google Cloud (VM/GKE)
 * **AI Model:** Ollama (Llama 3 modelini sunmak için)
+  
+## 🛠️ Arch (Edit from here: https://www.mermaidchart.com/d/529a48fe-299c-40cf-944e-bae6994234a7)
+
+<img width="1246" height="1500" alt="Untitled diagram-2025-10-24-175128" src="https://github.com/user-attachments/assets/a1b88361-ba43-4ef7-8d16-6b85429a3f50" />
+
