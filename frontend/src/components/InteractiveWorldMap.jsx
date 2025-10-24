@@ -92,87 +92,131 @@ const InteractiveWorldMap = ({ selectedCountry, onSelectCountry }) => {
     <div className="relative w-full">
       {/* Tooltip - shows country name on hover */}
       {hoveredCountry && (
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-900 to-blue-800 text-white px-5 py-3 rounded-xl text-sm font-bold z-20 pointer-events-none shadow-2xl whitespace-nowrap backdrop-blur-sm border border-blue-700">
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-900 to-blue-800 text-white px-6 py-3 rounded-xl text-sm font-bold z-20 pointer-events-none shadow-2xl whitespace-nowrap backdrop-blur-sm border border-blue-700">
           {SCHENGEN_COUNTRIES[hoveredCountry]}
         </div>
       )}
 
-      {/* Map Container with Premium Styling */}
-      <div className="rounded-2xl overflow-hidden shadow-2xl" style={{ backgroundColor: '#F0F9FF', border: '2px solid #DBEAFE' }}>
-        {/* Map Header */}
-        <div style={{ backgroundColor: 'linear-gradient(135deg, #1E40AF 0%, #0C4A6E 100%)', padding: '1.5rem', textAlign: 'center' }}>
-          <p style={{ color: '#FFFFFF', margin: 0, fontSize: '0.875rem', opacity: 0.9, letterSpacing: '0.05em' }}>
-            İnteraktif Harita
-          </p>
-        </div>
+      {/* Map Container with Premium Styling - No Border */}
+      <div className="rounded-3xl overflow-hidden shadow-2xl" style={{ backgroundColor: '#FFFFFF' }}>
+        {/* Map with Gradient Background */}
+        <div style={{
+          padding: '2.5rem 2rem',
+          background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
+          position: 'relative'
+        }}>
+          {/* Decorative Elements */}
+          <div style={{
+            position: 'absolute',
+            top: '-100px',
+            right: '-100px',
+            width: '300px',
+            height: '300px',
+            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
+            borderRadius: '50%',
+            pointerEvents: 'none'
+          }}></div>
+          <div style={{
+            position: 'absolute',
+            bottom: '-150px',
+            left: '-150px',
+            width: '350px',
+            height: '350px',
+            background: 'radial-gradient(circle, rgba(30, 64, 175, 0.08) 0%, transparent 70%)',
+            borderRadius: '50%',
+            pointerEvents: 'none'
+          }}></div>
 
-        {/* Map */}
-        <div style={{ padding: '2rem', backgroundColor: '#FFFFFF' }}>
-          <ComposableMap
-            projection="geoMercator"
-            projectionConfig={{
-              scale: 147,
-              center: [15, 45]
-            }}
-            width={800}
-            height={600}
-            style={{ width: '100%', height: 'auto' }}
-          >
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo) => {
-                  const isoCode = geo.id;
-                  const isSchengen = SCHENGEN_CODES.includes(isoCode);
+          {/* Map */}
+          <div style={{ position: 'relative', zIndex: 10 }}>
+            <ComposableMap
+              projection="geoMercator"
+              projectionConfig={{
+                scale: 147,
+                center: [15, 45]
+              }}
+              width={800}
+              height={600}
+              style={{ width: '100%', height: 'auto' }}
+            >
+              <Geographies geography={geoUrl}>
+                {({ geographies }) =>
+                  geographies.map((geo) => {
+                    const isoCode = geo.id;
+                    const isSchengen = SCHENGEN_CODES.includes(isoCode);
 
-                  return (
-                    <Geography
-                      key={geo.rsmKey}
-                      geography={geo}
-                      onClick={() => handleCountryClick(geo)}
-                      onMouseEnter={() => handleMouseEnter(geo)}
-                      onMouseLeave={handleMouseLeave}
-                      style={{
-                        default: {
-                          fill: getFillColor(geo),
-                          stroke: '#E0E7FF',
-                          strokeWidth: 0.75,
-                          outline: 'none',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        },
-                        hover: {
-                          fill: getFillColor(geo),
-                          stroke: '#1E40AF',
-                          strokeWidth: isSchengen ? 2 : 0.75,
-                          outline: 'none',
-                          cursor: isSchengen ? 'pointer' : 'default',
-                          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                          filter: 'drop-shadow(0 4px 6px rgba(30, 64, 175, 0.1))',
-                        },
-                        pressed: {
-                          fill: getFillColor(geo),
-                          stroke: '#1E40AF',
-                          strokeWidth: 2.5,
-                          outline: 'none',
-                          filter: 'drop-shadow(0 8px 12px rgba(30, 64, 175, 0.2))',
-                        },
-                      }}
-                    />
-                  );
-                })
-              }
-            </Geographies>
-          </ComposableMap>
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        onClick={() => handleCountryClick(geo)}
+                        onMouseEnter={() => handleMouseEnter(geo)}
+                        onMouseLeave={handleMouseLeave}
+                        style={{
+                          default: {
+                            fill: getFillColor(geo),
+                            stroke: '#CBD5E1',
+                            strokeWidth: 0.75,
+                            outline: 'none',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                          },
+                          hover: {
+                            fill: getFillColor(geo),
+                            stroke: '#1E40AF',
+                            strokeWidth: isSchengen ? 2 : 0.75,
+                            outline: 'none',
+                            cursor: isSchengen ? 'pointer' : 'default',
+                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            filter: 'drop-shadow(0 4px 12px rgba(30, 64, 175, 0.2))',
+                          },
+                          pressed: {
+                            fill: getFillColor(geo),
+                            stroke: '#1E40AF',
+                            strokeWidth: 2.5,
+                            outline: 'none',
+                            filter: 'drop-shadow(0 8px 16px rgba(30, 64, 175, 0.25))',
+                          },
+                        }}
+                      />
+                    );
+                  })
+                }
+              </Geographies>
+            </ComposableMap>
+          </div>
         </div>
 
         {/* Premium Legend */}
-        <div style={{ backgroundColor: '#F8FAFC', padding: '1.5rem', borderTop: '1px solid #E2E8F0', display: 'flex', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap' }}>
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          padding: '1.75rem',
+          borderTop: '1px solid #F1F5F9',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: '2.5rem',
+          flexWrap: 'wrap'
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#DBEAFE', border: '1px solid #BFDBFE', boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)' }}></div>
-            <span style={{ color: '#0C4A6E', fontSize: '0.9rem', fontWeight: '600' }}>Schengen Ülkeleri</span>
+            <div style={{
+              width: '14px',
+              height: '14px',
+              borderRadius: '4px',
+              backgroundColor: '#DBEAFE',
+              border: '1px solid #BAE6FD',
+              boxShadow: '0 2px 4px rgba(30, 64, 175, 0.08)'
+            }}></div>
+            <span style={{ color: '#0C4A6E', fontSize: '0.9rem', fontWeight: '600', letterSpacing: '0.01em' }}>Schengen Ülkeleri</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: '#1E40AF', border: '1px solid #1E3A8A', boxShadow: '0 2px 4px rgba(30, 64, 175, 0.2)' }}></div>
-            <span style={{ color: '#0C4A6E', fontSize: '0.9rem', fontWeight: '600' }}>Seçili Ülke</span>
+            <div style={{
+              width: '14px',
+              height: '14px',
+              borderRadius: '4px',
+              backgroundColor: '#1E40AF',
+              border: '1px solid #1E3A8A',
+              boxShadow: '0 2px 4px rgba(30, 64, 175, 0.15)'
+            }}></div>
+            <span style={{ color: '#0C4A6E', fontSize: '0.9rem', fontWeight: '600', letterSpacing: '0.01em' }}>Seçili Ülke</span>
           </div>
         </div>
       </div>
@@ -181,4 +225,3 @@ const InteractiveWorldMap = ({ selectedCountry, onSelectCountry }) => {
 };
 
 export default InteractiveWorldMap;
-

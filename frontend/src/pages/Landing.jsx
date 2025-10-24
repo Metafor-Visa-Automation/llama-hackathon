@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import InteractiveWorldMap from '../components/InteractiveWorldMap';
 import ProcessSteps from '../components/ProcessSteps';
+import vibeBg from '../assets/vibe-bg1.webp';
 
 /**
  * Landing Page Component for Visa Flow
@@ -29,7 +30,12 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#FFFFFF' }}>
+    <div className="min-h-screen" style={{
+      backgroundImage: `url(${vibeBg})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundAttachment: 'fixed'
+    }}>
       {/* Hero Section - Split Layout */}
       <section style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', paddingTop: '4rem' }}>
         <div className="container mx-auto px-8">

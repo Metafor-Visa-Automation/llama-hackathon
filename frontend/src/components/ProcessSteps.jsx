@@ -27,7 +27,12 @@ const ProcessSteps = () => {
   ];
 
   return (
-    <section style={{ backgroundColor: '#FFFFFF', padding: '6rem 2rem' }}>
+    <section style={{
+      background: 'rgba(255, 255, 255, 0.95)',
+      backdropFilter: 'blur(10px)',
+      padding: '6rem 2rem',
+      borderTop: '1px solid rgba(255, 255, 255, 0.3)'
+    }}>
       <div className="container mx-auto">
         <h2
           style={{
