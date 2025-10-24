@@ -47,3 +47,8 @@ Platformumuz, vize başvurusunun her aşamasını otomatize ederek verimliliği 
 
 <img width="1246" height="1500" alt="Untitled diagram-2025-10-24-175128" src="https://github.com/user-attachments/assets/a1b88361-ba43-4ef7-8d16-6b85429a3f50" />
 
+## 🛠️ Database (Edit from here: https://www.mermaidchart.com/d/965a71e2-ca92-43d9-8cd8-8d9d7ef0283b )
+
+<img width="4390" height="2943" alt="image" src="https://github.com/user-attachments/assets/c69ca404-d3b4-4aa7-b923-7bc4b259174a" />
+
+
