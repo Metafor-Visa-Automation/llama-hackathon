@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
+import { ArrowRight } from 'lucide-react';
 
 // Schengen countries ISO codes with names
 const SCHENGEN_COUNTRIES = {
@@ -13,18 +14,37 @@ const SCHENGEN_COUNTRIES = {
 
 const SCHENGEN_CODES = Object.keys(SCHENGEN_COUNTRIES);
 
+// Common origin countries for Turkish users
+const ORIGIN_COUNTRIES = {
+  'TUR': 'Türkiye',
+  'USA': 'Amerika Birleşik Devletleri',
+  'GBR': 'Birleşik Krallık',
+  'CAN': 'Kanada',
+  'AUS': 'Avustralya',
+  'JPN': 'Japonya',
+  'KOR': 'Güney Kore',
+  'CHN': 'Çin',
+  'IND': 'Hindistan',
+  'BRA': 'Brezilya',
+  'MEX': 'Meksika',
+  'RUS': 'Rusya',
+  'SAU': 'Suudi Arabistan',
+  'ARE': 'Birleşik Arap Emirlikleri'
+};
+
 // GeoJSON data URL
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
 
 /**
  * InteractiveWorldMap Component
- * Displays an interactive world map highlighting Schengen countries
+ * Displays an interactive world map highlighting Schengen countries with country selection
  * @param {Object} props
- * @param {string|null} props.selectedCountry - Currently selected country ISO code
- * @param {Function} props.onSelectCountry - Callback when a country is clicked
+ * @param {Function} props.onStartApplication - Callback when application is started
  */
-const InteractiveWorldMap = ({ selectedCountry, onSelectCountry }) => {
+const InteractiveWorldMap = ({ onStartApplication }) => {
   const [hoveredCountry, setHoveredCountry] = useState(null);
+  const [originCountry, setOriginCountry] = useState('TUR'); // Default to Turkey
+  const [destinationCountry, setDestinationCountry] = useState(null);
 
   /**
    * Determines the fill color of a country based on its state
@@ -35,23 +55,23 @@ const InteractiveWorldMap = ({ selectedCountry, onSelectCountry }) => {
     const isoCode = geo.id;
     const isSchengen = SCHENGEN_CODES.includes(isoCode);
 
-    // Selected state - dark blue
-    if (selectedCountry === isoCode) {
-      return '#1E40AF';
+    // Selected state - vibrant emerald green (fully painted)
+    if (destinationCountry === isoCode) {
+      return '#059669';
     }
 
-    // Hovered state - medium blue
+    // Hovered state - medium green (noticeable hover effect)
     if (hoveredCountry === isoCode && isSchengen) {
-      return '#3B82F6';
+      return '#10B981';
     }
 
-    // Schengen countries - light blue
+    // Schengen countries - light mint green
     if (isSchengen) {
-      return '#DBEAFE';
+      return '#D1FAE5';
     }
 
     // Default state - light gray
-    return '#F3F4F6';
+    return '#F5F5F5';
   };
 
   /**
@@ -64,7 +84,16 @@ const InteractiveWorldMap = ({ selectedCountry, onSelectCountry }) => {
 
     // Only allow selection of Schengen countries
     if (isSchengen) {
-      onSelectCountry(isoCode);
+      setDestinationCountry(isoCode);
+    }
+  };
+
+  /**
+   * Handles start application button click
+   */
+  const handleStartApplication = () => {
+    if (originCountry && destinationCountry) {
+      onStartApplication({ originCountry, destinationCountry });
     }
   };
 
@@ -92,7 +121,7 @@ const InteractiveWorldMap = ({ selectedCountry, onSelectCountry }) => {
     <div className="relative w-full">
       {/* Tooltip - shows country name on hover */}
       {hoveredCountry && (
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-900 to-blue-800 text-white px-6 py-3 rounded-xl text-sm font-bold z-20 pointer-events-none shadow-2xl whitespace-nowrap backdrop-blur-sm border border-blue-700">
+        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-emerald-800 to-emerald-700 text-white px-6 py-3 rounded-xl text-sm font-bold z-20 pointer-events-none shadow-2xl whitespace-nowrap backdrop-blur-sm border border-emerald-600">
           {SCHENGEN_COUNTRIES[hoveredCountry]}
         </div>
       )}
@@ -102,7 +131,7 @@ const InteractiveWorldMap = ({ selectedCountry, onSelectCountry }) => {
         {/* Map with Gradient Background */}
         <div style={{
           padding: '2.5rem 2rem',
-          background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
+          background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
           position: 'relative'
         }}>
           {/* Decorative Elements */}
@@ -112,7 +141,7 @@ const InteractiveWorldMap = ({ selectedCountry, onSelectCountry }) => {
             right: '-100px',
             width: '300px',
             height: '300px',
-            background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, transparent 70%)',
             borderRadius: '50%',
             pointerEvents: 'none'
           }}></div>
@@ -122,7 +151,7 @@ const InteractiveWorldMap = ({ selectedCountry, onSelectCountry }) => {
             left: '-150px',
             width: '350px',
             height: '350px',
-            background: 'radial-gradient(circle, rgba(30, 64, 175, 0.08) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(5, 150, 105, 0.1) 0%, transparent 70%)',
             borderRadius: '50%',
             pointerEvents: 'none'
           }}></div>
@@ -155,26 +184,27 @@ const InteractiveWorldMap = ({ selectedCountry, onSelectCountry }) => {
                         style={{
                           default: {
                             fill: getFillColor(geo),
-                            stroke: '#CBD5E1',
-                            strokeWidth: 0.75,
+                            stroke: destinationCountry === isoCode ? '#047857' : (isSchengen ? '#86EFAC' : '#9CA3AF'),
+                            strokeWidth: destinationCountry === isoCode ? 3 : (isSchengen ? 1.5 : 1),
                             outline: 'none',
                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            filter: destinationCountry === isoCode ? 'drop-shadow(0 6px 20px rgba(5, 150, 105, 0.35))' : 'none',
                           },
                           hover: {
                             fill: getFillColor(geo),
-                            stroke: '#1E40AF',
-                            strokeWidth: isSchengen ? 2 : 0.75,
+                            stroke: isSchengen ? '#059669' : '#9CA3AF',
+                            strokeWidth: isSchengen ? 3 : 1,
                             outline: 'none',
                             cursor: isSchengen ? 'pointer' : 'default',
                             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            filter: 'drop-shadow(0 4px 12px rgba(30, 64, 175, 0.2))',
+                            filter: isSchengen ? 'drop-shadow(0 6px 16px rgba(5, 150, 105, 0.3))' : 'none',
                           },
                           pressed: {
                             fill: getFillColor(geo),
-                            stroke: '#1E40AF',
-                            strokeWidth: 2.5,
+                            stroke: '#047857',
+                            strokeWidth: 3.5,
                             outline: 'none',
-                            filter: 'drop-shadow(0 8px 16px rgba(30, 64, 175, 0.25))',
+                            filter: 'drop-shadow(0 8px 24px rgba(5, 150, 105, 0.4))',
                           },
                         }}
                       />
@@ -186,38 +216,129 @@ const InteractiveWorldMap = ({ selectedCountry, onSelectCountry }) => {
           </div>
         </div>
 
-        {/* Premium Legend */}
+        {/* Country Selection and CTA Section */}
         <div style={{
           backgroundColor: '#FFFFFF',
-          padding: '1.75rem',
-          borderTop: '1px solid #F1F5F9',
+          padding: '2rem 2.5rem',
+          borderTop: '1px solid #E5E7EB',
           display: 'flex',
-          justifyContent: 'center',
-          gap: '2.5rem',
+          alignItems: 'center',
+          gap: '1.5rem',
           flexWrap: 'wrap'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{
-              width: '14px',
-              height: '14px',
-              borderRadius: '4px',
-              backgroundColor: '#DBEAFE',
-              border: '1px solid #BAE6FD',
-              boxShadow: '0 2px 4px rgba(30, 64, 175, 0.08)'
-            }}></div>
-            <span style={{ color: '#0C4A6E', fontSize: '0.9rem', fontWeight: '600', letterSpacing: '0.01em' }}>Schengen Ülkeleri</span>
+          {/* Origin Country Dropdown */}
+          <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#064E3B',
+              marginBottom: '0.5rem'
+            }}>
+              Nereden
+            </label>
+            <select
+              value={originCountry}
+              onChange={(e) => setOriginCountry(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.75rem 1rem',
+                fontSize: '1rem',
+                fontWeight: '500',
+                color: '#064E3B',
+                backgroundColor: '#F0FDF4',
+                border: '2px solid #A7F3D0',
+                borderRadius: '12px',
+                outline: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#10B981';
+                e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#A7F3D0';
+                e.target.style.boxShadow = 'none';
+              }}
+            >
+              {Object.entries(ORIGIN_COUNTRIES).map(([code, name]) => (
+                <option key={code} value={code}>{name}</option>
+              ))}
+            </select>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{
-              width: '14px',
-              height: '14px',
-              borderRadius: '4px',
-              backgroundColor: '#1E40AF',
-              border: '1px solid #1E3A8A',
-              boxShadow: '0 2px 4px rgba(30, 64, 175, 0.15)'
-            }}></div>
-            <span style={{ color: '#0C4A6E', fontSize: '0.9rem', fontWeight: '600', letterSpacing: '0.01em' }}>Seçili Ülke</span>
+
+          {/* Destination Country Dropdown */}
+          <div style={{ flex: '1 1 200px', minWidth: '200px' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#064E3B',
+              marginBottom: '0.5rem'
+            }}>
+              Nereye
+            </label>
+            <select
+              value={destinationCountry || ''}
+              onChange={(e) => setDestinationCountry(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.75rem 1rem',
+                fontSize: '1rem',
+                fontWeight: '500',
+                color: destinationCountry ? '#064E3B' : '#9CA3AF',
+                backgroundColor: destinationCountry ? '#F0FDF4' : '#F9FAFB',
+                border: destinationCountry ? '2px solid #A7F3D0' : '2px solid #E5E7EB',
+                borderRadius: '12px',
+                outline: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#10B981';
+                e.target.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = destinationCountry ? '#A7F3D0' : '#E5E7EB';
+                e.target.style.boxShadow = 'none';
+              }}
+            >
+              <option value="" disabled>Ülke Seçiniz</option>
+              {Object.entries(SCHENGEN_COUNTRIES).map(([code, name]) => (
+                <option key={code} value={code}>{name}</option>
+              ))}
+            </select>
           </div>
+
+          {/* CTA Button */}
+          <button
+            onClick={handleStartApplication}
+            disabled={!originCountry || !destinationCountry}
+            className={`
+              inline-flex items-center gap-2 px-6 py-3 text-base font-semibold rounded-full
+              transition-all duration-300 transform
+              ${originCountry && destinationCountry
+                ? 'hover:scale-105 cursor-pointer'
+                : 'cursor-not-allowed opacity-50'
+              }
+            `}
+            style={{
+              background: originCountry && destinationCountry
+                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+                : '#CCCCCC',
+              color: '#FFFFFF',
+              boxShadow: originCountry && destinationCountry
+                ? '0 6px 20px rgba(16, 185, 129, 0.4)'
+                : 'none',
+              border: 'none',
+              whiteSpace: 'nowrap',
+              flex: '0 0 auto'
+            }}
+          >
+            Başvuruya Başla
+            <ArrowRight size={18} />
+          </button>
         </div>
       </div>
     </div>

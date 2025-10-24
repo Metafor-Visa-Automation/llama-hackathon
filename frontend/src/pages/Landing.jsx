@@ -1,7 +1,4 @@
-import { useState } from 'react';
-import { ArrowRight } from 'lucide-react';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import InteractiveWorldMap from '../components/InteractiveWorldMap';
 import ProcessSteps from '../components/ProcessSteps';
 import vibeBg from '../assets/vibe-bg1.webp';
@@ -11,24 +8,13 @@ import vibeBg from '../assets/vibe-bg1.webp';
  * Main landing page with interactive world map and application flow
  */
 const Landing = () => {
-  const [selectedCountry, setSelectedCountry] = useState(null);
-
-  /**
-   * Handles country selection from the map
-   * @param {string} countryCode - ISO code of selected country
-   */
-  const handleSelectCountry = (countryCode) => {
-    setSelectedCountry(countryCode);
-  };
-
   /**
    * Handles the "Start Application" button click
+   * @param {Object} data - Contains originCountry and destinationCountry
    */
-  const handleStartApplication = () => {
-    if (selectedCountry) {
-      console.log('Starting application for:', selectedCountry);
-      // TODO: Navigate to application page
-    }
+  const handleStartApplication = (data) => {
+    console.log('Starting application from:', data.originCountry, 'to:', data.destinationCountry);
+    // TODO: Navigate to application page
   };
 
   return (
@@ -56,7 +42,7 @@ const Landing = () => {
       {/* Hero Section - Split Layout */}
       <section style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', paddingTop: '4rem' }}>
         <div className="container mx-auto px-8">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: '3rem', alignItems: 'center' }}>
             {/* Left Side - Text Content */}
             <div>
               {/* Brand Badge - Eye-Catching with Green Theme */}
@@ -90,7 +76,7 @@ const Landing = () => {
               {/* Main Hero Headline - Bold & Attention-Grabbing */}
               <h1
                 style={{
-                  fontSize: '4.5rem',
+                  fontSize: '4rem',
                   fontWeight: '800',
                   color: '#1a1a1a',
                   marginBottom: '1.5rem',
@@ -115,66 +101,22 @@ const Landing = () => {
               {/* Supporting Text */}
               <p
                 style={{
-                  fontSize: '1.35rem',
+                  fontSize: '1.25rem',
                   color: '#666666',
                   marginBottom: '2.5rem',
                   lineHeight: '1.7',
                   fontWeight: '400',
-                  maxWidth: '90%'
+                  maxWidth: '95%'
                 }}
               >
                 Yapay zeka destekli çözümümüzle vize başvuru sürecinizi basitleştirin. İhtiyacınız olan tüm belgeleri yapay zeka destekli çözümümüzle hızlıca oluşturun. Seçtiğiniz ülkeye göre özelleştirilmiş rehberlik alın.
               </p>
-
-              {/* CTA Button */}
-              <button
-                onClick={handleStartApplication}
-                disabled={!selectedCountry}
-                className={`
-                  inline-flex items-center gap-2 px-8 py-4 text-base font-semibold rounded-full
-                  transition-all duration-300 transform
-                  ${selectedCountry
-                    ? 'hover:scale-105 cursor-pointer'
-                    : 'cursor-not-allowed opacity-60'
-                  }
-                `}
-                style={{
-                  background: selectedCountry 
-                    ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)' 
-                    : '#CCCCCC',
-                  color: '#FFFFFF',
-                  boxShadow: selectedCountry 
-                    ? '0 8px 25px rgba(16, 185, 129, 0.4)' 
-                    : 'none',
-                  border: 'none'
-                }}
-              >
-                Başvuruya Başla
-                <ArrowRight size={20} />
-              </button>
-
-              {/* Helper Text */}
-              {selectedCountry && (
-                <p style={{ 
-                  marginTop: '1rem', 
-                  fontSize: '0.875rem', 
-                  color: '#10b981',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem'
-                }}>
-                  <CheckCircleIcon sx={{ fontSize: 18, color: '#10b981' }} />
-                  Ülke seçildi. Başvuruya devam edebilirsiniz.
-                </p>
-              )}
             </div>
 
             {/* Right Side - Interactive Map */}
             <div>
               <InteractiveWorldMap
-                selectedCountry={selectedCountry}
-                onSelectCountry={handleSelectCountry}
+                onStartApplication={handleStartApplication}
               />
             </div>
           </div>
