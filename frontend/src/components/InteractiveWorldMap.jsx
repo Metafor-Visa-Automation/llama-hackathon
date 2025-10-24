@@ -1,107 +1,272 @@
-import { useState } from 'react';
-import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 
-// Schengen countries ISO codes with names
+// Schengen countries ISO codes with names (ISO2 format for SimpleMaps)
 const SCHENGEN_COUNTRIES = {
-  'AUT': 'Avusturya', 'BEL': 'Belçika', 'CZE': 'Çek Cumhuriyeti', 'DNK': 'Danimarka',
-  'EST': 'Estonya', 'FIN': 'Finlandiya', 'FRA': 'Fransa', 'DEU': 'Almanya',
-  'GRC': 'Yunanistan', 'HUN': 'Macaristan', 'ISL': 'İzlanda', 'ITA': 'İtalya',
-  'LVA': 'Letonya', 'LTU': 'Litvanya', 'LUX': 'Lüksemburg', 'MLT': 'Malta',
-  'NLD': 'Hollanda', 'NOR': 'Norveç', 'POL': 'Polonya', 'PRT': 'Portekiz',
-  'SVK': 'Slovakya', 'SVN': 'Slovenya', 'ESP': 'İspanya', 'SWE': 'İsveç', 'CHE': 'İsviçre'
+  'AT': 'Avusturya',
+  'BE': 'Belçika', 
+  'CZ': 'Çek Cumhuriyeti',
+  'DK': 'Danimarka',
+  'EE': 'Estonya',
+  'FI': 'Finlandiya',
+  'FR': 'Fransa',
+  'DE': 'Almanya',
+  'GR': 'Yunanistan',
+  'HU': 'Macaristan',
+  'IS': 'İzlanda',
+  'IT': 'İtalya',
+  'LV': 'Letonya',
+  'LT': 'Litvanya',
+  'LU': 'Lüksemburg',
+  'MT': 'Malta',
+  'NL': 'Hollanda',
+  'NO': 'Norveç',
+  'PL': 'Polonya',
+  'PT': 'Portekiz',
+  'SK': 'Slovakya',
+  'SI': 'Slovenya',
+  'ES': 'İspanya',
+  'SE': 'İsveç',
+  'CH': 'İsviçre'
 };
 
 const SCHENGEN_CODES = Object.keys(SCHENGEN_COUNTRIES);
 
-// Common origin countries for Turkish users
+// Common origin countries for Turkish users (ISO2 format)
 const ORIGIN_COUNTRIES = {
-  'TUR': 'Türkiye',
-  'USA': 'Amerika Birleşik Devletleri',
-  'GBR': 'Birleşik Krallık',
-  'CAN': 'Kanada',
-  'AUS': 'Avustralya',
-  'JPN': 'Japonya',
-  'KOR': 'Güney Kore',
-  'CHN': 'Çin',
-  'IND': 'Hindistan',
-  'BRA': 'Brezilya',
-  'MEX': 'Meksika',
-  'RUS': 'Rusya',
-  'SAU': 'Suudi Arabistan',
-  'ARE': 'Birleşik Arap Emirlikleri'
+  'TR': 'Türkiye',
+  'US': 'Amerika Birleşik Devletleri',
+  'GB': 'Birleşik Krallık',
+  'CA': 'Kanada',
+  'AU': 'Avustralya',
+  'JP': 'Japonya',
+  'KR': 'Güney Kore',
+  'CN': 'Çin',
+  'IN': 'Hindistan',
+  'BR': 'Brezilya',
+  'MX': 'Meksika',
+  'RU': 'Rusya',
+  'SA': 'Suudi Arabistan',
+  'AE': 'Birleşik Arap Emirlikleri'
 };
 
-// GeoJSON data URL
-const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json";
-
 /**
- * InteractiveWorldMap Component
+ * InteractiveWorldMap Component using SimpleMaps
  * Displays an interactive world map highlighting Schengen countries with country selection
  * @param {Object} props
  * @param {Function} props.onStartApplication - Callback when application is started
  */
 const InteractiveWorldMap = ({ onStartApplication }) => {
-  const [hoveredCountry, setHoveredCountry] = useState(null);
-  const [originCountry, setOriginCountry] = useState('TUR'); // Default to Turkey
+  const [originCountry, setOriginCountry] = useState('TR'); // Default to Turkey
   const [destinationCountry, setDestinationCountry] = useState(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const mapInitialized = useRef(false);
+  const scriptsLoaded = useRef(false);
 
   /**
-   * Determines the fill color of a country based on its state
-   * @param {string} isoCode - Country ISO code
-   * @param {boolean} isSchengen - Whether country is in Schengen zone
-   * @param {boolean} isHovered - Whether country is currently hovered
-   * @returns {string} - CSS color value
+   * Load SimpleMaps scripts dynamically
    */
-  const getFillColor = (isoCode, isSchengen, isHovered = false) => {
-    // Selected state - vibrant emerald green (fully painted)
-    if (destinationCountry === isoCode) {
-      return '#059669';
-    }
+  useEffect(() => {
+    if (scriptsLoaded.current) return;
 
-    // Hovered state - medium green (noticeable hover effect)
-    if (isHovered && isSchengen) {
-      return '#10B981';
-    }
+    const loadScript = (src, id) => {
+      return new Promise((resolve, reject) => {
+        // Check if script already exists
+        if (document.getElementById(id)) {
+          resolve();
+          return;
+        }
 
-    // Schengen countries - light mint green
-    if (isSchengen) {
-      return '#D1FAE5';
-    }
+        const script = document.createElement('script');
+        script.src = src;
+        script.id = id;
+        script.async = false;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.body.appendChild(script);
+      });
+    };
 
-    // Default state - light gray
-    return '#F5F5F5';
-  };
+    // Load scripts in sequence (mapdata first, then engine)
+    loadScript('/simplemaps/simplemaps_worldmap_mapdata.js', 'simplemaps-mapdata')
+      .then(() => loadScript('/simplemaps/simplemaps_worldmap.js', 'simplemaps-engine'))
+      .then(() => {
+        scriptsLoaded.current = true;
+        setMapLoaded(true);
+      })
+      .catch((error) => {
+        console.error('Error loading SimpleMaps scripts:', error);
+      });
+
+    // Cleanup function
+    return () => {
+      // Don't remove scripts on cleanup to avoid reloading
+    };
+  }, []);
 
   /**
-   * Handles country click event from map
-   * @param {Object} geo - Geography object
+   * Initialize SimpleMaps with custom configuration
    */
-  const handleCountryClick = (geo) => {
-    const isoCode = geo.id;
-    const isSchengen = SCHENGEN_CODES.includes(isoCode);
+  useEffect(() => {
+    if (!mapLoaded || mapInitialized.current || !window.simplemaps_worldmap_mapdata) return;
 
-    // Only allow selection of Schengen countries
-    if (isSchengen) {
-      // Update destination country state - this will update both map and dropdown
-      setDestinationCountry(isoCode);
-      console.log('Country selected from map:', isoCode, SCHENGEN_COUNTRIES[isoCode]);
+    const md = window.simplemaps_worldmap_mapdata;
+
+    // Configure map settings
+    md.main_settings = {
+      width: 'responsive',
+      background_color: 'transparent',
+      background_transparent: 'yes',
+      popups: 'on_hover',
+      label_color: '#047857',
+      label_size: 20,
+      label_font: '"Playfair Display", serif',
+      border_size: 2,
+      border_color: '#FFFFFF',
+      state_color: '#E5E7EB',
+      state_hover_color: '#22C55E',
+      all_states_inactive: 'no',
+      all_states_zoomable: 'yes',
+      div: 'simplemaps-container',
+      auto_load: 'yes',
+      
+      // Zoom settings - Smooth zoom like in the example
+      manual_zoom: 'yes',
+      back_image: 'no',
+      arrow_box: 'yes',
+      navigation_size: '40',
+      navigation_color: '#FFFFFF',
+      navigation_border_color: '#10B981',
+      initial_back: 'no',
+      initial_zoom: -1,
+      initial_zoom_solo: 'no',
+      zoom_out_incrementally: 'yes',
+      zoom_percentage: 0.65, // Tighter zoom to fit vertically
+      zoom_time: 0.5,
+      
+      // Popup settings
+      popup_color: 'white',
+      popup_opacity: 0.98,
+      popup_shadow: 3,
+      popup_corners: 12,
+      popup_font: '15px/1.6 "Playfair Display", serif',
+      popup_nocss: 'no',
+      
+      fade_time: 0.2,
+    };
+
+    // Initialize state_specific if not exists
+    if (!md.state_specific) {
+      md.state_specific = {};
     }
-  };
+    
+    // Define a region for Schengen countries to zoom into
+    if (!md.regions) md.regions = {};
+    md.regions['schengen_area'] = {
+        name: 'Schengen Area',
+        states: [...SCHENGEN_CODES]
+    };
+
+    // Color Schengen countries with more vibrant colors
+    SCHENGEN_CODES.forEach(code => {
+      if (md.state_specific[code]) {
+        md.state_specific[code].color = '#A7F3D0';
+        md.state_specific[code].hover_color = '#34D399';
+        md.state_specific[code].description = SCHENGEN_COUNTRIES[code];
+      }
+    });
+
+    // Set initial zoom to the Schengen region
+    md.main_settings.initial_zoom = 'schengen_area';
+    md.main_settings.initial_zoom_solo = 'no';
+    
+    // Load the map
+    if (window.simplemaps_worldmap) {
+      window.simplemaps_worldmap.load();
+      mapInitialized.current = true;
+    }
+  }, [mapLoaded]);
 
   /**
-   * Handles destination country change from dropdown
-   * @param {string} countryCode - ISO code of selected country
+   * Setup global click handler for SimpleMaps
+   */
+  useEffect(() => {
+    // Create global click handler function
+    window.handleSchengenCountryClick = (countryCode) => {
+      if (SCHENGEN_CODES.includes(countryCode)) {
+        setDestinationCountry(countryCode);
+        console.log('Country selected from map:', countryCode, SCHENGEN_COUNTRIES[countryCode]);
+      }
+    };
+
+    return () => {
+      delete window.handleSchengenCountryClick;
+    };
+  }, []);
+
+  /**
+   * Setup click handlers for countries
+   */
+  useEffect(() => {
+    if (!mapLoaded || !window.simplemaps_worldmap_mapdata) return;
+
+    const md = window.simplemaps_worldmap_mapdata;
+
+    // Add click handlers to Schengen countries only
+    SCHENGEN_CODES.forEach(code => {
+      if (md.state_specific[code]) {
+        md.state_specific[code].url = `javascript:window.handleSchengenCountryClick('${code}');`;
+        md.state_specific[code].inactive = 'no';
+      }
+    });
+
+    // Make non-Schengen countries inactive (no hover, no click)
+    Object.keys(md.state_specific).forEach(code => {
+      if (!SCHENGEN_CODES.includes(code)) {
+        md.state_specific[code].inactive = 'yes';
+      }
+    });
+  }, [mapLoaded]);
+
+  /**
+   * Update map colors when destination country changes
+   */
+  useEffect(() => {
+    if (!mapLoaded || !window.simplemaps_worldmap || !window.simplemaps_worldmap_mapdata) return;
+
+    const md = window.simplemaps_worldmap_mapdata;
+
+    // Reset all Schengen countries to vibrant light green
+    SCHENGEN_CODES.forEach(code => {
+      if (md.state_specific[code]) {
+        md.state_specific[code].color = '#A7F3D0';
+        md.state_specific[code].hover_color = '#34D399';
+      }
+    });
+
+    // Highlight selected country with darker green
+    if (destinationCountry && md.state_specific[destinationCountry]) {
+      md.state_specific[destinationCountry].color = '#10B981';
+      md.state_specific[destinationCountry].hover_color = '#059669';
+    }
+
+    // Refresh the map
+    if (window.simplemaps_worldmap && window.simplemaps_worldmap.refresh) {
+      window.simplemaps_worldmap.refresh();
+    }
+  }, [destinationCountry, mapLoaded]);
+
+  /**
+   * Handle destination country change from dropdown
    */
   const handleDestinationChange = (countryCode) => {
-    // Update destination country state - this will update both map and dropdown
     setDestinationCountry(countryCode);
     console.log('Country selected from dropdown:', countryCode, SCHENGEN_COUNTRIES[countryCode]);
   };
 
   /**
-   * Handles start application button click
+   * Handle start application button click
    */
   const handleStartApplication = () => {
     if (originCountry && destinationCountry) {
@@ -113,42 +278,74 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
     }
   };
 
-  /**
-   * Handles country mouse enter event
-   * @param {Object} geo - Geography object
-   */
-  const handleMouseEnter = (geo) => {
-    const isoCode = geo.id;
-    const isSchengen = SCHENGEN_CODES.includes(isoCode);
-
-    if (isSchengen) {
-      setHoveredCountry(isoCode);
-    }
-  };
-
-  /**
-   * Handles country mouse leave event
-   */
-  const handleMouseLeave = () => {
-    setHoveredCountry(null);
-  };
-
   return (
     <div className="relative w-full">
-      {/* Tooltip - shows country name on hover */}
-      {hoveredCountry && (
-        <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-emerald-800 to-emerald-700 text-white px-6 py-3 rounded-xl text-sm font-bold z-20 pointer-events-none shadow-2xl whitespace-nowrap backdrop-blur-sm border border-emerald-600" style={{ fontFamily: '"Playfair Display", serif' }}>
-          {SCHENGEN_COUNTRIES[hoveredCountry]}
-        </div>
-      )}
+      {/* Hide SimpleMaps watermark and enhance map */}
+      <style>{`
+        #simplemaps-container a[href*="simplemaps.com"],
+        #simplemaps-container a[href*="simplemaps"],
+        #simplemaps-container div[id*="credits"] {
+          display: none !important;
+          visibility: hidden !important;
+          opacity: 0 !important;
+          width: 0 !important;
+          height: 0 !important;
+          position: absolute !important;
+          left: -9999px !important;
+        }
+        /* Make map more prominent and crisp */
+        #simplemaps-container {
+          position: relative;
+        }
+        #simplemaps-container svg {
+          filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.1));
+          border-radius: 12px;
+        }
+        #simplemaps-container svg path {
+          stroke-width: 1.2;
+        }
 
-      {/* Map Container with Premium Styling - No Border */}
+        /* Modern Zoom Buttons */
+        #simplemaps_navigation {
+          left: 24px !important;
+          right: auto !important;
+          top: 24px !important;
+        }
+        #simplemaps_navigation div {
+          display: flex !important;
+          align-items: center !important;
+          justify-content: center !important;
+          background-color: rgba(255, 255, 255, 0.65) !important;
+          border: 1px solid rgba(0, 0, 0, 0.05) !important;
+          border-radius: 50% !important; /* Circular buttons */
+          width: 42px !important;
+          height: 42px !important;
+          margin-bottom: 10px !important;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+        }
+        #simplemaps_navigation div:hover {
+          background-color: #FFFFFF !important;
+          transform: scale(1.05) !important;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12) !important;
+        }
+        #simplemaps_navigation div svg {
+          fill: #059669 !important;
+          width: 20px !important;
+          height: 20px !important;
+        }
+      `}</style>
+
+      {/* Map Container with Premium Styling */}
       <div className="rounded-3xl overflow-hidden shadow-2xl" style={{ backgroundColor: '#FFFFFF' }}>
         {/* Map with Gradient Background */}
         <div style={{
-          padding: '2.5rem 2rem',
+          padding: 0,
           background: 'linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%)',
-          position: 'relative'
+          position: 'relative',
+          height: '650px' // Set a fixed height for the map area
         }}>
           {/* Decorative Elements */}
           <div style={{
@@ -172,63 +369,29 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
             pointerEvents: 'none'
           }}></div>
 
-          {/* Map */}
-          <div style={{ position: 'relative', zIndex: 10 }}>
-            <ComposableMap
-              projection="geoMercator"
-              projectionConfig={{
-                scale: 147,
-                center: [15, 45]
-              }}
-              width={800}
-              height={600}
-              style={{ width: '100%', height: 'auto' }}
-            >
-              <Geographies geography={geoUrl}>
-                {({ geographies }) =>
-                  geographies.map((geo) => {
-                    const isoCode = geo.id;
-                    const isSchengen = SCHENGEN_CODES.includes(isoCode);
-
-                    return (
-                      <Geography
-                        key={geo.rsmKey}
-                        geography={geo}
-                        onClick={() => handleCountryClick(geo)}
-                        onMouseEnter={() => handleMouseEnter(geo)}
-                        onMouseLeave={handleMouseLeave}
-                        style={{
-                          default: {
-                            fill: getFillColor(isoCode, isSchengen, hoveredCountry === isoCode),
-                            stroke: destinationCountry === isoCode ? '#047857' : (isSchengen ? '#86EFAC' : '#9CA3AF'),
-                            strokeWidth: destinationCountry === isoCode ? 3 : (isSchengen ? 1.5 : 1),
-                            outline: 'none',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            filter: destinationCountry === isoCode ? 'drop-shadow(0 6px 20px rgba(5, 150, 105, 0.35))' : 'none',
-                          },
-                          hover: {
-                            fill: getFillColor(isoCode, isSchengen, true),
-                            stroke: isSchengen ? '#059669' : '#9CA3AF',
-                            strokeWidth: isSchengen ? 3 : 1,
-                            outline: 'none',
-                            cursor: isSchengen ? 'pointer' : 'default',
-                            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                            filter: isSchengen ? 'drop-shadow(0 6px 16px rgba(5, 150, 105, 0.3))' : 'none',
-                          },
-                          pressed: {
-                            fill: getFillColor(isoCode, isSchengen, false),
-                            stroke: '#047857',
-                            strokeWidth: 3.5,
-                            outline: 'none',
-                            filter: 'drop-shadow(0 8px 24px rgba(5, 150, 105, 0.4))',
-                          },
-                        }}
-                      />
-                    );
-                  })
-                }
-              </Geographies>
-            </ComposableMap>
+          {/* SimpleMaps Container */}
+          <div 
+            id="simplemaps-container" 
+            style={{ 
+              position: 'relative', 
+              zIndex: 10,
+              width: '100%',
+              height: '100%'
+            }}
+          >
+            {!mapLoaded && (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100%',
+                color: '#059669',
+                fontSize: '18px',
+                fontFamily: '"Playfair Display", serif'
+              }}>
+                Harita yükleniyor...
+              </div>
+            )}
           </div>
         </div>
 

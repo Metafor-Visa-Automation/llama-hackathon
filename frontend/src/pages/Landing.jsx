@@ -95,7 +95,7 @@ const Landing = () => {
                 >
                   10 Dakikada
                 </span>{' '}
-                Oluşturun!
+                Hazırlayın!
               </h1>
 
               {/* Supporting Text */}
