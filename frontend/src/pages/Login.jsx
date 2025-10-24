@@ -264,23 +264,6 @@ const Login = () => {
             {isLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
           </Button>
         </form>
-
-        {/* Additional Links */}
-        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
-          <p style={{ color: '#666666', fontSize: '0.875rem' }}>
-            Hesabınız yok mu?{' '}
-            <a 
-              href="#" 
-              style={{ 
-                color: '#10B981', 
-                fontWeight: '600',
-                textDecoration: 'none'
-              }}
-            >
-              Kayıt Ol
-            </a>
-          </p>
-        </div>
       </div>
       </div>
     </PageTransition>
