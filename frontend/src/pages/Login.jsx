@@ -62,6 +62,7 @@ const Login = () => {
       dispatch(loginSuccess({
         user: data.user,
         token: data.access_token,
+        tokenType: data.token_type,
         expiresIn: data.expires_in
       }));
 

@@ -4,6 +4,7 @@ import { createSlice } from '@reduxjs/toolkit';
 const loadAuthFromStorage = () => {
   try {
     const token = localStorage.getItem('authToken');
+    const tokenType = localStorage.getItem('tokenType');
     const user = localStorage.getItem('authUser');
     const tokenExpiration = localStorage.getItem('tokenExpiration');
 
@@ -12,12 +13,14 @@ const loadAuthFromStorage = () => {
       if (tokenExpiration && new Date().getTime() > parseInt(tokenExpiration)) {
         // Token expired, clear storage
         localStorage.removeItem('authToken');
+        localStorage.removeItem('tokenType');
         localStorage.removeItem('authUser');
         localStorage.removeItem('tokenExpiration');
         return {
           isAuthenticated: false,
           user: null,
           token: null,
+          tokenType: null,
           tokenExpiration: null,
         };
       }
@@ -26,6 +29,7 @@ const loadAuthFromStorage = () => {
         isAuthenticated: true,
         user: JSON.parse(user),
         token: token,
+        tokenType: tokenType || 'bearer',
         tokenExpiration: tokenExpiration ? parseInt(tokenExpiration) : null,
       };
     }
@@ -37,6 +41,7 @@ const loadAuthFromStorage = () => {
     isAuthenticated: false,
     user: null,
     token: null,
+    tokenType: null,
     tokenExpiration: null,
   };
 };
@@ -51,6 +56,7 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
       state.user = action.payload.user;
       state.token = action.payload.token;
+      state.tokenType = action.payload.tokenType || 'bearer';
 
       // Calculate token expiration time (current time + expires_in seconds)
       const expiresIn = action.payload.expiresIn || 3600; // Default 1 hour if not provided
@@ -59,6 +65,7 @@ const authSlice = createSlice({
 
       // Save to localStorage
       localStorage.setItem('authToken', action.payload.token);
+      localStorage.setItem('tokenType', state.tokenType);
       localStorage.setItem('authUser', JSON.stringify(action.payload.user));
       localStorage.setItem('tokenExpiration', expirationTime.toString());
     },
@@ -66,10 +73,12 @@ const authSlice = createSlice({
       state.isAuthenticated = false;
       state.user = null;
       state.token = null;
+      state.tokenType = null;
       state.tokenExpiration = null;
 
       // Clear localStorage
       localStorage.removeItem('authToken');
+      localStorage.removeItem('tokenType');
       localStorage.removeItem('authUser');
       localStorage.removeItem('tokenExpiration');
     },

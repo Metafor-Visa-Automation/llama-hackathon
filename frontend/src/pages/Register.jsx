@@ -16,7 +16,10 @@ import {
   VisibilityOff,
   Speed,
   VerifiedUser,
-  Language
+  Language,
+  Wc,
+  Home,
+  CheckCircle
 } from '@mui/icons-material';
 
 /**
@@ -31,9 +34,12 @@ const Register = () => {
     surname: '',
     profile_type: 'STUDENT',
     passport_type: 'BORDO',
+    gender: 'MALE',
     phone: '',
     date_of_birth: '',
-    nationality: 'Turkish'
+    nationality: 'Turkish',
+    address: '',
+    has_schengen_before: false
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -234,146 +240,105 @@ const Register = () => {
             <div style={{
               backgroundColor: 'rgba(255, 255, 255, 0.98)',
               backdropFilter: 'blur(30px)',
-              borderRadius: '32px',
-              padding: '3rem',
+              borderRadius: '24px',
+              padding: '2rem 2.5rem',
               width: '100%',
               maxWidth: '550px',
               boxShadow: '0 30px 80px rgba(0, 0, 0, 0.2)',
               border: '1px solid rgba(255, 255, 255, 0.9)'
             }}>
               {/* Form Header */}
-              <div style={{ marginBottom: '2.5rem', textAlign: 'center' }}>
+              <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
                 <h2 style={{
-                  fontSize: '2rem',
+                  fontSize: '1.75rem',
                   fontWeight: '800',
                   color: '#1a1a1a',
-                  marginBottom: '0.5rem'
+                  marginBottom: '0.25rem'
                 }}>
                   Hesap Oluştur
                 </h2>
-                <p style={{ color: '#666666', fontSize: '1rem' }}>
+                <p style={{ color: '#666666', fontSize: '0.9rem', margin: 0 }}>
                   Yolculuğunuz birkaç adım ötede
                 </p>
               </div>
 
               {/* Registration Form */}
-              <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                {/* Name & Surname Row */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <CustomInput
-                    name="name"
-                    placeholder="Ad"
-                    value={formData.name}
-                    onChange={handleChange}
-                    icon={<Person sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
-                    required
-                    focusedField={focusedField}
-                    setFocusedField={setFocusedField}
-                  />
-                  <CustomInput
-                    name="surname"
-                    placeholder="Soyad"
-                    value={formData.surname}
-                    onChange={handleChange}
-                    icon={<Person sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
-                    required
-                    focusedField={focusedField}
-                    setFocusedField={setFocusedField}
-                  />
+              <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+                {/* Name & Surname */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <CustomInput name="name" placeholder="Ad" value={formData.name} onChange={handleChange} icon={<Person sx={{ color: '#10B981', fontSize: '1.1rem' }} />} required focusedField={focusedField} setFocusedField={setFocusedField} />
+                  <CustomInput name="surname" placeholder="Soyad" value={formData.surname} onChange={handleChange} icon={<Person sx={{ color: '#10B981', fontSize: '1.1rem' }} />} required focusedField={focusedField} setFocusedField={setFocusedField} />
                 </div>
 
-                {/* Email */}
-                <CustomInput
-                  name="email"
-                  type="email"
-                  placeholder="E-posta"
-                  value={formData.email}
-                  onChange={handleChange}
-                  icon={<Email sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
-                  required
-                  focusedField={focusedField}
-                  setFocusedField={setFocusedField}
-                />
+                {/* Email & Password */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <CustomInput name="email" type="email" placeholder="E-posta" value={formData.email} onChange={handleChange} icon={<Email sx={{ color: '#10B981', fontSize: '1.1rem' }} />} required focusedField={focusedField} setFocusedField={setFocusedField} />
+                  <CustomInput name="password" type={showPassword ? 'text' : 'password'} placeholder="Şifre" value={formData.password} onChange={handleChange} icon={<Lock sx={{ color: '#10B981', fontSize: '1.1rem' }} />} required showPasswordToggle showPassword={showPassword} onTogglePassword={() => setShowPassword(!showPassword)} focusedField={focusedField} setFocusedField={setFocusedField} />
+                </div>
 
-                {/* Password */}
-                <CustomInput
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Şifre"
-                  value={formData.password}
-                  onChange={handleChange}
-                  icon={<Lock sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
-                  required
-                  showPasswordToggle
-                  showPassword={showPassword}
-                  onTogglePassword={() => setShowPassword(!showPassword)}
-                  focusedField={focusedField}
-                  setFocusedField={setFocusedField}
-                />
+                {/* Phone & Date of Birth */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <CustomInput name="phone" placeholder="Telefon" value={formData.phone} onChange={handleChange} icon={<Phone sx={{ color: '#10B981', fontSize: '1.1rem' }} />} required focusedField={focusedField} setFocusedField={setFocusedField} />
+                  <CustomInput name="date_of_birth" placeholder="Doğum Tarihi" value={formData.date_of_birth} onChange={handleChange} icon={<CalendarToday sx={{ color: '#10B981', fontSize: '1.1rem' }} />} required focusedField={focusedField} setFocusedField={setFocusedField} />
+                </div>
 
-                {/* Phone */}
-                <CustomInput
-                  name="phone"
-                  placeholder="Telefon (05001234567)"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  icon={<Phone sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
-                  required
-                  focusedField={focusedField}
-                  setFocusedField={setFocusedField}
-                />
+                {/* Nationality & Gender */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <CustomInput name="nationality" placeholder="Uyruk" value={formData.nationality} onChange={handleChange} icon={<Public sx={{ color: '#10B981', fontSize: '1.1rem' }} />} required focusedField={focusedField} setFocusedField={setFocusedField} />
+                  <CustomSelect name="gender" value={formData.gender} onChange={handleChange} icon={<Wc sx={{ color: '#10B981', fontSize: '1.1rem' }} />} options={[{ value: 'MALE', label: 'Erkek' }, { value: 'FEMALE', label: 'Kadın' }, { value: 'OTHER', label: 'Diğer' }]} focusedField={focusedField} setFocusedField={setFocusedField} />
+                </div>
 
-                {/* Date of Birth */}
-                <CustomInput
-                  name="date_of_birth"
-                  placeholder="Doğum Tarihi (16.07.2000)"
-                  value={formData.date_of_birth}
-                  onChange={handleChange}
-                  icon={<CalendarToday sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
-                  required
-                  focusedField={focusedField}
-                  setFocusedField={setFocusedField}
-                />
-
-                {/* Nationality */}
-                <CustomInput
-                  name="nationality"
-                  placeholder="Uyruk"
-                  value={formData.nationality}
-                  onChange={handleChange}
-                  icon={<Public sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
-                  required
-                  focusedField={focusedField}
-                  setFocusedField={setFocusedField}
-                />
+                {/* Address */}
+                <CustomInput name="address" placeholder="Adres" value={formData.address} onChange={handleChange} icon={<Home sx={{ color: '#10B981', fontSize: '1.1rem' }} />} required focusedField={focusedField} setFocusedField={setFocusedField} />
 
                 {/* Profile Type & Passport Type */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <CustomSelect
-                    name="profile_type"
-                    value={formData.profile_type}
-                    onChange={handleChange}
-                    icon={<Work sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
-                    options={[
-                      { value: 'STUDENT', label: 'Öğrenci' },
-                      { value: 'EMPLOYEE', label: 'Çalışan' },
-                      { value: 'TOURIST', label: 'Turist' }
-                    ]}
-                    focusedField={focusedField}
-                    setFocusedField={setFocusedField}
-                  />
-                  <CustomSelect
-                    name="passport_type"
-                    value={formData.passport_type}
-                    onChange={handleChange}
-                    icon={<CardTravel sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
-                    options={[
-                      { value: 'BORDO', label: 'Bordo' },
-                      { value: 'YESIL', label: 'Yeşil' }
-                    ]}
-                    focusedField={focusedField}
-                    setFocusedField={setFocusedField}
-                  />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                  <CustomSelect name="profile_type" value={formData.profile_type} onChange={handleChange} icon={<Work sx={{ color: '#10B981', fontSize: '1.1rem' }} />} options={[{ value: 'STUDENT', label: 'Öğrenci' }, { value: 'EMPLOYEE', label: 'Çalışan' }, { value: 'TOURIST', label: 'Turist' }]} focusedField={focusedField} setFocusedField={setFocusedField} />
+                  <CustomSelect name="passport_type" value={formData.passport_type} onChange={handleChange} icon={<CardTravel sx={{ color: '#10B981', fontSize: '1.1rem' }} />} options={[{ value: 'BORDO', label: 'Bordo' }, { value: 'YESIL', label: 'Yeşil' }]} focusedField={focusedField} setFocusedField={setFocusedField} />
+                </div>
+
+                {/* Schengen Before */}
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.65rem',
+                    padding: '0.75rem 1rem',
+                    borderRadius: '12px',
+                    border: formData.has_schengen_before ? '2px solid #10B981' : '2px solid #E5E7EB',
+                    backgroundColor: formData.has_schengen_before ? '#F0FDF4' : '#F9FAFB',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    boxShadow: formData.has_schengen_before ? '0 0 0 3px rgba(16, 185, 129, 0.1)' : 'none'
+                  }}
+                  onClick={() => setFormData({ ...formData, has_schengen_before: !formData.has_schengen_before })}
+                  onMouseEnter={(e) => {
+                    if (!formData.has_schengen_before) {
+                      e.currentTarget.style.borderColor = '#10B981';
+                      e.currentTarget.style.backgroundColor = '#F0FDF4';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!formData.has_schengen_before) {
+                      e.currentTarget.style.borderColor = '#E5E7EB';
+                      e.currentTarget.style.backgroundColor = '#F9FAFB';
+                    }
+                  }}
+                >
+                  <CheckCircle sx={{
+                    color: formData.has_schengen_before ? '#10B981' : '#9CA3AF',
+                    fontSize: '1.3rem',
+                    transition: 'color 0.3s ease'
+                  }} />
+                  <span style={{
+                    fontSize: '0.95rem',
+                    fontFamily: '"Playfair Display", serif',
+                    color: '#1a1a1a',
+                    fontWeight: formData.has_schengen_before ? '600' : '400',
+                    transition: 'font-weight 0.3s ease'
+                  }}>
+                    Daha önce Schengen vizesi aldım
+                  </span>
                 </div>
 
                 {/* Error Message */}
@@ -382,12 +347,12 @@ const Register = () => {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     style={{
-                      padding: '0.875rem',
-                      borderRadius: '12px',
+                      padding: '0.75rem',
+                      borderRadius: '10px',
                       backgroundColor: 'rgba(239, 68, 68, 0.1)',
                       border: '1px solid rgba(239, 68, 68, 0.3)',
                       color: '#EF4444',
-                      fontSize: '0.875rem',
+                      fontSize: '0.85rem',
                       textAlign: 'center'
                     }}
                   >
@@ -401,12 +366,12 @@ const Register = () => {
                   disabled={isLoading}
                   style={{
                     marginTop: '0.5rem',
-                    padding: '1rem',
-                    borderRadius: '16px',
+                    padding: '0.875rem',
+                    borderRadius: '12px',
                     border: 'none',
                     background: isLoading ? '#CCCCCC' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
                     color: '#FFFFFF',
-                    fontSize: '1.1rem',
+                    fontSize: '1rem',
                     fontWeight: '700',
                     fontFamily: '"Playfair Display", serif',
                     cursor: isLoading ? 'not-allowed' : 'pointer',
@@ -429,8 +394,8 @@ const Register = () => {
                 </button>
 
                 {/* Login Link */}
-                <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
-                  <p style={{ color: '#666666', fontSize: '0.95rem' }}>
+                <div style={{ textAlign: 'center', marginTop: '0.25rem' }}>
+                  <p style={{ color: '#666666', fontSize: '0.9rem', margin: 0 }}>
                     Zaten hesabınız var mı?{' '}
                     <button
                       type="button"
@@ -443,7 +408,8 @@ const Register = () => {
                         cursor: 'pointer',
                         textDecoration: 'underline',
                         fontFamily: '"Playfair Display", serif',
-                        fontSize: '0.95rem'
+                        fontSize: '0.9rem',
+                        padding: 0
                       }}
                     >
                       Giriş Yap
@@ -481,10 +447,10 @@ const CustomInput = ({
       {/* Icon */}
       <span style={{
         position: 'absolute',
-        left: '1rem',
+        left: '0.85rem',
         top: '50%',
         transform: 'translateY(-50%)',
-        fontSize: '1.25rem',
+        fontSize: '1.1rem',
         opacity: isFocused ? '1' : '0.6',
         transition: 'all 0.3s ease',
         pointerEvents: 'none',
@@ -505,16 +471,16 @@ const CustomInput = ({
         onBlur={() => setFocusedField('')}
         style={{
           width: '100%',
-          padding: '1rem 1rem 1rem 3.25rem',
-          borderRadius: '14px',
-          border: isFocused ? '2.5px solid #10B981' : '2.5px solid #E5E7EB',
+          padding: '0.75rem 0.75rem 0.75rem 2.75rem',
+          borderRadius: '12px',
+          border: isFocused ? '2px solid #10B981' : '2px solid #E5E7EB',
           backgroundColor: isFocused ? '#F0FDF4' : '#F9FAFB',
-          fontSize: '1rem',
+          fontSize: '0.95rem',
           fontFamily: '"Playfair Display", serif',
           color: '#1a1a1a',
           outline: 'none',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: isFocused ? '0 0 0 4px rgba(16, 185, 129, 0.1)' : 'none'
+          boxShadow: isFocused ? '0 0 0 3px rgba(16, 185, 129, 0.1)' : 'none'
         }}
       />
 
@@ -561,10 +527,10 @@ const CustomSelect = ({ name, value, onChange, icon, options, focusedField, setF
       {/* Icon */}
       <span style={{
         position: 'absolute',
-        left: '1rem',
+        left: '0.85rem',
         top: '50%',
         transform: 'translateY(-50%)',
-        fontSize: '1.25rem',
+        fontSize: '1.1rem',
         opacity: isFocused ? '1' : '0.6',
         transition: 'all 0.3s ease',
         pointerEvents: 'none',
@@ -582,21 +548,21 @@ const CustomSelect = ({ name, value, onChange, icon, options, focusedField, setF
         onBlur={() => setFocusedField('')}
         style={{
           width: '100%',
-          padding: '1rem 1rem 1rem 3.25rem',
-          borderRadius: '14px',
-          border: isFocused ? '2.5px solid #10B981' : '2.5px solid #E5E7EB',
+          padding: '0.75rem 0.75rem 0.75rem 2.75rem',
+          borderRadius: '12px',
+          border: isFocused ? '2px solid #10B981' : '2px solid #E5E7EB',
           backgroundColor: isFocused ? '#F0FDF4' : '#F9FAFB',
-          fontSize: '1rem',
+          fontSize: '0.95rem',
           fontFamily: '"Playfair Display", serif',
           color: '#1a1a1a',
           outline: 'none',
           cursor: 'pointer',
           transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          boxShadow: isFocused ? '0 0 0 4px rgba(16, 185, 129, 0.1)' : 'none',
+          boxShadow: isFocused ? '0 0 0 3px rgba(16, 185, 129, 0.1)' : 'none',
           appearance: 'none',
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
           backgroundRepeat: 'no-repeat',
-          backgroundPosition: 'right 1rem center'
+          backgroundPosition: 'right 0.75rem center'
         }}
       >
         {options.map(option => (
