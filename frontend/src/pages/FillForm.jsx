@@ -18,11 +18,13 @@ import {
   markQuestionComplete,
   markQuestionIncomplete,
   setFormMetadata,
+  resetForm,
 } from '../store/formSlice';
 import {
   createApplication,
   completeApplicationStep,
   incompleteApplicationStep,
+  resetApplication,
 } from '../store/applicationSlice';
 
 /**
@@ -131,7 +133,14 @@ const FillForm = () => {
     } else {
       setIsLoading(false);
     }
-  }, [questions.length, processActionSteps]);
+
+    // Cleanup function - reset state when component unmounts
+    return () => {
+      console.log('🧹 FillForm unmounting - cleaning up state');
+      dispatch(resetForm());
+      dispatch(resetApplication());
+    };
+  }, [questions.length, processActionSteps, dispatch]);
 
   const totalQuestions = questions.length;
 
