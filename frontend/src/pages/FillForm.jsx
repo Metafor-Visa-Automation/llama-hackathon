@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
@@ -7,16 +7,17 @@ import PageTransition from '../components/PageTransition';
 import QuestionCard from '../components/QuestionCard';
 import vibeBg from '../assets/vibe-bg3.png';
 import { ArrowBack } from '@mui/icons-material';
+// TODO: Replace with actual AI service call
+import mockResponseData from '../ai_responses/response-fransa.json';
 
 /**
- * FillForm Page Component - Jotform Cards Style
+ * FillForm Page Component -  Cards Style
  * One question at a time with progress tracking
- * Questions will eventually come from AI
+ * Questions are dynamically generated from AI response (currently using mock data)
  */
 const FillForm = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
-  // Country selection data (will be used in future updates)
   // eslint-disable-next-line no-unused-vars
   const { originCountry, destinationCountry } = useSelector((state) => state.country);
 
@@ -24,85 +25,101 @@ const FillForm = () => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [direction, setDirection] = useState(0); // For animation direction
 
-  // Mock questions (will be replaced with AI-generated questions)
-  const [answers, setAnswers] = useState({
-    fullName: '',
-    passportNumber: '',
-    travelPurpose: '',
-    travelDuration: '',
-    accommodationInfo: '',
-    previousVisas: '',
-    financialStatus: ''
-  });
+  // Convert action_steps to questions format
+  const [questions, setQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [documents, setDocuments] = useState({});
 
-  // Question definitions
-  const questions = [
-    {
-      id: 'fullName',
-      type: 'text',
-      question: 'Tam adınız nedir?',
-      placeholder: 'Örn: Ahmet Yılmaz',
-      required: true
-    },
-    {
-      id: 'passportNumber',
-      type: 'text',
-      question: 'Pasaport numaranız nedir?',
-      placeholder: 'Örn: U12345678',
-      required: true
-    },
-    {
-      id: 'travelPurpose',
-      type: 'radio',
-      question: 'Seyahat amacınız nedir?',
-      options: [
-        { value: 'tourism', label: 'Turizm' },
-        { value: 'business', label: 'İş' },
-        { value: 'education', label: 'Eğitim' },
-        { value: 'family', label: 'Aile Ziyareti' }
-      ],
-      required: true
-    },
-    {
-      id: 'travelDuration',
-      type: 'text',
-      question: 'Ne kadar süreyle seyahat edeceksiniz?',
-      placeholder: 'Örn: 15 gün',
-      required: true
-    },
-    {
-      id: 'accommodationInfo',
-      type: 'textarea',
-      question: 'Nerede kalacaksınız?',
-      placeholder: 'Otel adı veya adres',
-      required: true
-    },
-    {
-      id: 'previousVisas',
-      type: 'radio',
-      question: 'Daha önce Schengen vizesi aldınız mı?',
-      options: [
-        { value: 'yes', label: 'Evet' },
-        { value: 'no', label: 'Hayır' }
-      ],
-      required: true
-    },
-    {
-      id: 'financialStatus',
-      type: 'textarea',
-      question: 'Seyahatinizi nasıl finanse edeceksiniz?',
-      placeholder: 'Mali durumunuzu açıklayın',
-      required: true
+  useEffect(() => {
+    // TODO: Replace this with actual AI service call
+    // const fetchVisaRequirements = async () => {
+    //   try {
+    //     const response = await fetch('/api/visa-requirements', {
+    //       method: 'POST',
+    //       body: JSON.stringify({
+    //         originCountry,
+    //         destinationCountry
+    //       })
+    //     });
+    //     const data = await response.json();
+    //     processActionSteps(data.action_steps);
+    //   } catch (error) {
+    //     console.error('Error fetching visa requirements:', error);
+    //   }
+    // };
+    // fetchVisaRequirements();
+
+    // Using mock data for now
+    if (mockResponseData && mockResponseData.action_steps) {
+      processActionSteps(mockResponseData.action_steps);
     }
-  ];
+  }, []);
+
+  /**
+   * Process action steps from AI response into question format
+   */
+  const processActionSteps = (actionSteps) => {
+    const processedQuestions = actionSteps.map(step => ({
+      id: step.step_id,
+      type: step.requires_document ? 'document' : 'textarea',
+      question: step.title,
+      title: step.title,
+      description: step.description,
+      placeholder: step.requires_document 
+        ? 'Döküman yükleyiniz' 
+        : 'Detaylı bilgi veriniz...',
+      required: step.mandatory,
+      mandatory: step.mandatory,
+      requires_document: step.requires_document,
+      category: step.category,
+      priority_score: step.priority_score,
+      estimated_duration: step.estimated_duration,
+      cost_estimate: step.cost_estimate,
+      detailed_instructions: step.detailed_instructions,
+      common_mistakes: step.common_mistakes,
+      helpful_tips: step.helpful_tips,
+      source_urls: step.source_urls
+    }));
+
+    setQuestions(processedQuestions);
+
+    // Initialize answers state
+    const initialAnswers = {};
+    const initialDocuments = {};
+    processedQuestions.forEach(q => {
+      initialAnswers[q.id] = '';
+      initialDocuments[q.id] = []; // Array for multiple documents
+    });
+    setAnswers(initialAnswers);
+    setDocuments(initialDocuments);
+  };
 
   const totalQuestions = questions.length;
-  const progress = ((currentQuestion + 1) / totalQuestions) * 100;
+  const progress = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0;
 
   const handleAnswer = (value) => {
+    if (questions.length === 0) return;
     setAnswers(prev => ({
       ...prev,
       [questions[currentQuestion].id]: value
+    }));
+  };
+
+  const handleDocumentAdd = (file) => {
+    if (questions.length === 0) return;
+    const questionId = questions[currentQuestion].id;
+    setDocuments(prev => ({
+      ...prev,
+      [questionId]: [...(prev[questionId] || []), file]
+    }));
+  };
+
+  const handleDocumentRemove = (index) => {
+    if (questions.length === 0) return;
+    const questionId = questions[currentQuestion].id;
+    setDocuments(prev => ({
+      ...prev,
+      [questionId]: prev[questionId].filter((_, i) => i !== index)
     }));
   };
 
@@ -121,18 +138,61 @@ const FillForm = () => {
   };
 
   const handleSubmit = () => {
-    console.log('Form submitted:', answers);
+    console.log('Form submitted:', { answers, documents });
     // TODO: Send to backend/AI for processing
+    // This will include both text answers and uploaded documents
     alert('Başvurunuz başarıyla gönderildi!');
-    navigate('/');
+    navigate('/dashboard');
   };
 
   const isCurrentQuestionAnswered = () => {
-    const currentAnswer = answers[questions[currentQuestion].id];
+    if (questions.length === 0) return false;
+    
+    const currentQ = questions[currentQuestion];
+    
+    // If it's a document question, check if at least one document is uploaded
+    if (currentQ.requires_document) {
+      const docs = documents[currentQ.id];
+      return Array.isArray(docs) && docs.length > 0;
+    }
+    
+    // For text/textarea questions, check if answer is provided
+    const currentAnswer = answers[currentQ.id];
     return currentAnswer && currentAnswer.trim() !== '';
   };
 
   const canGoNext = isCurrentQuestionAnswered();
+
+  // Show loading state while questions are being processed
+  if (questions.length === 0) {
+    return (
+      <PageTransition>
+        <div 
+          className="min-h-screen flex items-center justify-center"
+          style={{
+            backgroundImage: `url(${vibeBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed'
+          }}
+        >
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            padding: '2rem',
+            borderRadius: '24px',
+            textAlign: 'center',
+            fontFamily: '"Playfair Display", serif'
+          }}>
+            <h2 style={{ fontSize: '1.5rem', color: '#10B981', marginBottom: '1rem' }}>
+              Vize gereksinimleriniz hazırlanıyor...
+            </h2>
+            <p style={{ color: '#666666' }}>Lütfen bekleyin</p>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
 
   // Animation variants for card transitions
   const cardVariants = {
@@ -253,7 +313,10 @@ const FillForm = () => {
                 <QuestionCard
                   question={questions[currentQuestion]}
                   value={answers[questions[currentQuestion].id]}
+                  documents={documents[questions[currentQuestion].id] || []}
                   onChange={handleAnswer}
+                  onDocumentAdd={handleDocumentAdd}
+                  onDocumentRemove={handleDocumentRemove}
                   currentIndex={currentQuestion}
                   totalQuestions={totalQuestions}
                   canGoNext={canGoNext}
