@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
+# Install build tools first
+RUN pip install --upgrade pip setuptools wheel
+
 # Copy requirements first for better caching
 COPY requirements.txt .
 
