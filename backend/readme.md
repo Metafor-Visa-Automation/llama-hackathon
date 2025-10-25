@@ -454,6 +454,31 @@ POST /api/v1/reports/export
 
 ## 🚀 **Deployment Guide**
 
+### **Production Deployment**
+
+**Live API Endpoint**: http://34.3.90.3:8000/
+
+The API is currently deployed and running on a Google Cloud VM instance.
+
+#### **Access the API**
+- **Base URL**: `http://34.3.90.3:8000/`
+- **Health Check**: `http://34.3.90.3:8000/health`
+- **API Endpoints**: `http://34.3.90.3:8000/api/v1/`
+
+#### **Example API Requests**
+```bash
+# Health check
+curl http://34.3.90.3:8000/health
+
+# Get countries
+curl http://34.3.90.3:8000/api/v1/countries
+
+# Login
+curl -X POST http://34.3.90.3:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "password123"}'
+```
+
 ### **Docker Deployment**
 
 #### **Local Development**
