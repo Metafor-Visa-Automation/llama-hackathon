@@ -195,7 +195,14 @@ const Landing = () => {
       {/* 3-Step Process Section */}
       <ProcessSteps />
 
-      <footer style={{ backgroundColor: '#F5F5F5', padding: '2rem 2rem', textAlign: 'center', borderTop: '1px solid #EEEEEE' }}>
+      <footer style={{ 
+        backgroundImage: `url(${vibeBg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        padding: '2rem 2rem', 
+        textAlign: 'center', 
+        borderTop: '1px solid #EEEEEE' 
+      }}>
         <p style={{ color: '#666666', fontSize: '0.875rem', margin: 0 }}>© Metafor. Llama Hackathon 2025</p>
       </footer>
       </div>
