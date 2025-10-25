@@ -58,10 +58,11 @@ const Login = () => {
         return;
       }
 
-      // Dispatch login success action with full user data and token
+      // Dispatch login success action with full user data, token, and expiration
       dispatch(loginSuccess({
         user: data.user,
-        token: data.access_token
+        token: data.access_token,
+        expiresIn: data.expires_in
       }));
 
       // Navigate to landing page
