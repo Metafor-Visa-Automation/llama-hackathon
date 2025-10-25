@@ -3,7 +3,8 @@ from app.core.firebase import db
 from app.models.schemas import (
     ApplicationCreate, ApplicationResponse, ApplicationInDB,
     TaskResponse, TaskInDB, ApplicationStatus, TaskStatus,
-    ApplicationUpdate, ApplicationSubmit
+    ApplicationUpdate, ApplicationSubmit, ApplicationProgressUpdate,
+    ApplicationGenerateLetter
 )
 from app.services.security import get_current_user, UserInDB
 from datetime import datetime
@@ -356,4 +357,277 @@ async def submit_application(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to submit application: {str(e)}"
+        )
+
+
+@router.put("/applications/{app_id}/progress", response_model=ApplicationResponse)
+async def update_application_progress(
+    app_id: str,
+    progress_update: ApplicationProgressUpdate,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Update application progress (completed items, selected templates)
+    """
+    try:
+        # Verify application exists and belongs to current user
+        app_ref = db.collection('APPLICATION').document(app_id)
+        app_doc = app_ref.get()
+        
+        if not app_doc.exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Application not found"
+            )
+        
+        app_data = app_doc.to_dict()
+        if app_data['user_id'] != current_user.uid:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Application does not belong to current user"
+            )
+        
+        # Prepare update data
+        update_data = {"updated_at": datetime.utcnow()}
+        
+        if progress_update.completed_items is not None:
+            update_data["completed_items"] = progress_update.completed_items
+            
+            # Calculate progress percentage
+            total_items = app_data.get("total_items", 1)
+            progress_percentage = int((progress_update.completed_items / total_items) * 100)
+            update_data["progress_percentage"] = progress_percentage
+        
+        if progress_update.selected_templates is not None:
+            update_data["selected_templates"] = progress_update.selected_templates
+        
+        # Update application
+        app_ref.update(update_data)
+        
+        # Fetch updated data
+        updated_doc = app_ref.get()
+        updated_data = updated_doc.to_dict()
+        
+        return ApplicationResponse(
+            app_id=updated_data['app_id'],
+            user_id=updated_data['user_id'],
+            team_id=updated_data.get('team_id'),
+            requirement_id=updated_data['requirement_id'],
+            status=updated_data['status'],
+            generated_letter_url=updated_data.get('generated_letter_url'),
+            generated_letter_file_name=updated_data.get('generated_letter_file_name'),
+            generated_letter_file_size=updated_data.get('generated_letter_file_size'),
+            generated_letter_mime_type=updated_data.get('generated_letter_mime_type'),
+            generated_letter_created_at=updated_data.get('generated_letter_created_at'),
+            total_items=updated_data.get('total_items', 0),
+            completed_items=updated_data.get('completed_items', 0),
+            progress_percentage=updated_data.get('progress_percentage', 0),
+            selected_templates=updated_data.get('selected_templates', []),
+            travel_purpose=updated_data.get('travel_purpose'),
+            destination_country=updated_data.get('destination_country'),
+            company_info=updated_data.get('company_info'),
+            travel_dates=updated_data.get('travel_dates'),
+            travel_insurance=updated_data.get('travel_insurance'),
+            created_at=updated_data['created_at'],
+            updated_at=updated_data['updated_at'],
+            submitted_at=updated_data.get('submitted_at'),
+            approved_at=updated_data.get('approved_at')
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update application progress: {str(e)}"
+        )
+
+
+@router.post("/applications/{app_id}/generate-letter", response_model=ApplicationResponse)
+async def generate_application_letter(
+    app_id: str,
+    letter_data: ApplicationGenerateLetter,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Generate a letter for the visa application
+    """
+    try:
+        # Verify application exists and belongs to current user
+        app_ref = db.collection('APPLICATION').document(app_id)
+        app_doc = app_ref.get()
+        
+        if not app_doc.exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Application not found"
+            )
+        
+        app_data = app_doc.to_dict()
+        if app_data['user_id'] != current_user.uid:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Application does not belong to current user"
+            )
+        
+        # Get visa requirement for letter template
+        requirement_doc = db.collection('VISA_REQUIREMENT').document(
+            app_data['requirement_id']
+        ).get()
+        
+        if not requirement_doc.exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Visa requirement not found"
+            )
+        
+        requirement_data = requirement_doc.to_dict()
+        letter_templates = requirement_data.get('letter_template', [])
+        
+        if not letter_templates and not letter_data.letter_template:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="No letter template available for this visa requirement"
+            )
+        
+        # Use provided template or default template
+        template_to_use = letter_data.letter_template or letter_templates[0]
+        
+        # Generate letter content (simplified - in production, use AI service)
+        letter_content = template_to_use
+        
+        if letter_data.custom_content:
+            # Replace placeholders with custom content
+            for key, value in letter_data.custom_content.items():
+                letter_content = letter_content.replace(f"{{{key}}}", str(value))
+        
+        # Generate unique filename
+        letter_filename = f"visa_letter_{app_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.txt"
+        
+        # In production, save to cloud storage and get URL
+        letter_url = f"https://storage.example.com/letters/{letter_filename}"
+        
+        # Update application with letter information
+        update_data = {
+            "generated_letter_url": letter_url,
+            "generated_letter_file_name": letter_filename,
+            "generated_letter_file_size": len(letter_content.encode('utf-8')),
+            "generated_letter_mime_type": "text/plain",
+            "generated_letter_created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow()
+        }
+        
+        app_ref.update(update_data)
+        
+        # Fetch updated data
+        updated_doc = app_ref.get()
+        updated_data = updated_doc.to_dict()
+        
+        return ApplicationResponse(
+            app_id=updated_data['app_id'],
+            user_id=updated_data['user_id'],
+            team_id=updated_data.get('team_id'),
+            requirement_id=updated_data['requirement_id'],
+            status=updated_data['status'],
+            generated_letter_url=updated_data.get('generated_letter_url'),
+            generated_letter_file_name=updated_data.get('generated_letter_file_name'),
+            generated_letter_file_size=updated_data.get('generated_letter_file_size'),
+            generated_letter_mime_type=updated_data.get('generated_letter_mime_type'),
+            generated_letter_created_at=updated_data.get('generated_letter_created_at'),
+            total_items=updated_data.get('total_items', 0),
+            completed_items=updated_data.get('completed_items', 0),
+            progress_percentage=updated_data.get('progress_percentage', 0),
+            selected_templates=updated_data.get('selected_templates', []),
+            travel_purpose=updated_data.get('travel_purpose'),
+            destination_country=updated_data.get('destination_country'),
+            company_info=updated_data.get('company_info'),
+            travel_dates=updated_data.get('travel_dates'),
+            travel_insurance=updated_data.get('travel_insurance'),
+            created_at=updated_data['created_at'],
+            updated_at=updated_data['updated_at'],
+            submitted_at=updated_data.get('submitted_at'),
+            approved_at=updated_data.get('approved_at')
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate application letter: {str(e)}"
+        )
+
+
+@router.get("/applications/{app_id}/progress", response_model=dict)
+async def get_application_progress(
+    app_id: str,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Get detailed progress information for an application
+    """
+    try:
+        # Verify application exists and belongs to current user
+        app_doc = db.collection('APPLICATION').document(app_id).get()
+        
+        if not app_doc.exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Application not found"
+            )
+        
+        app_data = app_doc.to_dict()
+        if app_data['user_id'] != current_user.uid:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Application does not belong to current user"
+            )
+        
+        # Get all tasks for this application
+        tasks_query = db.collection('TASK').where(
+            'application_id', '==', app_id
+        ).where('user_id', '==', current_user.uid).stream()
+        
+        tasks = []
+        for task_doc in tasks_query:
+            task_data = task_doc.to_dict()
+            tasks.append(task_data)
+        
+        # Calculate progress statistics
+        total_tasks = len(tasks)
+        completed_tasks = len([t for t in tasks if t['status'] == TaskStatus.DONE.value])
+        pending_tasks = len([t for t in tasks if t['status'] == TaskStatus.PENDING.value])
+        in_progress_tasks = len([t for t in tasks if t['status'] == TaskStatus.IN_PROGRESS.value])
+        
+        progress_percentage = int((completed_tasks / total_tasks) * 100) if total_tasks > 0 else 0
+        
+        # Get task details by status
+        tasks_by_status = {
+            "pending": [t for t in tasks if t['status'] == TaskStatus.PENDING.value],
+            "in_progress": [t for t in tasks if t['status'] == TaskStatus.IN_PROGRESS.value],
+            "completed": [t for t in tasks if t['status'] == TaskStatus.DONE.value],
+            "rejected": [t for t in tasks if t['status'] == TaskStatus.REJECTED.value]
+        }
+        
+        return {
+            "application_id": app_id,
+            "status": app_data['status'],
+            "total_tasks": total_tasks,
+            "completed_tasks": completed_tasks,
+            "pending_tasks": pending_tasks,
+            "in_progress_tasks": in_progress_tasks,
+            "progress_percentage": progress_percentage,
+            "tasks_by_status": tasks_by_status,
+            "created_at": app_data['created_at'],
+            "updated_at": app_data['updated_at'],
+            "submitted_at": app_data.get('submitted_at'),
+            "approved_at": app_data.get('approved_at')
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get application progress: {str(e)}"
         )

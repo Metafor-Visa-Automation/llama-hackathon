@@ -45,7 +45,7 @@ backend/
 │   │   ├── auth.py           # Authentication
 │   │   ├── users.py          # User management
 │   │   ├── applications.py   # Visa applications (core logic)
-│   │   ├── documents.py      # File uploads
+│   │   ├── documents.py      # Word document editing & file uploads
 │   │   ├── tasks.py          # Task management
 │   │   ├── countries.py      # Country data
 │   │   ├── visa_requirements.py # Visa requirements
@@ -57,7 +57,8 @@ backend/
 │   ├── models/               # Data models
 │   │   └── schemas.py        # Pydantic schemas
 │   ├── services/             # Business logic
-│   │   └── security.py       # Authentication & security
+│   │   ├── security.py       # Authentication & security
+│   │   └── word_document_service.py # Word document editing service
 │   └── main.py              # FastAPI application
 ├── requirements.txt         # Dependencies
 ├── test_firebase.py         # Firebase connection test
@@ -214,6 +215,13 @@ headers = {
 - `GET /api/v1/docs/task/{task_id}` - Get task documents
 - `DELETE /api/v1/docs/{doc_id}` - Delete document
 
+### Word Document Editing Service
+- `POST /api/v1/documents/edit-word-document` - Edit Schengen visa application Word document
+- `GET /api/v1/documents/sample-data` - Get sample form data for all 34 fields
+- `GET /api/v1/documents/download/{filename}` - Download generated Word document
+- `GET /api/v1/documents/list-documents` - List all generated documents
+- `DELETE /api/v1/documents/delete/{filename}` - Delete generated document
+
 ### Visa Requirements
 - `GET /api/v1/visa-requirements` - Get visa requirements (with filtering)
 - `GET /api/v1/visa-requirements/{req_id}` - Get specific visa requirement
@@ -270,6 +278,354 @@ headers = {
 - `GET /api/v1/admin/users/{user_id}` - Get user details
 - `GET /api/v1/admin/system-health` - Get system health
 - `GET /api/v1/admin/collections` - Get collection info
+
+## 📄 **Word Document Editing Service**
+
+### **Overview**
+The Word Document Editing Service provides automated filling of Schengen visa application forms using a Word document template. Users can submit form data and receive a filled Word document ready for download.
+
+### **Features**
+- **Automated Form Filling**: Fill all 34 fields of the Schengen visa application form
+- **Template-Based**: Uses OCRed Word document template for accurate field mapping
+- **Data Validation**: Validates and cleans user input data
+- **File Management**: Generate, download, list, and delete documents
+- **Sample Data**: Provides sample data for testing and development
+
+### **Field Mapping**
+The service supports 34 form fields covering all sections of the Schengen visa application:
+
+#### **Personal Information (Fields 1-11)**
+- `FIELD1`: Surname (Family name)
+- `FIELD2`: Surname at birth (Former family name(s))
+- `FIELD3`: First name(s) (Given name(s))
+- `FIELD4`: Date of birth (day-month-year)
+- `FIELD5`: Place of birth
+- `FIELD6`: Country of birth
+- `FIELD7`: Current nationality
+- `FIELD8`: Parental authority (in case of minors) / legal guardian
+- `FIELD9`: National identity number, where applicable
+
+#### **Family Member Information (Fields 10-14)**
+- `FIELD10`: Surname (family name) of family member
+- `FIELD11`: First name of family member
+- `FIELD12`: Date of birth of family member
+- `FIELD13`: Nationality of family member
+- `FIELD14`: Number of travel document or ID card of family member
+
+#### **Contact & Employment (Fields 15-18)**
+- `FIELD15`: Applicant's home address and e-mail address
+- `FIELD16`: Telephone number
+- `FIELD17`: Current occupation
+- `FIELD18`: Employer and employer's address and telephone number
+
+#### **Travel Information (Fields 19-25)**
+- `FIELD19`: Purpose of the journey
+- `FIELD20`: Member State of main destination
+- `FIELD21`: Address and e-mail address of inviting person(s)/hotel(s)
+- `FIELD22`: Telephone number of accommodation
+- `FIELD23`: Name and address of inviting company/organisation
+- `FIELD24`: Member State of main destination
+- `FIELD25`: Member State of first entry
+
+#### **Passport Details (Fields 26-29)**
+- `FIELD26`: Number of travel document
+- `FIELD27`: Date of issue
+- `FIELD28`: Valid until
+- `FIELD29`: Issued by (country)
+
+#### **Additional Information (Fields 30-34)**
+- `FIELD30`: Surname and first name of the inviting person(s)
+- `FIELD31`: Contact person in company/organisation details
+- `FIELD32`: Telephone number of company/organisation
+- `FIELD33`: Cost of travelling and living
+- `FIELD34`: Place and date
+
+### **API Usage Examples**
+
+#### **Edit Word Document**
+```bash
+POST /api/v1/documents/edit-word-document
+{
+  "field_data": {
+    "FIELD1": "DOE",
+    "FIELD2": "SMITH",
+    "FIELD3": "John",
+    "FIELD4": "15/03/1990",
+    "FIELD5": "New York",
+    "FIELD6": "United States",
+    "FIELD7": "American",
+    "FIELD8": "Jane Doe, 123 Main St, New York, +1-555-123-4567, jane@example.com, American",
+    "FIELD9": "123456789",
+    "FIELD10": "DOE",
+    "FIELD11": "Jane",
+    "FIELD12": "20/05/1995",
+    "FIELD13": "American",
+    "FIELD14": "987654321",
+    "FIELD15": "123 Main Street, New York, NY 10001, john.doe@example.com",
+    "FIELD16": "+1-555-123-4567",
+    "FIELD17": "Software Engineer",
+    "FIELD18": "Tech Corp, 456 Business Ave, New York, NY 10002, +1-555-987-6543",
+    "FIELD19": "Tourism",
+    "FIELD20": "Germany",
+    "FIELD21": "Hotel Berlin, 123 Tourist Street, Berlin, Germany",
+    "FIELD22": "+49-30-12345678",
+    "FIELD23": "Business Solutions GmbH",
+    "FIELD24": "Germany",
+    "FIELD25": "Germany",
+    "FIELD26": "US123456789",
+    "FIELD27": "01/01/2020",
+    "FIELD28": "01/01/2030",
+    "FIELD29": "United States",
+    "FIELD30": "Hans Mueller",
+    "FIELD31": "Maria Schmidt, 456 Business St, Berlin, +49-30-98765432, maria@business.de",
+    "FIELD32": "+49-30-11111111",
+    "FIELD33": "Self-funded",
+    "FIELD34": "Germany, 15/06/2025"
+  },
+  "filename": "my-visa-application.docx"
+}
+```
+
+#### **Get Sample Data**
+```bash
+GET /api/v1/documents/sample-data
+# Returns sample data structure and field descriptions
+```
+
+#### **Download Document**
+```bash
+GET /api/v1/documents/download/my-visa-application.docx
+# Downloads the generated Word document
+```
+
+#### **List Documents**
+```bash
+GET /api/v1/documents/list-documents
+# Returns list of all generated documents with metadata
+```
+
+#### **Delete Document**
+```bash
+DELETE /api/v1/documents/delete/my-visa-application.docx
+# Deletes the specified document
+```
+
+### **Service Architecture**
+
+#### **WordDocumentService Class**
+- **Template Management**: Handles Word document template loading
+- **Data Processing**: Validates and processes user input
+- **Document Generation**: Creates filled Word documents
+- **File Management**: Manages generated documents
+
+#### **Key Methods**
+- `edit_document()`: Main method for document generation
+- `validate_user_data()`: Validates and cleans input data
+- `get_sample_data()`: Provides sample data for testing
+- `_process_paragraphs()`: Processes text in document paragraphs
+- `_process_tables()`: Processes text in document tables
+
+### **Security Features**
+- **Authentication Required**: All endpoints require valid Firebase authentication
+- **File Validation**: Prevents path traversal attacks
+- **Input Sanitization**: Validates and cleans all user input
+- **Secure Downloads**: Time-limited, secure file access
+
+### **Error Handling**
+- **Template Not Found**: Returns 404 if template file is missing
+- **Invalid Data**: Returns 400 for malformed requests
+- **File Errors**: Returns 500 for file processing errors
+- **Security Violations**: Returns 400 for security violations
+
+### **Usage Instructions**
+
+#### **1. Setup and Installation**
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Ensure the Word template is in the backend directory
+# File: schengen-visa-application-form_ocred.docx
+
+# Start the server
+python -m uvicorn app.main:app --reload
+```
+
+#### **2. Access the API**
+- **Interactive Documentation**: http://127.0.0.1:8000/docs
+- **API Base URL**: http://127.0.0.1:8000/api/v1
+- **Health Check**: http://127.0.0.1:8000/health
+
+#### **3. Generate a Filled Word Document**
+
+**Step 1: Get Sample Data Structure**
+```bash
+curl http://127.0.0.1:8000/api/v1/documents/sample-data \
+  -H "Authorization: Bearer YOUR_FIREBASE_TOKEN"
+```
+
+**Step 2: Edit Word Document with Your Data**
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/documents/edit-word-document \
+  -H "Authorization: Bearer YOUR_FIREBASE_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "field_data": {
+      "FIELD1": "DOE",
+      "FIELD2": "SMITH",
+      "FIELD3": "John",
+      "FIELD4": "15/03/1990",
+      "FIELD5": "New York",
+      "FIELD6": "United States",
+      "FIELD7": "American",
+      "FIELD8": "Jane Doe, 123 Main St, New York, +1-555-123-4567, jane@example.com, American",
+      "FIELD9": "123456789",
+      "FIELD10": "DOE",
+      "FIELD11": "Jane",
+      "FIELD12": "20/05/1995",
+      "FIELD13": "American",
+      "FIELD14": "987654321",
+      "FIELD15": "123 Main Street, New York, NY 10001, john.doe@example.com",
+      "FIELD16": "+1-555-123-4567",
+      "FIELD17": "Software Engineer",
+      "FIELD18": "Tech Corp, 456 Business Ave, New York, NY 10002, +1-555-987-6543",
+      "FIELD19": "Tourism",
+      "FIELD20": "Germany",
+      "FIELD21": "Hotel Berlin, 123 Tourist Street, Berlin, Germany",
+      "FIELD22": "+49-30-12345678",
+      "FIELD23": "Business Solutions GmbH",
+      "FIELD24": "Germany",
+      "FIELD25": "Germany",
+      "FIELD26": "US123456789",
+      "FIELD27": "01/01/2020",
+      "FIELD28": "01/01/2030",
+      "FIELD29": "United States",
+      "FIELD30": "Hans Mueller",
+      "FIELD31": "Maria Schmidt, 456 Business St, Berlin, +49-30-98765432, maria@business.de",
+      "FIELD32": "+49-30-11111111",
+      "FIELD33": "Self-funded",
+      "FIELD34": "Germany, 15/06/2025"
+    },
+    "filename": "my-visa-application.docx"
+  }'
+```
+
+**Step 3: Download the Generated Document**
+```bash
+curl http://127.0.0.1:8000/api/v1/documents/download/my-visa-application.docx \
+  -H "Authorization: Bearer YOUR_FIREBASE_TOKEN" \
+  --output my-visa-application.docx
+```
+
+#### **4. List All Generated Documents**
+```bash
+curl http://127.0.0.1:8000/api/v1/documents/list-documents \
+  -H "Authorization: Bearer YOUR_FIREBASE_TOKEN"
+```
+
+#### **5. Delete a Document**
+```bash
+curl -X DELETE http://127.0.0.1:8000/api/v1/documents/delete/my-visa-application.docx \
+  -H "Authorization: Bearer YOUR_FIREBASE_TOKEN"
+```
+
+#### **6. Python Client Example**
+```python
+import requests
+
+BASE_URL = "http://127.0.0.1:8000"
+API_BASE = f"{BASE_URL}/api/v1"
+TOKEN = "YOUR_FIREBASE_TOKEN"
+
+headers = {"Authorization": f"Bearer {TOKEN}"}
+
+# Get sample data
+response = requests.get(f"{API_BASE}/documents/sample-data", headers=headers)
+sample_data = response.json()["data"]
+
+# Edit document
+response = requests.post(
+    f"{API_BASE}/documents/edit-word-document",
+    json={"field_data": sample_data, "filename": "my-application.docx"},
+    headers=headers
+)
+
+# Download document
+filename = response.json()["filename"]
+download_response = requests.get(
+    f"{API_BASE}/documents/download/{filename}",
+    headers=headers
+)
+
+with open(filename, "wb") as f:
+    f.write(download_response.content)
+```
+
+#### **7. Frontend Integration Example (JavaScript)**
+```javascript
+// Generate Word document
+async function generateWordDocument(formData) {
+  const response = await fetch('/api/v1/documents/edit-word-document', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${firebaseToken}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      field_data: formData,
+      filename: 'visa-application.docx'
+    })
+  });
+  
+  const result = await response.json();
+  
+  // Download the document
+  window.location.href = result.download_url;
+}
+
+// Usage
+const formData = {
+  FIELD1: "DOE",
+  FIELD2: "SMITH",
+  FIELD3: "John",
+  // ... all 34 fields
+};
+
+generateWordDocument(formData);
+```
+
+### **Important Notes**
+- **Authentication Required**: All endpoints require a valid Firebase JWT token
+- **Template File**: Ensure `schengen-visa-application-form_ocred.docx` exists in the backend directory
+- **Generated Documents**: Stored in `backend/generated_documents/` directory
+- **File Format**: Output is a `.docx` file compatible with Microsoft Word and LibreOffice
+- **Field Validation**: All 34 fields are optional, but recommended for complete applications
+
+## 🔍 **OCR Service Improvements**
+
+### **Enhanced Image Preprocessing**
+The OCR service has been improved with better image preprocessing for higher accuracy:
+
+- **Denoising**: Uses `fastNlMeansDenoising` to remove noise while preserving text
+- **Adaptive Thresholding**: Better handling of varying lighting conditions
+- **Morphological Operations**: Cleans up the image for better text recognition
+- **Multi-language Support**: English + Turkish language support
+
+### **Document Type Detection**
+The service automatically detects and processes different document types:
+- **Passports**: Extracts passport numbers, names, and dates
+- **Bank Statements**: Extracts account numbers, amounts, and dates
+- **Business Invitations**: Extracts company names, addresses, and dates
+- **Insurance Documents**: Extracts policy numbers and dates
+- **Tax Documents**: Extracts tax numbers, amounts, and dates
+- **Property Deeds**: Extracts property numbers and dates
+- **Accommodation Documents**: Extracts hotel names, addresses, and dates
+
+### **OCR Validation**
+- **Quality Scoring**: Analyzes image quality and provides recommendations
+- **Field Extraction**: Automatically extracts key fields from documents
+- **Confidence Scoring**: Provides confidence scores for extracted data
+- **Issue Detection**: Identifies potential problems with documents
 
 ## 🚀 **New Priority 1 Features**
 
@@ -453,6 +809,31 @@ POST /api/v1/reports/export
 ```
 
 ## 🚀 **Deployment Guide**
+
+### **Production Deployment**
+
+**Live API Endpoint**: http://34.3.90.3:8000/
+
+The API is currently deployed and running on a Google Cloud VM instance.
+
+#### **Access the API**
+- **Base URL**: `http://34.3.90.3:8000/`
+- **Health Check**: `http://34.3.90.3:8000/health`
+- **API Endpoints**: `http://34.3.90.3:8000/api/v1/`
+
+#### **Example API Requests**
+```bash
+# Health check
+curl http://34.3.90.3:8000/health
+
+# Get countries
+curl http://34.3.90.3:8000/api/v1/countries
+
+# Login
+curl -X POST http://34.3.90.3:8000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "password123"}'
+```
 
 ### **Docker Deployment**
 
