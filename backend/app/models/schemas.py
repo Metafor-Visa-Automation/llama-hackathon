@@ -101,6 +101,9 @@ class ApplicationCreate(BaseModel):
     """
     application_name: str = Field(..., description="User's custom name for the application")
     country_code: str = Field(..., description="Two-letter country code (e.g., 'US', 'DE')")
+    travel_purpose: str = Field(..., description="Purpose of travel (e.g., 'Tourism', 'Education', 'Business')")
+    application_start_date: Optional[datetime] = Field(None, description="Start date of application period")
+    application_end_date: Optional[datetime] = Field(None, description="End date of application period")
     application_steps: List[Dict[str, Any]] = Field(default_factory=list, description="Array of application steps")
 
 
@@ -110,6 +113,9 @@ class ApplicationUpdate(BaseModel):
     """
     application_name: Optional[str] = None
     country_code: Optional[str] = None
+    travel_purpose: Optional[str] = None  # e.g., "Tourism", "Education", "Business"
+    application_start_date: Optional[datetime] = None
+    application_end_date: Optional[datetime] = None
     status: Optional[str] = None
     application_steps: Optional[List[Dict[str, Any]]] = None
 
@@ -141,9 +147,12 @@ class UserResponse(BaseModel):
     surname: str
     profile_type: str
     passport_type: str
+    gender: Optional[str] = None  # e.g., "MALE", "FEMALE", "OTHER"
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None
     nationality: Optional[str] = None
+    address: Optional[str] = None  # User's address
+    has_schengen_before: Optional[bool] = False  # Has the user had a Schengen visa before
     token: Optional[str] = None  # Authentication token
     last_login_at: Optional[datetime] = None  # Last login timestamp
     created_at: datetime
@@ -159,9 +168,12 @@ class UserUpdate(BaseModel):
     surname: Optional[str] = Field(None, min_length=2, max_length=100)
     profile_type: Optional[str] = None
     passport_type: Optional[str] = None
+    gender: Optional[str] = None
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None
     nationality: Optional[str] = None
+    address: Optional[str] = None
+    has_schengen_before: Optional[bool] = None
 
 
 class LoginResponse(BaseModel):
@@ -563,9 +575,12 @@ class UserInDB(BaseModel):
     surname: str
     profile_type: str  # e.g., "STUDENT", "WORKER"
     passport_type: str  # e.g., "BORDO", "YESIL"
+    gender: Optional[str] = None  # e.g., "MALE", "FEMALE", "OTHER"
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None
     nationality: Optional[str] = None  # Country code, e.g., "TR"
+    address: Optional[str] = None  # User's address
+    has_schengen_before: Optional[bool] = False  # Has the user had a Schengen visa before
     token: Optional[str] = None  # Authentication token
     last_login_at: Optional[datetime] = None  # Last login timestamp
     created_at: datetime
@@ -746,6 +761,9 @@ class ApplicationResponse(BaseModel):
     user_id: str
     application_name: str
     country_code: str
+    travel_purpose: str  # e.g., "Tourism", "Education", "Business"
+    application_start_date: Optional[datetime] = None
+    application_end_date: Optional[datetime] = None
     status: str
     application_steps: List[Dict[str, Any]] = []
     created_at: datetime
@@ -851,6 +869,9 @@ class ApplicationInDB(BaseModel):
     user_id: str  # Foreign Key to users table
     application_name: str  # User's custom name for the application, e.g., "Amerika Turist Vizesi 2025"
     country_code: str  # Two-letter country code, e.g., "US", "DE"
+    travel_purpose: str  # e.g., "Tourism", "Education", "Business"
+    application_start_date: Optional[datetime] = None  # When the visa application period starts
+    application_end_date: Optional[datetime] = None  # When the visa application period ends
     status: str  # e.g., "DRAFT", "SUBMITTED", "APPROVED"
     application_steps: List[Dict[str, Any]] = []  # Array of steps, each step is an object
     created_at: datetime

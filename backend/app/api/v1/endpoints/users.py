@@ -29,9 +29,12 @@ async def get_user_profile(current_user: UserInDB = Depends(get_current_user)):
             surname=data['surname'],
             profile_type=data['profile_type'],
             passport_type=data['passport_type'],
+            gender=data.get('gender'),
             phone=data.get('phone'),
             date_of_birth=data.get('date_of_birth'),
             nationality=data.get('nationality'),
+            address=data.get('address'),
+            has_schengen_before=data.get('has_schengen_before', False),
             token=data.get('token'),
             last_login_at=data.get('last_login_at'),
             created_at=data['created_at'],
@@ -64,12 +67,18 @@ async def update_user_profile(
             update_data["profile_type"] = user_update.profile_type
         if user_update.passport_type is not None:
             update_data["passport_type"] = user_update.passport_type
+        if user_update.gender is not None:
+            update_data["gender"] = user_update.gender
         if user_update.phone is not None:
             update_data["phone"] = user_update.phone
         if user_update.date_of_birth is not None:
             update_data["date_of_birth"] = user_update.date_of_birth
         if user_update.nationality is not None:
             update_data["nationality"] = user_update.nationality
+        if user_update.address is not None:
+            update_data["address"] = user_update.address
+        if user_update.has_schengen_before is not None:
+            update_data["has_schengen_before"] = user_update.has_schengen_before
         
         # Always update the timestamp
         update_data["updated_at"] = datetime.utcnow()
@@ -88,9 +97,12 @@ async def update_user_profile(
             surname=updated_data["surname"],
             profile_type=updated_data["profile_type"],
             passport_type=updated_data["passport_type"],
+            gender=updated_data.get("gender"),
             phone=updated_data.get("phone"),
             date_of_birth=updated_data.get("date_of_birth"),
             nationality=updated_data.get("nationality"),
+            address=updated_data.get("address"),
+            has_schengen_before=updated_data.get("has_schengen_before", False),
             token=updated_data.get("token"),
             last_login_at=updated_data.get("last_login_at"),
             created_at=updated_data["created_at"],

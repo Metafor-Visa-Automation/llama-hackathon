@@ -3,6 +3,7 @@ from firebase_admin import auth
 from app.core.firebase import db
 from app.models.schemas import UserLogin, UserResponse
 from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
 from datetime import datetime
 import uuid
 
@@ -17,6 +18,12 @@ class UserRegister(BaseModel):
     surname: str = Field(..., min_length=2, max_length=100)
     profile_type: str = Field(..., description="Profile type (e.g., 'STUDENT', 'WORKER')")
     passport_type: str = Field(..., description="Passport type (e.g., 'BORDO', 'YESIL')")
+    gender: Optional[str] = Field(None, description="Gender (e.g., 'MALE', 'FEMALE', 'OTHER')")
+    phone: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    nationality: Optional[str] = None
+    address: Optional[str] = None
+    has_schengen_before: Optional[bool] = False
 
 
 class LoginResponse(BaseModel):
@@ -50,6 +57,12 @@ async def register_user(user_data: UserRegister):
             "surname": user_data.surname,
             "profile_type": user_data.profile_type,
             "passport_type": user_data.passport_type,
+            "gender": user_data.gender,
+            "phone": user_data.phone,
+            "date_of_birth": user_data.date_of_birth,
+            "nationality": user_data.nationality,
+            "address": user_data.address,
+            "has_schengen_before": user_data.has_schengen_before,
             "token": None,
             "last_login_at": None,
             "created_at": now,
@@ -66,9 +79,12 @@ async def register_user(user_data: UserRegister):
             surname=user_data.surname,
             profile_type=user_data.profile_type,
             passport_type=user_data.passport_type,
-            phone=None,
-            date_of_birth=None,
-            nationality=None,
+            gender=user_data.gender,
+            phone=user_data.phone,
+            date_of_birth=user_data.date_of_birth,
+            nationality=user_data.nationality,
+            address=user_data.address,
+            has_schengen_before=user_data.has_schengen_before,
             token=None,
             last_login_at=None,
             created_at=now,
@@ -137,9 +153,12 @@ async def login_user(login_data: UserLogin):
             surname=updated_user_data['surname'],
             profile_type=updated_user_data['profile_type'],
             passport_type=updated_user_data['passport_type'],
+            gender=updated_user_data.get('gender'),
             phone=updated_user_data.get('phone'),
             date_of_birth=updated_user_data.get('date_of_birth'),
             nationality=updated_user_data.get('nationality'),
+            address=updated_user_data.get('address'),
+            has_schengen_before=updated_user_data.get('has_schengen_before', False),
             token=updated_user_data.get('token'),
             last_login_at=updated_user_data.get('last_login_at'),
             created_at=updated_user_data['created_at'],
