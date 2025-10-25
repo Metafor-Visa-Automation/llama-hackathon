@@ -1,36 +1,44 @@
 import { useState, useRef } from 'react';
-import { TextField, Button, Radio, RadioGroup, FormControlLabel, FormControl, Chip, IconButton, Tooltip } from '@mui/material';
-import { 
-  ArrowBack, 
-  ArrowForward, 
-  Send, 
-  CloudUpload, 
-  CheckCircle, 
-  Close, 
-  InsertDriveFile, 
+import { TextField, Button, Chip, IconButton, Tooltip, FormControlLabel, Checkbox } from '@mui/material';
+import {
+  ArrowBack,
+  ArrowForward,
+  Send,
+  CloudUpload,
+  CheckCircle,
+  Close,
+  InsertDriveFile,
   Link as LinkIcon,
   PriorityHigh,
   Error as ErrorIcon,
   Warning as WarningIcon,
   Info as InfoIcon,
-  FiberManualRecord as CircleIcon
+  FiberManualRecord as CircleIcon,
+  CheckBox as CheckBoxIcon,
+  CheckBoxOutlineBlank as CheckBoxOutlineBlankIcon
 } from '@mui/icons-material';
 
 /**
  * QuestionCard Component
- * Renders different question types (text, textarea, radio, document upload) in a card format
- * Supports multiple document uploads for document type questions
- * 
+ * Renders action steps dynamically based on response-final.json structure
+ * Automatically shows document upload area when requires_document is true
+ * Displays priority badges, source URLs, and step descriptions
+ *
  * @param {Object} props
- * @param {Object} props.question - Question object with id, type, question text, options, requires_document, etc.
- * @param {string} props.value - Current answer value
+ * @param {Object} props.question - Action step object from response-final.json
+ *   - step_id: Unique identifier for the step
+ *   - title: Step title/question
+ *   - description: Detailed description of the step
+ *   - priority_score: 1-5 priority score (5 = highest)
+ *   - requires_document: Boolean indicating if document upload is needed
+ *   - source_urls: Array of reference URLs
+ * @param {string} props.value - Current answer value (for text/textarea inputs)
  * @param {Array<File>} props.documents - Array of uploaded document files
  * @param {Function} props.onChange - Handler for answer changes
  * @param {Function} props.onDocumentAdd - Handler for adding a document
  * @param {Function} props.onDocumentRemove - Handler for removing a document
  * @param {number} props.currentIndex - Current question index (0-based)
  * @param {number} props.totalQuestions - Total number of questions
- * @param {boolean} props.canGoNext - Whether next button should be enabled
  * @param {Function} props.onNext - Handler for next button
  * @param {Function} props.onPrevious - Handler for previous button
  * @param {Function} props.onSubmit - Handler for submit button
@@ -122,39 +130,39 @@ const QuestionCard = ({
   const getPriorityInfo = (score) => {
     switch(score) {
       case 5:
-        return { 
-          label: 'Çok Yüksek Öncelik', 
-          color: '#DC2626', 
-          bgColor: '#FEE2E2', 
-          Icon: ErrorIcon 
+        return {
+          label: 'Çok Yüksek Öncelik',
+          color: '#DC2626',
+          bgColor: '#FEE2E2',
+          Icon: ErrorIcon
         };
       case 4:
-        return { 
-          label: 'Yüksek Öncelik', 
-          color: '#EA580C', 
-          bgColor: '#FFEDD5', 
-          Icon: PriorityHigh 
+        return {
+          label: 'Yüksek Öncelik',
+          color: '#EA580C',
+          bgColor: '#FFEDD5',
+          Icon: PriorityHigh
         };
       case 3:
-        return { 
-          label: 'Orta Öncelik', 
-          color: '#D97706', 
-          bgColor: '#FEF3C7', 
-          Icon: WarningIcon 
+        return {
+          label: 'Orta Öncelik',
+          color: '#D97706',
+          bgColor: '#FEF3C7',
+          Icon: WarningIcon
         };
       case 2:
-        return { 
-          label: 'Düşük Öncelik', 
-          color: '#059669', 
-          bgColor: '#D1FAE5', 
-          Icon: InfoIcon 
+        return {
+          label: 'Düşük Öncelik',
+          color: '#059669',
+          bgColor: '#D1FAE5',
+          Icon: InfoIcon
         };
       case 1:
-        return { 
-          label: 'Çok Düşük Öncelik', 
-          color: '#047857', 
-          bgColor: '#D1FAE5', 
-          Icon: CircleIcon 
+        return {
+          label: 'Çok Düşük Öncelik',
+          color: '#047857',
+          bgColor: '#D1FAE5',
+          Icon: CircleIcon
         };
       default:
         return null;
@@ -162,326 +170,304 @@ const QuestionCard = ({
   };
 
   /**
-   * Render input based on question type
+   * Render input based on question configuration
+   * - If requires_document is true, show document upload area
+   * - Otherwise, show a simple text area for notes/comments
    */
   const renderInput = () => {
-    switch (question.type) {
-      case 'text':
-        return (
-          <TextField
-            fullWidth
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={question.placeholder}
-            autoFocus
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '12px',
-                backgroundColor: '#F0FDF4',
-                fontFamily: '"Playfair Display", serif',
-                fontSize: '1.1rem',
-                '& fieldset': {
-                  borderColor: '#A7F3D0',
-                  borderWidth: '2px',
-                },
-                '&:hover fieldset': {
-                  borderColor: '#10B981',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#10B981',
-                  borderWidth: '3px',
-                },
-              },
-            }}
+    // If the step requires a document, show the document upload interface
+    if (question.requires_document) {
+      return (
+        <div>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            style={{ display: 'none' }}
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            multiple
           />
-        );
 
-      case 'textarea':
-        return (
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={question.placeholder}
-            autoFocus
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: '12px',
-                backgroundColor: '#F0FDF4',
-                fontFamily: '"Playfair Display", serif',
-                fontSize: '1.1rem',
-                '& fieldset': {
-                  borderColor: '#A7F3D0',
-                  borderWidth: '2px',
-                },
-                '&:hover fieldset': {
-                  borderColor: '#10B981',
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: '#10B981',
-                  borderWidth: '3px',
-                },
-              },
+          {/* Upload Area */}
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            style={{
+              border: isDragging ? '3px dashed #10B981' : '2px dashed #A7F3D0',
+              borderRadius: '16px',
+              padding: documents.length > 0 ? '1.5rem' : '3rem 2rem',
+              textAlign: 'center',
+              cursor: 'pointer',
+              backgroundColor: isDragging ? '#F0FDF4' : '#FAFAFA',
+              transition: 'all 0.3s ease',
+              marginBottom: documents.length > 0 ? '1rem' : 0
             }}
-          />
-        );
-
-      case 'radio':
-        return (
-          <FormControl component="fieldset" fullWidth>
-            <RadioGroup
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-            >
-              {question.options.map((option) => (
-                <div
-                  key={option.value}
-                  onClick={() => onChange(option.value)}
-                  style={{
-                    backgroundColor: value === option.value ? '#F0FDF4' : '#FFFFFF',
-                    border: value === option.value ? '3px solid #10B981' : '2px solid #E5E7EB',
-                    borderRadius: '12px',
-                    padding: '1.25rem 1.5rem',
-                    marginBottom: '1rem',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease',
-                    boxShadow: value === option.value 
-                      ? '0 4px 20px rgba(16, 185, 129, 0.2)' 
-                      : '0 2px 8px rgba(0, 0, 0, 0.05)',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (value !== option.value) {
-                      e.currentTarget.style.borderColor = '#10B981';
-                      e.currentTarget.style.backgroundColor = '#F9FAFB';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (value !== option.value) {
-                      e.currentTarget.style.borderColor = '#E5E7EB';
-                      e.currentTarget.style.backgroundColor = '#FFFFFF';
-                    }
-                  }}
-                >
-                  <FormControlLabel
-                    value={option.value}
-                    control={
-                      <Radio
-                        sx={{
-                          color: '#10B981',
-                          '&.Mui-checked': {
-                            color: '#059669',
-                          },
-                        }}
-                      />
-                    }
-                    label={option.label}
-                    sx={{
-                      width: '100%',
-                      margin: 0,
-                      '& .MuiFormControlLabel-label': {
-                        fontFamily: '"Playfair Display", serif',
-                        fontSize: '1.1rem',
-                        fontWeight: '600',
-                        color: '#1a1a1a',
-                        flex: 1,
-                      },
-                    }}
-                  />
-                </div>
-              ))}
-            </RadioGroup>
-          </FormControl>
-        );
-
-      case 'document':
-        return (
-          <div>
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              style={{ display: 'none' }}
-              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-              multiple
-            />
-            
-            {/* Upload Area */}
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              style={{
-                border: isDragging ? '3px dashed #10B981' : '2px dashed #A7F3D0',
-                borderRadius: '16px',
-                padding: documents.length > 0 ? '1.5rem' : '3rem 2rem',
-                textAlign: 'center',
-                cursor: 'pointer',
-                backgroundColor: isDragging ? '#F0FDF4' : '#FAFAFA',
-                transition: 'all 0.3s ease',
-                marginBottom: documents.length > 0 ? '1rem' : 0
+          >
+            <CloudUpload
+              sx={{
+                fontSize: documents.length > 0 ? 40 : 64,
+                color: '#10B981',
+                marginBottom: documents.length > 0 ? '0.5rem' : '1rem'
               }}
-            >
-              <CloudUpload 
-                sx={{ 
-                  fontSize: documents.length > 0 ? 40 : 64, 
-                  color: '#10B981',
-                  marginBottom: documents.length > 0 ? '0.5rem' : '1rem'
-                }} 
-              />
+            />
+            <p style={{
+              fontFamily: '"Playfair Display", serif',
+              fontSize: documents.length > 0 ? '0.95rem' : '1.1rem',
+              fontWeight: '600',
+              color: '#1a1a1a',
+              marginBottom: documents.length > 0 ? 0 : '0.5rem'
+            }}>
+              {documents.length > 0
+                ? '+ Daha fazla döküman ekle'
+                : 'Dökümanları yüklemek için tıklayın veya sürükleyin'}
+            </p>
+            {documents.length === 0 && (
               <p style={{
                 fontFamily: '"Playfair Display", serif',
-                fontSize: documents.length > 0 ? '0.95rem' : '1.1rem',
-                fontWeight: '600',
-                color: '#1a1a1a',
-                marginBottom: documents.length > 0 ? 0 : '0.5rem'
+                fontSize: '0.9rem',
+                color: '#666666',
+                margin: 0
               }}>
-                {documents.length > 0 
-                  ? '+ Daha fazla döküman ekle' 
-                  : 'Dökümanları yüklemek için tıklayın veya sürükleyin'}
+                PDF, JPG, PNG, DOC, DOCX formatları desteklenir
               </p>
-              {documents.length === 0 && (
-                <p style={{
-                  fontFamily: '"Playfair Display", serif',
-                  fontSize: '0.9rem',
-                  color: '#666666',
-                  margin: 0
-                }}>
-                  PDF, JPG, PNG, DOC, DOCX formatları desteklenir
-                </p>
-              )}
-            </div>
-
-            {/* Uploaded Documents Grid */}
-            {documents.length > 0 && (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
-                gap: '0.75rem',
-                marginTop: '1rem'
-              }}>
-                {documents.map((doc, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      border: '1px solid #E5E7EB',
-                      borderRadius: '12px',
-                      padding: '1rem',
-                      backgroundColor: '#FFFFFF',
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      gap: '0.75rem',
-                      transition: 'all 0.2s ease',
-                      boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
-                      position: 'relative',
-                      overflow: 'hidden'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-                      e.currentTarget.style.borderColor = '#10B981';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
-                      e.currentTarget.style.borderColor = '#E5E7EB';
-                    }}
-                  >
-                    {/* File Icon */}
-                    <div style={{
-                      flexShrink: 0,
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '8px',
-                      backgroundColor: getFileColor(doc.name) + '15',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}>
-                      <InsertDriveFile sx={{ color: getFileColor(doc.name), fontSize: 24 }} />
-                    </div>
-
-                    {/* File Info */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <p style={{
-                        fontFamily: '"Playfair Display", serif',
-                        fontSize: '0.9rem',
-                        fontWeight: '600',
-                        color: '#1a1a1a',
-                        margin: 0,
-                        marginBottom: '0.25rem',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        {doc.name}
-                      </p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <p style={{
-                          fontFamily: '"Playfair Display", serif',
-                          fontSize: '0.75rem',
-                          color: '#666666',
-                          margin: 0
-                        }}>
-                          {formatFileSize(doc.size)}
-                        </p>
-                        <CheckCircle sx={{ color: '#10B981', fontSize: 14 }} />
-                      </div>
-                    </div>
-
-                    {/* Remove Button */}
-                    <IconButton
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDocumentRemove(index);
-                      }}
-                      size="small"
-                      sx={{
-                        padding: '4px',
-                        color: '#9CA3AF',
-                        '&:hover': {
-                          backgroundColor: '#FEE2E2',
-                          color: '#EF4444'
-                        }
-                      }}
-                    >
-                      <Close sx={{ fontSize: 18 }} />
-                    </IconButton>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Document Counter */}
-            {documents.length > 0 && (
-              <div style={{
-                marginTop: '0.75rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
-                <Chip
-                  icon={<CheckCircle />}
-                  label={`${documents.length} döküman yüklendi`}
-                  size="small"
-                  sx={{
-                    backgroundColor: '#F0FDF4',
-                    color: '#059669',
-                    fontFamily: '"Playfair Display", serif',
-                    fontWeight: '600',
-                    '& .MuiChip-icon': {
-                      color: '#10B981'
-                    }
-                  }}
-                />
-              </div>
             )}
           </div>
-        );
 
-      default:
-        return null;
+          {/* Uploaded Documents Grid */}
+          {documents.length > 0 && (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))',
+              gap: '0.75rem',
+              marginTop: '1rem'
+            }}>
+              {documents.map((doc, index) => (
+                <div
+                  key={index}
+                  style={{
+                    border: '1px solid #E5E7EB',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    backgroundColor: '#FFFFFF',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '0.75rem',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                    e.currentTarget.style.borderColor = '#10B981';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+                    e.currentTarget.style.borderColor = '#E5E7EB';
+                  }}
+                >
+                  {/* File Icon */}
+                  <div style={{
+                    flexShrink: 0,
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '8px',
+                    backgroundColor: getFileColor(doc.name) + '15',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <InsertDriveFile sx={{ color: getFileColor(doc.name), fontSize: 24 }} />
+                  </div>
+
+                  {/* File Info */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{
+                      fontFamily: '"Playfair Display", serif',
+                      fontSize: '0.9rem',
+                      fontWeight: '600',
+                      color: '#1a1a1a',
+                      margin: 0,
+                      marginBottom: '0.25rem',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap'
+                    }}>
+                      {doc.name}
+                    </p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <p style={{
+                        fontFamily: '"Playfair Display", serif',
+                        fontSize: '0.75rem',
+                        color: '#666666',
+                        margin: 0
+                      }}>
+                        {formatFileSize(doc.size)}
+                      </p>
+                      <CheckCircle sx={{ color: '#10B981', fontSize: 14 }} />
+                    </div>
+                  </div>
+
+                  {/* Remove Button */}
+                  <IconButton
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDocumentRemove(index);
+                    }}
+                    size="small"
+                    sx={{
+                      padding: '4px',
+                      color: '#9CA3AF',
+                      '&:hover': {
+                        backgroundColor: '#FEE2E2',
+                        color: '#EF4444'
+                      }
+                    }}
+                  >
+                    <Close sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Document Counter */}
+          {documents.length > 0 && (
+            <div style={{
+              marginTop: '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem'
+            }}>
+              <Chip
+                icon={<CheckCircle />}
+                label={`${documents.length} döküman yüklendi`}
+                size="small"
+                sx={{
+                  backgroundColor: '#F0FDF4',
+                  color: '#059669',
+                  fontFamily: '"Playfair Display", serif',
+                  fontWeight: '600',
+                  '& .MuiChip-icon': {
+                    color: '#10B981'
+                  }
+                }}
+              />
+            </div>
+          )}
+        </div>
+      );
     }
+
+    // Otherwise, show a checkbox to mark the step as completed
+    // The 'value' will be 'true' or 'false' string for checkbox state
+    const isChecked = value === 'true' || value === true;
+
+    return (
+      <div style={{
+        backgroundColor: isChecked ? '#F0FDF4' : '#FAFAFA',
+        border: isChecked ? '2px solid #10B981' : '2px solid #E5E7EB',
+        borderRadius: '16px',
+        padding: '1.5rem 2rem',
+        transition: 'all 0.3s ease',
+        cursor: 'pointer',
+        boxShadow: isChecked ? '0 4px 20px rgba(16, 185, 129, 0.15)' : '0 2px 8px rgba(0, 0, 0, 0.05)',
+      }}
+      onClick={() => onChange(!isChecked)}
+      onMouseEnter={(e) => {
+        if (!isChecked) {
+          e.currentTarget.style.borderColor = '#10B981';
+          e.currentTarget.style.backgroundColor = '#F9FAFB';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isChecked) {
+          e.currentTarget.style.borderColor = '#E5E7EB';
+          e.currentTarget.style.backgroundColor = '#FAFAFA';
+        }
+      }}
+      >
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={isChecked}
+              onChange={(e) => {
+                e.stopPropagation();
+                onChange(!isChecked);
+              }}
+              icon={<CheckBoxOutlineBlankIcon sx={{ fontSize: 32 }} />}
+              checkedIcon={<CheckBoxIcon sx={{ fontSize: 32 }} />}
+              sx={{
+                color: '#10B981',
+                '&.Mui-checked': {
+                  color: '#059669',
+                },
+                '& .MuiSvgIcon-root': {
+                  transition: 'all 0.2s ease',
+                }
+              }}
+            />
+          }
+          label={
+            <div style={{ marginLeft: '0.5rem' }}>
+              <p style={{
+                fontFamily: '"Playfair Display", serif',
+                fontSize: '1.1rem',
+                fontWeight: '600',
+                color: isChecked ? '#059669' : '#1a1a1a',
+                margin: 0,
+                marginBottom: '0.25rem',
+                transition: 'color 0.3s ease'
+              }}>
+                {isChecked ? 'Bu adımı tamamladım' : 'Bu adımı tamamlandı olarak işaretle'}
+              </p>
+              <p style={{
+                fontFamily: '"Playfair Display", serif',
+                fontSize: '0.85rem',
+                color: '#666666',
+                margin: 0
+              }}>
+                {isChecked
+                  ? 'Harika! Bir sonraki adıma geçebilirsiniz.'
+                  : 'Bu adım tamamlandığında işaretleyin'}
+              </p>
+            </div>
+          }
+          sx={{
+            width: '100%',
+            margin: 0,
+            alignItems: 'flex-start',
+            '& .MuiFormControlLabel-label': {
+              flex: 1,
+            }
+          }}
+        />
+
+        {isChecked && (
+          <div style={{
+            marginTop: '1rem',
+            paddingTop: '1rem',
+            borderTop: '1px solid #D1FAE5',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <CheckCircle sx={{ color: '#10B981', fontSize: 20 }} />
+            <p style={{
+              fontFamily: '"Playfair Display", serif',
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              color: '#059669',
+              margin: 0
+            }}>
+              Tamamlandı olarak işaretlendi
+            </p>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -512,10 +498,10 @@ const QuestionCard = ({
           marginBottom: '1.5rem',
         }}
       >
-        Soru {currentIndex + 1} / {totalQuestions}
+        Adım {currentIndex + 1} / {totalQuestions}
       </div>
 
-      {/* Question Text */}
+      {/* Question Text - Use title from response-final.json */}
       <h2
         style={{
           fontSize: '1.75rem',
@@ -526,10 +512,10 @@ const QuestionCard = ({
           lineHeight: '1.4',
         }}
       >
-        {question.question || question.title}
+        {question.title}
       </h2>
 
-      {/* Description */}
+      {/* Description - Use description from response-final.json */}
       {question.description && (
         <p style={{
           fontSize: '1rem',
@@ -542,13 +528,13 @@ const QuestionCard = ({
         </p>
       )}
 
-      {/* Additional Info Chips */}
+      {/* Priority Badge - Use priority_score from response-final.json */}
       {question.priority_score && getPriorityInfo(question.priority_score) && (() => {
         const priorityInfo = getPriorityInfo(question.priority_score);
         const PriorityIcon = priorityInfo.Icon;
         return (
           <div style={{ marginBottom: '1.5rem' }}>
-            <Chip 
+            <Chip
               icon={<PriorityIcon sx={{ fontSize: 16 }} />}
               label={priorityInfo.label}
               size="small"
@@ -568,12 +554,12 @@ const QuestionCard = ({
         );
       })()}
 
-      {/* Input Field */}
+      {/* Input Field - Dynamically shows document upload or notes based on requires_document */}
       <div style={{ marginBottom: '1.5rem' }}>
         {renderInput()}
       </div>
 
-      {/* Source URLs */}
+      {/* Source URLs - Use source_urls from response-final.json */}
       {question.source_urls && question.source_urls.length > 0 && (
         <div style={{ marginBottom: '1.5rem' }}>
           <Tooltip
@@ -654,8 +640,8 @@ const QuestionCard = ({
       )}
 
       {/* Navigation Buttons */}
-      <div style={{ 
-        display: 'flex', 
+      <div style={{
+        display: 'flex',
         gap: '1rem',
         justifyContent: 'space-between',
         alignItems: 'center'
@@ -740,4 +726,3 @@ const QuestionCard = ({
 };
 
 export default QuestionCard;
-

@@ -9,7 +9,7 @@ import ProgressStepper from '../components/ProgressStepper';
 import vibeBg from '../assets/vibe-bg3.png';
 import { ArrowBack, FlightTakeoff as FlightTakeoffIcon } from '@mui/icons-material';
 // TODO: Replace with actual AI service call
-import mockResponseData from '../ai_responses/response-fransa.json';
+import mockResponseData from '../ai_responses/response-final.json';
 import {
   setQuestions,
   setAnswer,
@@ -18,7 +18,6 @@ import {
   markQuestionComplete,
   markQuestionIncomplete,
   setFormMetadata,
-  resetForm
 } from '../store/formSlice';
 
 /**
