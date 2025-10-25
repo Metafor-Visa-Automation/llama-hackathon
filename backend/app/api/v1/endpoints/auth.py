@@ -1,18 +1,37 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from firebase_admin import auth
 from app.core.firebase import db
-from app.models.schemas import UserCreate, UserResponse, UserInDB, UserLogin, LoginResponse
-from app.services.security import get_current_user
+from app.models.schemas import UserLogin, UserResponse
+from pydantic import BaseModel, EmailStr, Field
 from datetime import datetime
+import uuid
 
 router = APIRouter()
 
 
+class UserRegister(BaseModel):
+    """Request model for user registration"""
+    email: EmailStr
+    password: str = Field(..., min_length=6)
+    name: str = Field(..., min_length=2, max_length=100)
+    surname: str = Field(..., min_length=2, max_length=100)
+    profile_type: str = Field(..., description="Profile type (e.g., 'STUDENT', 'WORKER')")
+    passport_type: str = Field(..., description="Passport type (e.g., 'BORDO', 'YESIL')")
+
+
+class LoginResponse(BaseModel):
+    """Response model for successful login"""
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+    expires_in: int = 3600
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register_user(user_data: UserCreate):
+async def register_user(user_data: UserRegister):
     """
     Register a new user
-    Creates user in Firebase Auth and corresponding document in Firestore
+    Creates user in Firebase Auth and Firestore
     """
     try:
         # Step 1: Create user in Firebase Auth
@@ -29,19 +48,17 @@ async def register_user(user_data: UserCreate):
             "email": user_data.email,
             "name": user_data.name,
             "surname": user_data.surname,
-            "profile_type": user_data.profile_type.value,
-            "passport_type": user_data.passport_type.value,
-            "phone": user_data.phone,
-            "date_of_birth": user_data.date_of_birth,
-            "nationality": user_data.nationality,
+            "profile_type": user_data.profile_type,
+            "passport_type": user_data.passport_type,
+            "token": None,
+            "last_login_at": None,
             "created_at": now,
             "updated_at": now
         }
         
         # Save to Firestore
-        db.collection('USER').document(firebase_user.uid).set(user_doc_data)
+        db.collection('users').document(firebase_user.uid).set(user_doc_data)
         
-        # Return user response
         return UserResponse(
             uid=firebase_user.uid,
             email=user_data.email,
@@ -49,9 +66,11 @@ async def register_user(user_data: UserCreate):
             surname=user_data.surname,
             profile_type=user_data.profile_type,
             passport_type=user_data.passport_type,
-            phone=user_data.phone,
-            date_of_birth=user_data.date_of_birth,
-            nationality=user_data.nationality,
+            phone=None,
+            date_of_birth=None,
+            nationality=None,
+            token=None,
+            last_login_at=None,
             created_at=now,
             updated_at=now
         )
@@ -61,16 +80,6 @@ async def register_user(user_data: UserCreate):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
-    except auth.InvalidEmailError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid email format"
-        )
-    except auth.WeakPasswordError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Weak password: {str(e)}"
-        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -78,19 +87,14 @@ async def register_user(user_data: UserCreate):
         )
 
 
-@router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
+@router.post("/login", response_model=LoginResponse)
 async def login_user(login_data: UserLogin):
     """
     Login user with email and password
-    Returns Firebase custom token and user information
-    
-    Note: This endpoint generates a custom token for the user.
-    In a production app, password verification should be done on the client side
-    using Firebase Auth SDK, and this endpoint should verify the Firebase ID token
-    instead of email/password directly.
+    Returns token and user information
     """
     try:
-        # Step 1: Check if user exists in Firebase Auth
+        # Step 1: Get user from Firebase Auth
         try:
             firebase_user = auth.get_user_by_email(login_data.email)
         except auth.UserNotFoundError:
@@ -99,19 +103,12 @@ async def login_user(login_data: UserLogin):
                 detail="Invalid email or password"
             )
         
-        # Note: This endpoint doesn't verify the password because Firebase Admin SDK
-        # doesn't have a way to verify passwords server-side for security reasons.
-        # In production, you should:
-        # 1. Use Firebase Auth SDK on the client to sign in and get an ID token
-        # 2. Send that ID token to this endpoint
-        # 3. Verify the ID token using auth.verify_id_token()
-        # For now, we'll generate a custom token that the client can exchange for an ID token
-        
         # Step 2: Generate custom token
         custom_token = auth.create_custom_token(firebase_user.uid)
+        token_string = custom_token.decode('utf-8')
         
         # Step 3: Get user data from Firestore
-        user_doc = db.collection('USER').document(firebase_user.uid).get()
+        user_doc = db.collection('users').document(firebase_user.uid).get()
         
         if not user_doc.exists:
             raise HTTPException(
@@ -121,59 +118,46 @@ async def login_user(login_data: UserLogin):
         
         user_data = user_doc.to_dict()
         
-        # Step 4: Create user response
+        # Step 4: Update token and last login
+        now = datetime.utcnow()
+        db.collection('users').document(firebase_user.uid).update({
+            'token': token_string,
+            'last_login_at': now,
+            'updated_at': now
+        })
+        
+        # Step 5: Get updated user data
+        updated_user_doc = db.collection('users').document(firebase_user.uid).get()
+        updated_user_data = updated_user_doc.to_dict()
+        
         user_response = UserResponse(
-            uid=user_data['uid'],
-            email=user_data['email'],
-            name=user_data['name'],
-            surname=user_data['surname'],
-            profile_type=user_data['profile_type'],
-            passport_type=user_data['passport_type'],
-            phone=user_data.get('phone'),
-            date_of_birth=user_data.get('date_of_birth'),
-            nationality=user_data.get('nationality'),
-            created_at=user_data['created_at'],
-            updated_at=user_data['updated_at']
+            uid=updated_user_data['uid'],
+            email=updated_user_data['email'],
+            name=updated_user_data['name'],
+            surname=updated_user_data['surname'],
+            profile_type=updated_user_data['profile_type'],
+            passport_type=updated_user_data['passport_type'],
+            phone=updated_user_data.get('phone'),
+            date_of_birth=updated_user_data.get('date_of_birth'),
+            nationality=updated_user_data.get('nationality'),
+            token=updated_user_data.get('token'),
+            last_login_at=updated_user_data.get('last_login_at'),
+            created_at=updated_user_data['created_at'],
+            updated_at=updated_user_data['updated_at']
         )
         
-        # Step 5: Return login response with token
         return LoginResponse(
-            access_token=custom_token.decode('utf-8'),
+            access_token=token_string,
             token_type="bearer",
             user=user_response,
             expires_in=3600
         )
         
     except HTTPException:
-        # Re-raise HTTP exceptions as they are
         raise
-    except auth.InvalidEmailError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid email format"
-        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Login failed: {str(e)}"
         )
 
-
-@router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user: UserInDB = Depends(get_current_user)):
-    """
-    Get current user information
-    """
-    return UserResponse(
-        uid=current_user.uid,
-        email=current_user.email,
-        name=current_user.name,
-        surname=current_user.surname,
-        profile_type=current_user.profile_type,
-        passport_type=current_user.passport_type,
-        phone=current_user.phone,
-        date_of_birth=current_user.date_of_birth,
-        nationality=current_user.nationality,
-        created_at=current_user.created_at,
-        updated_at=current_user.updated_at
-    )
