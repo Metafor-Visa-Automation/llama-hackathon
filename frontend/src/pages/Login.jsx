@@ -42,6 +42,16 @@ const Login = () => {
       // Simulated login for now (backend hazır olunca kaldırılacak)
       await new Promise(resolve => setTimeout(resolve, 1000));
       
+      // Mock credentials kontrolü
+      const MOCK_EMAIL = 'test@mail.com';
+      const MOCK_PASSWORD = 'test123';
+      
+      if (email !== MOCK_EMAIL || password !== MOCK_PASSWORD) {
+        setError('E-posta veya şifre hatalı. Lütfen tekrar deneyin.');
+        setIsLoading(false);
+        return;
+      }
+      
       // Extract name from email (before @)
       const name = email.split('@')[0];
       const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);

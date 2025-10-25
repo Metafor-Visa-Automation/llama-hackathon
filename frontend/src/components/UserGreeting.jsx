@@ -123,16 +123,6 @@ const UserGreeting = () => {
           >
             Hoşgeldin, {user?.name || 'Kullanıcı'}
           </span>
-          <span
-            style={{
-              color: 'rgba(255, 255, 255, 0.6)',
-              fontSize: '0.75rem',
-              fontWeight: '400',
-              fontFamily: '"Playfair Display", serif',
-            }}
-          >
-            Vize başvuruna devam et
-          </span>
         </div>
 
         {/* Logout Button */}
