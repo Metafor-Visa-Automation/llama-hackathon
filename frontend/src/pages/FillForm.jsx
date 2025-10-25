@@ -1,64 +1,56 @@
-import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useState, useEffect, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import QuestionCard from '../components/QuestionCard';
+import ProgressStepper from '../components/ProgressStepper';
 import vibeBg from '../assets/vibe-bg3.png';
 import { ArrowBack } from '@mui/icons-material';
 // TODO: Replace with actual AI service call
 import mockResponseData from '../ai_responses/response-fransa.json';
+import {
+  setQuestions,
+  setAnswer,
+  nextQuestion,
+  previousQuestion,
+  markQuestionComplete,
+  markQuestionIncomplete,
+  setFormMetadata,
+  resetForm
+} from '../store/formSlice';
 
 /**
- * FillForm Page Component -  Cards Style
+ * FillForm Page Component - Cards Style
  * One question at a time with progress tracking
  * Questions are dynamically generated from AI response (currently using mock data)
+ * Form state managed in Redux, documents stored locally
  */
 const FillForm = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   // eslint-disable-next-line no-unused-vars
   const { originCountry, destinationCountry } = useSelector((state) => state.country);
+  
+  // Redux state
+  const { 
+    questions, 
+    answers, 
+    currentQuestionIndex,
+    completedQuestions 
+  } = useSelector((state) => state.form);
 
-  // Current question index
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [direction, setDirection] = useState(0); // For animation direction
-
-  // Convert action_steps to questions format
-  const [questions, setQuestions] = useState([]);
-  const [answers, setAnswers] = useState({});
+  // Local state for documents (not in Redux due to size)
   const [documents, setDocuments] = useState({});
-
-  useEffect(() => {
-    // TODO: Replace this with actual AI service call
-    // const fetchVisaRequirements = async () => {
-    //   try {
-    //     const response = await fetch('/api/visa-requirements', {
-    //       method: 'POST',
-    //       body: JSON.stringify({
-    //         originCountry,
-    //         destinationCountry
-    //       })
-    //     });
-    //     const data = await response.json();
-    //     processActionSteps(data.action_steps);
-    //   } catch (error) {
-    //     console.error('Error fetching visa requirements:', error);
-    //   }
-    // };
-    // fetchVisaRequirements();
-
-    // Using mock data for now
-    if (mockResponseData && mockResponseData.action_steps) {
-      processActionSteps(mockResponseData.action_steps);
-    }
-  }, []);
+  const [direction, setDirection] = useState(0); // For animation direction
+  const [isLoading, setIsLoading] = useState(true);
 
   /**
    * Process action steps from AI response into question format
    */
-  const processActionSteps = (actionSteps) => {
+  const processActionSteps = useCallback((actionSteps) => {
     const processedQuestions = actionSteps.map(step => ({
       id: step.step_id,
       type: step.requires_document ? 'document' : 'textarea',
@@ -81,59 +73,122 @@ const FillForm = () => {
       source_urls: step.source_urls
     }));
 
-    setQuestions(processedQuestions);
+    // Dispatch to Redux
+    dispatch(setQuestions(processedQuestions));
+    
+    // Set metadata
+    dispatch(setFormMetadata({
+      estimatedTotalTime: mockResponseData.estimated_total_time || '',
+      estimatedTotalCost: mockResponseData.estimated_total_cost || ''
+    }));
 
-    // Initialize answers state
-    const initialAnswers = {};
+    // Initialize local documents state
     const initialDocuments = {};
     processedQuestions.forEach(q => {
-      initialAnswers[q.id] = '';
       initialDocuments[q.id] = []; // Array for multiple documents
     });
-    setAnswers(initialAnswers);
     setDocuments(initialDocuments);
-  };
+    setIsLoading(false);
+  }, [dispatch]);
+
+  useEffect(() => {
+    // Load questions only if not already loaded
+    if (questions.length === 0) {
+      // TODO: Replace this with actual AI service call
+      // const fetchVisaRequirements = async () => {
+      //   try {
+      //     const response = await fetch('/api/visa-requirements', {
+      //       method: 'POST',
+      //       body: JSON.stringify({
+      //         originCountry,
+      //         destinationCountry
+      //       })
+      //     });
+      //     const data = await response.json();
+      //     processActionSteps(data.action_steps);
+      //   } catch (error) {
+      //     console.error('Error fetching visa requirements:', error);
+      //   }
+      // };
+      // fetchVisaRequirements();
+
+      // Using mock data for now
+      if (mockResponseData && mockResponseData.action_steps) {
+        processActionSteps(mockResponseData.action_steps);
+      }
+    } else {
+      setIsLoading(false);
+    }
+  }, [questions.length, processActionSteps]);
 
   const totalQuestions = questions.length;
-  const progress = totalQuestions > 0 ? ((currentQuestion + 1) / totalQuestions) * 100 : 0;
 
   const handleAnswer = (value) => {
     if (questions.length === 0) return;
-    setAnswers(prev => ({
-      ...prev,
-      [questions[currentQuestion].id]: value
-    }));
+    const questionId = questions[currentQuestionIndex].id;
+    dispatch(setAnswer({ questionId, value }));
+    checkQuestionCompletion();
   };
 
   const handleDocumentAdd = (file) => {
     if (questions.length === 0) return;
-    const questionId = questions[currentQuestion].id;
+    const questionId = questions[currentQuestionIndex].id;
     setDocuments(prev => ({
       ...prev,
       [questionId]: [...(prev[questionId] || []), file]
     }));
+    // Check if question is now complete
+    setTimeout(() => checkQuestionCompletion(), 100);
   };
 
   const handleDocumentRemove = (index) => {
     if (questions.length === 0) return;
-    const questionId = questions[currentQuestion].id;
+    const questionId = questions[currentQuestionIndex].id;
     setDocuments(prev => ({
       ...prev,
       [questionId]: prev[questionId].filter((_, i) => i !== index)
     }));
+    // Check if question is still complete
+    setTimeout(() => checkQuestionCompletion(), 100);
+  };
+
+  /**
+   * Check if current question is complete and mark it
+   */
+  const checkQuestionCompletion = () => {
+    if (questions.length === 0) return;
+    
+    const currentQ = questions[currentQuestionIndex];
+    const questionId = currentQ.id;
+    
+    let isComplete = false;
+    
+    if (currentQ.requires_document) {
+      const docs = documents[questionId];
+      isComplete = Array.isArray(docs) && docs.length > 0;
+    } else {
+      const answer = answers[questionId];
+      isComplete = answer && answer.trim() !== '';
+    }
+    
+    if (isComplete) {
+      dispatch(markQuestionComplete(currentQuestionIndex));
+    } else {
+      dispatch(markQuestionIncomplete(currentQuestionIndex));
+    }
   };
 
   const handleNext = () => {
-    if (currentQuestion < totalQuestions - 1) {
+    if (currentQuestionIndex < totalQuestions - 1) {
       setDirection(1);
-      setCurrentQuestion(prev => prev + 1);
+      dispatch(nextQuestion());
     }
   };
 
   const handlePrevious = () => {
-    if (currentQuestion > 0) {
+    if (currentQuestionIndex > 0) {
       setDirection(-1);
-      setCurrentQuestion(prev => prev - 1);
+      dispatch(previousQuestion());
     }
   };
 
@@ -142,29 +197,31 @@ const FillForm = () => {
     // TODO: Send to backend/AI for processing
     // This will include both text answers and uploaded documents
     alert('Başvurunuz başarıyla gönderildi!');
+    dispatch(resetForm()); // Reset form after submission
     navigate('/dashboard');
   };
 
   const isCurrentQuestionAnswered = () => {
     if (questions.length === 0) return false;
     
-    const currentQ = questions[currentQuestion];
+    const currentQ = questions[currentQuestionIndex];
+    const questionId = currentQ.id;
     
     // If it's a document question, check if at least one document is uploaded
     if (currentQ.requires_document) {
-      const docs = documents[currentQ.id];
+      const docs = documents[questionId];
       return Array.isArray(docs) && docs.length > 0;
     }
     
     // For text/textarea questions, check if answer is provided
-    const currentAnswer = answers[currentQ.id];
+    const currentAnswer = answers[questionId];
     return currentAnswer && currentAnswer.trim() !== '';
   };
 
   const canGoNext = isCurrentQuestionAnswered();
 
   // Show loading state while questions are being processed
-  if (questions.length === 0) {
+  if (isLoading || questions.length === 0) {
     return (
       <PageTransition>
         <div 
@@ -260,7 +317,7 @@ const FillForm = () => {
         {/* Main Container */}
         <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto' }}>
           {/* Welcome Header - Only show on first question */}
-          {currentQuestion === 0 && (
+          {currentQuestionIndex === 0 && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -299,7 +356,7 @@ const FillForm = () => {
           <div style={{ overflow: 'hidden', width: '100%' }}>
             <AnimatePresence initial={false} custom={direction} mode="wait">
               <motion.div
-                key={currentQuestion}
+                key={currentQuestionIndex}
                 custom={direction}
                 variants={cardVariants}
                 initial="enter"
@@ -311,13 +368,13 @@ const FillForm = () => {
                 }}
               >
                 <QuestionCard
-                  question={questions[currentQuestion]}
-                  value={answers[questions[currentQuestion].id]}
-                  documents={documents[questions[currentQuestion].id] || []}
+                  question={questions[currentQuestionIndex]}
+                  value={answers[questions[currentQuestionIndex].id]}
+                  documents={documents[questions[currentQuestionIndex].id] || []}
                   onChange={handleAnswer}
                   onDocumentAdd={handleDocumentAdd}
                   onDocumentRemove={handleDocumentRemove}
-                  currentIndex={currentQuestion}
+                  currentIndex={currentQuestionIndex}
                   totalQuestions={totalQuestions}
                   canGoNext={canGoNext}
                   onNext={handleNext}
@@ -328,82 +385,13 @@ const FillForm = () => {
             </AnimatePresence>
           </div>
 
-          {/* Progress Bar - Modern & Compact */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            style={{
-              marginTop: '2rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              backdropFilter: 'blur(20px)',
-              padding: '1.75rem 2rem',
-              borderRadius: '20px',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.6)',
-            }}
-          >
-            {/* Progress Percentage & Label */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '1rem'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{
-                  fontFamily: '"Playfair Display", serif',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  color: '#666666',
-                  letterSpacing: '0.02em'
-                }}>
-                  İlerleme
-                </span>
-                <span style={{
-                  fontFamily: '"Playfair Display", serif',
-                  fontSize: '0.85rem',
-                  fontWeight: '500',
-                  color: '#9CA3AF',
-                }}>
-                  Soru {currentQuestion + 1} / {totalQuestions}
-                </span>
-              </div>
-              <span style={{
-                fontFamily: '"Playfair Display", serif',
-                fontSize: '1.1rem',
-                fontWeight: '700',
-                color: '#059669',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}>
-                {Math.round(progress)}%
-              </span>
-            </div>
-            
-            {/* Question Step Indicators */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: '0.75rem',
-              gap: '0.35rem'
-            }}>
-              {questions.map((_, index) => (
-                <div
-                  key={index}
-                  style={{
-                    flex: 1,
-                    height: index === currentQuestion ? '8px' : '6px',
-                    backgroundColor: index <= currentQuestion ? '#10B981' : '#E5E7EB',
-                    borderRadius: '4px',
-                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                  }}
-                />
-              ))}
-            </div>
-          </motion.div>
+          {/* Progress Stepper at Bottom */}
+          <ProgressStepper
+            questions={questions}
+            currentIndex={currentQuestionIndex}
+            completedQuestions={completedQuestions}
+            documents={documents}
+          />
         </div>
       </div>
     </PageTransition>

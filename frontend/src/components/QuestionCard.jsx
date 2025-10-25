@@ -1,6 +1,23 @@
 import { useState, useRef } from 'react';
 import { TextField, Button, Radio, RadioGroup, FormControlLabel, FormControl, Chip, IconButton } from '@mui/material';
-import { ArrowBack, ArrowForward, Send, CloudUpload, CheckCircle, Close, InsertDriveFile, Link as LinkIcon } from '@mui/icons-material';
+import { 
+  ArrowBack, 
+  ArrowForward, 
+  Send, 
+  CloudUpload, 
+  CheckCircle, 
+  Close, 
+  InsertDriveFile, 
+  Link as LinkIcon,
+  PriorityHigh,
+  Error as ErrorIcon,
+  Warning as WarningIcon,
+  Info as InfoIcon,
+  FiberManualRecord as CircleIcon,
+  Schedule as ScheduleIcon,
+  Euro as EuroIcon,
+  Lightbulb as LightbulbIcon
+} from '@mui/icons-material';
 
 /**
  * QuestionCard Component
@@ -101,6 +118,51 @@ const QuestionCard = ({
       default: '#6B7280'
     };
     return colorMap[ext] || colorMap.default;
+  };
+
+  /**
+   * Get priority display info based on score
+   */
+  const getPriorityInfo = (score) => {
+    switch(score) {
+      case 5:
+        return { 
+          label: 'Çok Yüksek Öncelik', 
+          color: '#DC2626', 
+          bgColor: '#FEE2E2', 
+          Icon: ErrorIcon 
+        };
+      case 4:
+        return { 
+          label: 'Yüksek Öncelik', 
+          color: '#EA580C', 
+          bgColor: '#FFEDD5', 
+          Icon: PriorityHigh 
+        };
+      case 3:
+        return { 
+          label: 'Orta Öncelik', 
+          color: '#D97706', 
+          bgColor: '#FEF3C7', 
+          Icon: WarningIcon 
+        };
+      case 2:
+        return { 
+          label: 'Düşük Öncelik', 
+          color: '#059669', 
+          bgColor: '#D1FAE5', 
+          Icon: InfoIcon 
+        };
+      case 1:
+        return { 
+          label: 'Çok Düşük Öncelik', 
+          color: '#047857', 
+          bgColor: '#D1FAE5', 
+          Icon: CircleIcon 
+        };
+      default:
+        return null;
+    }
   };
 
   /**
@@ -486,6 +548,28 @@ const QuestionCard = ({
 
       {/* Additional Info Chips */}
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
+        {question.priority_score && getPriorityInfo(question.priority_score) && (() => {
+          const priorityInfo = getPriorityInfo(question.priority_score);
+          const PriorityIcon = priorityInfo.Icon;
+          return (
+            <Chip 
+              icon={<PriorityIcon sx={{ fontSize: 16 }} />}
+              label={priorityInfo.label}
+              size="small"
+              sx={{
+                backgroundColor: priorityInfo.bgColor,
+                color: priorityInfo.color,
+                fontFamily: '"Playfair Display", serif',
+                fontWeight: '700',
+                fontSize: '0.8rem',
+                border: `1.5px solid ${priorityInfo.color}30`,
+                '& .MuiChip-icon': {
+                  color: priorityInfo.color
+                }
+              }}
+            />
+          );
+        })()}
         {question.mandatory && (
           <Chip 
             label="Zorunlu" 
@@ -500,23 +584,31 @@ const QuestionCard = ({
         )}
         {question.estimated_duration && (
           <Chip 
-            label={`Süre: ${question.estimated_duration}`}
+            icon={<ScheduleIcon sx={{ fontSize: 16 }} />}
+            label={question.estimated_duration}
             size="small"
             sx={{
               backgroundColor: '#E0E7FF',
               color: '#4F46E5',
               fontFamily: '"Playfair Display", serif',
+              '& .MuiChip-icon': {
+                color: '#4F46E5'
+              }
             }}
           />
         )}
         {question.cost_estimate && (
           <Chip 
-            label={`Maliyet: ${question.cost_estimate}`}
+            icon={<EuroIcon sx={{ fontSize: 16 }} />}
+            label={question.cost_estimate}
             size="small"
             sx={{
               backgroundColor: '#FEF3C7',
               color: '#D97706',
               fontFamily: '"Playfair Display", serif',
+              '& .MuiChip-icon': {
+                color: '#D97706'
+              }
             }}
           />
         )}
@@ -531,15 +623,23 @@ const QuestionCard = ({
           padding: '1rem',
           marginBottom: '1.5rem'
         }}>
-          <p style={{
-            fontSize: '0.9rem',
-            fontWeight: '600',
-            color: '#059669',
-            marginBottom: '0.5rem',
-            fontFamily: '"Playfair Display", serif',
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            marginBottom: '0.5rem'
           }}>
-            💡 Faydalı İpuçları:
-          </p>
+            <LightbulbIcon sx={{ fontSize: 20, color: '#059669' }} />
+            <p style={{
+              fontSize: '0.9rem',
+              fontWeight: '600',
+              color: '#059669',
+              margin: 0,
+              fontFamily: '"Playfair Display", serif',
+            }}>
+              Faydalı İpuçları:
+            </p>
+          </div>
           <ul style={{
             margin: 0,
             paddingLeft: '1.5rem',
