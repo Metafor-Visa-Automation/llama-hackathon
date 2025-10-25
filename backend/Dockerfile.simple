@@ -1,24 +1,18 @@
-# Multi-stage build for production
+# Simplified Dockerfile for headless OpenCV
 FROM python:3.12-slim AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies for building
+# Install minimal system dependencies for building
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     build-essential \
     pkg-config \
-    libglib2.0-dev \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
     libjpeg-dev \
     libpng-dev \
     libtiff-dev \
-    gfortran \
     && rm -rf /var/lib/apt/lists/*
 
 # Install build tools first
@@ -37,7 +31,7 @@ FROM python:3.12-slim
 # Set working directory
 WORKDIR /app
 
-# Set environment variables
+# Set environment variables for headless operation
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
@@ -49,14 +43,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     OPENCV_IO_ENABLE_TIFF=1 \
     OPENCV_IO_ENABLE_WEBP=1
 
-# Install runtime dependencies
+# Install minimal runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
     libjpeg-dev \
     libpng-dev \
     libtiff-dev \

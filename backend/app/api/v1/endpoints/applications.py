@@ -192,7 +192,7 @@ async def get_user_applications(current_user: UserInDB = Depends(get_current_use
     try:
         applications_query = db.collection('APPLICATION').where(
             'user_id', '==', current_user.uid
-        ).order_by('created_at', direction='DESCENDING').stream()
+        ).stream()
         
         applications = []
         for app_doc in applications_query:
@@ -206,6 +206,9 @@ async def get_user_applications(current_user: UserInDB = Depends(get_current_use
                 created_at=app_data['created_at'],
                 updated_at=app_data['updated_at']
             ))
+        
+        # Sort by created_at in Python (descending)
+        applications.sort(key=lambda x: x.created_at, reverse=True)
         
         return applications
         

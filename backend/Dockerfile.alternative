@@ -1,24 +1,14 @@
-# Multi-stage build for production
-FROM python:3.12-slim AS builder
+# Alternative Dockerfile with Python 3.11 for better compatibility
+FROM python:3.11-slim AS builder
 
 # Set working directory
 WORKDIR /app
 
 # Install system dependencies for building
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     build-essential \
-    pkg-config \
-    libglib2.0-dev \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
-    libjpeg-dev \
-    libpng-dev \
-    libtiff-dev \
-    gfortran \
     && rm -rf /var/lib/apt/lists/*
 
 # Install build tools first
@@ -32,7 +22,7 @@ RUN pip install --no-cache-dir --user --upgrade pip && \
     pip install --no-cache-dir --user -r requirements.txt
 
 # Production stage
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
@@ -41,25 +31,11 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
-    PATH="/home/appuser/.local/bin:$PATH" \
-    QT_QPA_PLATFORM=offscreen \
-    OPENCV_IO_ENABLE_OPENEXR=1 \
-    OPENCV_IO_ENABLE_JPEG=1 \
-    OPENCV_IO_ENABLE_PNG=1 \
-    OPENCV_IO_ENABLE_TIFF=1 \
-    OPENCV_IO_ENABLE_WEBP=1
+    PATH="/home/appuser/.local/bin:$PATH"
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update && apt-get install -y \
     curl \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
-    libjpeg-dev \
-    libpng-dev \
-    libtiff-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
