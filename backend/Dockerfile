@@ -15,6 +15,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libxrender-dev \
     libgomp1 \
+    libgl1-mesa-glx \
+    libglib2.0-dev \
+    libgtk-3-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libv4l-dev \
+    libxvidcore-dev \
+    libx264-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libatlas-base-dev \
+    gfortran \
     && rm -rf /var/lib/apt/lists/*
 
 # Install build tools first
@@ -37,7 +51,13 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
-    PATH="/home/appuser/.local/bin:$PATH"
+    PATH="/home/appuser/.local/bin:$PATH" \
+    QT_QPA_PLATFORM=offscreen \
+    OPENCV_IO_ENABLE_OPENEXR=1 \
+    OPENCV_IO_ENABLE_JPEG=1 \
+    OPENCV_IO_ENABLE_PNG=1 \
+    OPENCV_IO_ENABLE_TIFF=1 \
+    OPENCV_IO_ENABLE_WEBP=1
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -47,6 +67,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxext6 \
     libxrender-dev \
     libgomp1 \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libgtk-3-0 \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    libv4l-dev \
+    libxvidcore-dev \
+    libx264-dev \
+    libjpeg-dev \
+    libpng-dev \
+    libtiff-dev \
+    libatlas-base-dev \
+    gfortran \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security

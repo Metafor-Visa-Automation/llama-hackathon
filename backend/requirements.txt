@@ -29,7 +29,7 @@ cryptography>=41.0.0
 # OCR and document processing
 pytesseract==0.3.10
 Pillow>=10.1.0
-opencv-python>=4.8.1.78
+opencv-python-headless>=4.8.1.78
 numpy>=1.26.0
 pandas>=2.1.4
 
