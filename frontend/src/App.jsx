@@ -4,6 +4,7 @@ import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import FillForm from './pages/FillForm';
+import Dashboard from './pages/Dashboard';
 
 /**
  * AnimatedRoutes Component
@@ -19,6 +20,7 @@ function AnimatedRoutes() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/fill-form" element={<FillForm />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </AnimatePresence>
   );

@@ -2,7 +2,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { logout } from '../store/authSlice';
-import { Person, Login, Logout, PersonAdd } from '@mui/icons-material';
+import { Person, Login, Logout, PersonAdd, Assignment } from '@mui/icons-material';
 
 /**
  * UserGreeting Component - Modern Glassmorphism Style
@@ -51,6 +51,10 @@ const UserGreeting = () => {
     dispatch(logout());
     // Refresh the page after logout
     window.location.reload();
+  };
+
+  const handleDashboardClick = () => {
+    navigate('/dashboard');
   };
 
   if (!isAuthenticated) {
@@ -246,6 +250,39 @@ const UserGreeting = () => {
             {user?.name || 'Kullanıcı'}
           </span>
         </div>
+
+        {/* Başvurularım Button */}
+        <button
+          onClick={handleDashboardClick}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            color: '#059669',
+            padding: '0.5rem 0.875rem',
+            borderRadius: '50px',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            fontFamily: '"Playfair Display", serif',
+            cursor: 'pointer',
+            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            marginLeft: '0.25rem',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
+            e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+            e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          <Assignment sx={{ fontSize: 14 }} />
+        </button>
 
         {/* Logout Button with modern hover effect */}
         <button
