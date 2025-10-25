@@ -5,11 +5,13 @@ import PublicIcon from '@mui/icons-material/Public';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
+import AirplanemodeActiveIcon from '@mui/icons-material/AirplanemodeActive';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import vibeBg from '../assets/vibe-bg1.webp';
 
 const StatsSection = () => {
   const [isVisible, setIsVisible] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const sectionRef = useRef(null);
 
   useEffect(() => {
@@ -35,6 +37,34 @@ const StatsSection = () => {
       if (currentSection) {
         observer.unobserve(currentSection);
       }
+    };
+  }, []);
+
+  // Scroll-based animation for planes
+  useEffect(() => {
+    const handleScroll = () => {
+      if (sectionRef.current) {
+        const rect = sectionRef.current.getBoundingClientRect();
+        const windowHeight = window.innerHeight;
+        
+        // Calculate how much of the section is visible
+        const sectionTop = rect.top;
+        const sectionHeight = rect.height;
+        
+        // Progress from 0 to 1 as section scrolls through viewport
+        const progress = Math.max(0, Math.min(1, 
+          (windowHeight - sectionTop) / (windowHeight + sectionHeight)
+        ));
+        
+        setScrollProgress(progress);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    handleScroll(); // Initial call
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
@@ -95,6 +125,243 @@ const StatsSection = () => {
           zIndex: 0,
         }}
       />
+
+      {/* Flying Planes Layer */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          zIndex: 1,
+          overflow: 'hidden',
+          pointerEvents: 'none',
+        }}
+      >
+        {/* Left Fade Gradient */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: '250px',
+            background: 'linear-gradient(to right, rgba(255, 255, 255, 0.85) 0%, transparent 100%)',
+            zIndex: 3,
+          }}
+        />
+
+        {/* Right Fade Gradient */}
+        <div
+          style={{
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: '250px',
+            background: 'linear-gradient(to left, rgba(255, 255, 255, 0.85) 0%, transparent 100%)',
+            zIndex: 3,
+          }}
+        />
+
+        {/* Plane 1 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '8%',
+            left: '-120px',
+            transform: `translateX(${scrollProgress * 125}vw) rotate(90deg)`,
+            transition: 'transform 0.1s linear',
+            opacity: 0.5,
+          }}
+        >
+          <AirplanemodeActiveIcon
+            sx={{
+              fontSize: 42,
+              color: '#10B981',
+              filter: 'drop-shadow(0 4px 16px rgba(16, 185, 129, 0.4))',
+            }}
+          />
+        </div>
+
+        {/* Plane 2 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '18%',
+            left: '-150px',
+            transform: `translateX(${scrollProgress * 115}vw) rotate(90deg)`,
+            transition: 'transform 0.1s linear',
+            opacity: 0.55,
+          }}
+        >
+          <AirplanemodeActiveIcon
+            sx={{
+              fontSize: 48,
+              color: '#059669',
+              filter: 'drop-shadow(0 4px 16px rgba(5, 150, 105, 0.4))',
+            }}
+          />
+        </div>
+
+        {/* Plane 3 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '32%',
+            left: '-100px',
+            transform: `translateX(${scrollProgress * 135}vw) rotate(90deg)`,
+            transition: 'transform 0.1s linear',
+            opacity: 0.45,
+          }}
+        >
+          <AirplanemodeActiveIcon
+            sx={{
+              fontSize: 38,
+              color: '#10B981',
+              filter: 'drop-shadow(0 4px 16px rgba(16, 185, 129, 0.4))',
+            }}
+          />
+        </div>
+
+        {/* Plane 4 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '45%',
+            left: '-130px',
+            transform: `translateX(${scrollProgress * 120}vw) rotate(90deg)`,
+            transition: 'transform 0.1s linear',
+            opacity: 0.6,
+          }}
+        >
+          <AirplanemodeActiveIcon
+            sx={{
+              fontSize: 52,
+              color: '#047857',
+              filter: 'drop-shadow(0 4px 16px rgba(4, 120, 87, 0.4))',
+            }}
+          />
+        </div>
+
+        {/* Plane 5 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '55%',
+            left: '-90px',
+            transform: `translateX(${scrollProgress * 145}vw) rotate(90deg)`,
+            transition: 'transform 0.1s linear',
+            opacity: 0.5,
+          }}
+        >
+          <AirplanemodeActiveIcon
+            sx={{
+              fontSize: 44,
+              color: '#064E3B',
+              filter: 'drop-shadow(0 4px 16px rgba(6, 78, 59, 0.4))',
+            }}
+          />
+        </div>
+
+        {/* Plane 6 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '65%',
+            left: '-110px',
+            transform: `translateX(${scrollProgress * 130}vw) rotate(90deg)`,
+            transition: 'transform 0.1s linear',
+            opacity: 0.55,
+          }}
+        >
+          <AirplanemodeActiveIcon
+            sx={{
+              fontSize: 46,
+              color: '#10B981',
+              filter: 'drop-shadow(0 4px 16px rgba(16, 185, 129, 0.4))',
+            }}
+          />
+        </div>
+
+        {/* Plane 7 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '78%',
+            left: '-140px',
+            transform: `translateX(${scrollProgress * 118}vw) rotate(90deg)`,
+            transition: 'transform 0.1s linear',
+            opacity: 0.48,
+          }}
+        >
+          <AirplanemodeActiveIcon
+            sx={{
+              fontSize: 40,
+              color: '#059669',
+              filter: 'drop-shadow(0 4px 16px rgba(5, 150, 105, 0.4))',
+            }}
+          />
+        </div>
+
+        {/* Plane 8 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '88%',
+            left: '-95px',
+            transform: `translateX(${scrollProgress * 140}vw) rotate(90deg)`,
+            transition: 'transform 0.1s linear',
+            opacity: 0.52,
+          }}
+        >
+          <AirplanemodeActiveIcon
+            sx={{
+              fontSize: 50,
+              color: '#047857',
+              filter: 'drop-shadow(0 4px 16px rgba(4, 120, 87, 0.4))',
+            }}
+          />
+        </div>
+
+        {/* Plane 9 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '24%',
+            left: '-170px',
+            transform: `translateX(${scrollProgress * 108}vw) rotate(90deg)`,
+            transition: 'transform 0.1s linear',
+            opacity: 0.42,
+          }}
+        >
+          <AirplanemodeActiveIcon
+            sx={{
+              fontSize: 36,
+              color: '#10B981',
+              filter: 'drop-shadow(0 4px 16px rgba(16, 185, 129, 0.4))',
+            }}
+          />
+        </div>
+
+        {/* Plane 10 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '72%',
+            left: '-125px',
+            transform: `translateX(${scrollProgress * 128}vw) rotate(90deg)`,
+            transition: 'transform 0.1s linear',
+            opacity: 0.58,
+          }}
+        >
+          <AirplanemodeActiveIcon
+            sx={{
+              fontSize: 45,
+              color: '#064E3B',
+              filter: 'drop-shadow(0 4px 16px rgba(6, 78, 59, 0.4))',
+            }}
+          />
+        </div>
+      </div>
 
       <div className="container mx-auto px-8 md:px-12 relative z-10">
         {/* Title Section */}

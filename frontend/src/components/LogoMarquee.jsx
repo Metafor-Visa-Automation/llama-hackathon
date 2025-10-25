@@ -4,7 +4,7 @@ import startupHouseLogo from '../assets/logos/ytustartuphouse_logo.jpeg';
 import ytuLogo from '../assets/logos/Yıldız_Technical_University_logo_variant.svg.png';
 import ollamaLogo from '../assets/logos/ollama.png';
 
-const LogoMarquee = () => {
+const LogoMarquee = ({ direction = 'left' }) => {
   // Logo listesi
   const brands = [
     { name: 'Meta', logo: metaLogo },
@@ -74,7 +74,7 @@ const LogoMarquee = () => {
             style={{
               display: 'flex',
               gap: '3rem',
-              animation: 'marquee 30s linear infinite',
+              animation: direction === 'left' ? 'marquee 30s linear infinite' : 'marquee-reverse 30s linear infinite',
               willChange: 'transform',
               pointerEvents: 'none',
             }}
@@ -121,6 +121,15 @@ const LogoMarquee = () => {
             }
             100% {
               transform: translateX(-50%);
+            }
+          }
+
+          @keyframes marquee-reverse {
+            0% {
+              transform: translateX(-50%);
+            }
+            100% {
+              transform: translateX(0);
             }
           }
         `}

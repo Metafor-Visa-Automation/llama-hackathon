@@ -195,11 +195,14 @@ const Landing = () => {
       {/* 3-Step Process Section */}
       <ProcessSteps />
 
+      {/* Logo Marquee - Tech Stack */}
+      <LogoMarquee  direction="left"/>
+
       {/* MVP Badge Section */}
       <MVPBadge />
 
       {/* Logo Marquee - Tech Stack */}
-      <LogoMarquee />
+      <LogoMarquee  direction="right"/>
 
       <footer style={{ 
         backgroundImage: `url(${vibeBg})`,
@@ -209,7 +212,7 @@ const Landing = () => {
         textAlign: 'center', 
         borderTop: '1px solid #EEEEEE' 
       }}>
-        <p style={{ color: '#666666', fontSize: '0.875rem', margin: 0 }}>© Metafor. Llama Hackathon 2025</p>
+        <p style={{ color: '#666666', fontSize: '1.125rem', margin: 0, fontWeight: '500' }}>© Metafor. Llama Hackathon 2025</p>
       </footer>
       </div>
     </PageTransition>
