@@ -179,7 +179,13 @@ const FillForm = () => {
       isComplete = Array.isArray(docs) && docs.length > 0;
     } else {
       const answer = answers[questionId];
-      isComplete = answer && answer.trim() !== '';
+      // Handle boolean values (for checkboxes)
+      if (typeof answer === 'boolean') {
+        isComplete = answer;
+      } else {
+        // Handle string values (for text inputs)
+        isComplete = answer && typeof answer === 'string' && answer.trim() !== '';
+      }
     }
 
     if (isComplete) {
@@ -228,7 +234,12 @@ const FillForm = () => {
     
     // For text/textarea questions, check if answer is provided
     const currentAnswer = answers[questionId];
-    return currentAnswer && currentAnswer.trim() !== '';
+    // Handle boolean values (for checkboxes)
+    if (typeof currentAnswer === 'boolean') {
+      return currentAnswer;
+    }
+    // Handle string values (for text inputs)
+    return currentAnswer && typeof currentAnswer === 'string' && currentAnswer.trim() !== '';
   };
 
   const canGoNext = isCurrentQuestionAnswered();
