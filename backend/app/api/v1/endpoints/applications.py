@@ -26,6 +26,9 @@ async def create_application(
             "user_id": current_user.uid,
             "application_name": application_data.application_name,
             "country_code": application_data.country_code,
+            "travel_purpose": application_data.travel_purpose,
+            "application_start_date": application_data.application_start_date,
+            "application_end_date": application_data.application_end_date,
             "status": "DRAFT",
             "application_steps": application_data.application_steps,
             "created_at": now,
@@ -39,6 +42,9 @@ async def create_application(
             user_id=current_user.uid,
             application_name=application_data.application_name,
             country_code=application_data.country_code,
+            travel_purpose=application_data.travel_purpose,
+            application_start_date=application_data.application_start_date,
+            application_end_date=application_data.application_end_date,
             status="DRAFT",
             application_steps=application_data.application_steps,
             created_at=now,
@@ -65,7 +71,19 @@ async def get_user_applications(current_user: UserInDB = Depends(get_current_use
         applications = []
         for app_doc in applications_query:
             app_data = app_doc.to_dict()
-            applications.append(ApplicationResponse(**app_data))
+            applications.append(ApplicationResponse(
+                app_id=app_data['app_id'],
+                user_id=app_data['user_id'],
+                application_name=app_data['application_name'],
+                country_code=app_data['country_code'],
+                travel_purpose=app_data.get('travel_purpose', ''),
+                application_start_date=app_data.get('application_start_date'),
+                application_end_date=app_data.get('application_end_date'),
+                status=app_data['status'],
+                application_steps=app_data.get('application_steps', []),
+                created_at=app_data['created_at'],
+                updated_at=app_data['updated_at']
+            ))
         
         return applications
         
@@ -102,7 +120,19 @@ async def get_application(
                 detail="Access denied"
             )
         
-        return ApplicationResponse(**app_data)
+        return ApplicationResponse(
+            app_id=app_data['app_id'],
+            user_id=app_data['user_id'],
+            application_name=app_data['application_name'],
+            country_code=app_data['country_code'],
+            travel_purpose=app_data.get('travel_purpose', ''),
+            application_start_date=app_data.get('application_start_date'),
+            application_end_date=app_data.get('application_end_date'),
+            status=app_data['status'],
+            application_steps=app_data.get('application_steps', []),
+            created_at=app_data['created_at'],
+            updated_at=app_data['updated_at']
+        )
         
     except HTTPException:
         raise
@@ -147,6 +177,12 @@ async def update_application(
             update_data["application_name"] = application_update.application_name
         if application_update.country_code is not None:
             update_data["country_code"] = application_update.country_code
+        if application_update.travel_purpose is not None:
+            update_data["travel_purpose"] = application_update.travel_purpose
+        if application_update.application_start_date is not None:
+            update_data["application_start_date"] = application_update.application_start_date
+        if application_update.application_end_date is not None:
+            update_data["application_end_date"] = application_update.application_end_date
         if application_update.status is not None:
             update_data["status"] = application_update.status
         if application_update.application_steps is not None:
@@ -159,7 +195,19 @@ async def update_application(
         updated_doc = db.collection('applications').document(app_id).get()
         updated_data = updated_doc.to_dict()
         
-        return ApplicationResponse(**updated_data)
+        return ApplicationResponse(
+            app_id=updated_data['app_id'],
+            user_id=updated_data['user_id'],
+            application_name=updated_data['application_name'],
+            country_code=updated_data['country_code'],
+            travel_purpose=updated_data.get('travel_purpose', ''),
+            application_start_date=updated_data.get('application_start_date'),
+            application_end_date=updated_data.get('application_end_date'),
+            status=updated_data['status'],
+            application_steps=updated_data.get('application_steps', []),
+            created_at=updated_data['created_at'],
+            updated_at=updated_data['updated_at']
+        )
         
     except HTTPException:
         raise

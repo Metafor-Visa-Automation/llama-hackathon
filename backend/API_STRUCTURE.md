@@ -13,7 +13,13 @@ This is a fresh, clean API structure with only essential endpoints.
   "name": "John",
   "surname": "Doe",
   "profile_type": "STUDENT",
-  "passport_type": "BORDO"
+  "passport_type": "BORDO",
+  "gender": "MALE",
+  "phone": "+1234567890",
+  "date_of_birth": "1990-01-01",
+  "nationality": "TR",
+  "address": "123 Main St, Istanbul, Turkey",
+  "has_schengen_before": false
 }
 ```
 
@@ -26,6 +32,12 @@ This is a fresh, clean API structure with only essential endpoints.
   "surname": "Doe",
   "profile_type": "STUDENT",
   "passport_type": "BORDO",
+  "gender": "MALE",
+  "phone": "+1234567890",
+  "date_of_birth": "1990-01-01",
+  "nationality": "TR",
+  "address": "123 Main St, Istanbul, Turkey",
+  "has_schengen_before": false,
   "token": null,
   "last_login_at": null,
   "created_at": "2024-01-01T00:00:00",
@@ -83,6 +95,28 @@ This is a fresh, clean API structure with only essential endpoints.
 **Headers:** `Authorization: Bearer <token>`
 
 ## Applications (`/api/v1/applications/`)
+
+### POST `/api/v1/applications/applications` - Create Application
+**Request:**
+```json
+{
+  "application_name": "Schengen Tourism Visa 2025",
+  "country_code": "DE",
+  "travel_purpose": "Tourism",
+  "application_start_date": "2025-06-01T00:00:00",
+  "application_end_date": "2025-06-15T00:00:00",
+  "application_steps": []
+}
+```
+
+### PUT `/api/v1/applications/applications/{app_id}` - Update Application
+**Request:**
+```json
+{
+  "travel_purpose": "Business",
+  "status": "SUBMITTED"
+}
+```
 
 ### CRUD Operations
 - POST `/api/v1/applications/applications` - Create application
