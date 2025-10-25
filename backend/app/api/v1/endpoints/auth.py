@@ -99,8 +99,15 @@ async def login_user(login_data: UserLogin):
                 detail="Invalid email or password"
             )
         
-        # Step 2: Generate custom token (this is a simplified approach)
-        # In a real app, you'd use Firebase Auth SDK on the client side for password verification
+        # Note: This endpoint doesn't verify the password because Firebase Admin SDK
+        # doesn't have a way to verify passwords server-side for security reasons.
+        # In production, you should:
+        # 1. Use Firebase Auth SDK on the client to sign in and get an ID token
+        # 2. Send that ID token to this endpoint
+        # 3. Verify the ID token using auth.verify_id_token()
+        # For now, we'll generate a custom token that the client can exchange for an ID token
+        
+        # Step 2: Generate custom token
         custom_token = auth.create_custom_token(firebase_user.uid)
         
         # Step 3: Get user data from Firestore

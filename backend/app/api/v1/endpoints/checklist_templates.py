@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/checklist-templates", response_model=List[ChecklistTemplateResponse])
+@router.get("/", response_model=List[ChecklistTemplateResponse])
 async def get_checklist_templates(
     current_user: UserInDB = Depends(get_current_user),
     category: Optional[str] = Query(None, description="Filter by template category"),
@@ -67,7 +67,7 @@ async def get_checklist_templates(
         )
 
 
-@router.get("/checklist-templates/{template_id}", response_model=ChecklistTemplateResponse)
+@router.get("/{template_id}", response_model=ChecklistTemplateResponse)
 async def get_checklist_template(
     template_id: str,
     current_user: UserInDB = Depends(get_current_user)
@@ -100,7 +100,7 @@ async def get_checklist_template(
         )
 
 
-@router.get("/checklist-templates/categories", response_model=List[str])
+@router.get("/categories", response_model=List[str])
 async def get_template_categories(
     current_user: UserInDB = Depends(get_current_user)
 ):
@@ -128,7 +128,7 @@ async def get_template_categories(
         )
 
 
-@router.get("/checklist-templates/by-category/{category}", response_model=List[ChecklistTemplateResponse])
+@router.get("/by-category/{category}", response_model=List[ChecklistTemplateResponse])
 async def get_templates_by_category(
     category: str,
     current_user: UserInDB = Depends(get_current_user),
@@ -166,7 +166,7 @@ async def get_templates_by_category(
         )
 
 
-@router.get("/checklist-templates/stats", response_model=dict)
+@router.get("/stats", response_model=dict)
 async def get_template_stats(
     current_user: UserInDB = Depends(get_current_user)
 ):
