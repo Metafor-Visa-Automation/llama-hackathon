@@ -1,8 +1,27 @@
+# Core FastAPI dependencies
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
-firebase-admin==6.2.0
-pydantic==2.5.0
+pydantic[email]==2.5.0
 pydantic-settings==2.1.0
-python-multipart==0.0.6
-python-dotenv==1.0.0
+
+# Firebase and authentication
+firebase-admin==6.2.0
+PyJWT==2.8.0
+
+# HTTP and networking
 httpx==0.25.2
+python-multipart==0.0.6
+
+# Environment and configuration
+python-dotenv==1.0.0
+
+# Production dependencies
+gunicorn==21.2.0
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+
+# Monitoring and logging
+structlog==23.2.0
+
+# Security
+cryptography>=41.0.0

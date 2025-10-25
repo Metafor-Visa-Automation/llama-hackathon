@@ -2,7 +2,8 @@ from fastapi import APIRouter, HTTPException, status, Depends
 from app.core.firebase import db
 from app.models.schemas import (
     ApplicationCreate, ApplicationResponse, ApplicationInDB,
-    TaskResponse, TaskInDB, ApplicationStatus, TaskStatus
+    TaskResponse, TaskInDB, ApplicationStatus, TaskStatus,
+    ApplicationUpdate, ApplicationSubmit
 )
 from app.services.security import get_current_user, UserInDB
 from datetime import datetime
@@ -211,4 +212,148 @@ async def get_user_applications(current_user: UserInDB = Depends(get_current_use
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch applications: {str(e)}"
+        )
+
+
+@router.put("/applications/{app_id}", response_model=ApplicationResponse)
+async def update_application(
+    app_id: str,
+    application_update: ApplicationUpdate,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Update an existing visa application
+    """
+    try:
+        # Verify application exists and belongs to current user
+        app_ref = db.collection('APPLICATION').document(app_id)
+        app_doc = app_ref.get()
+        
+        if not app_doc.exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Application not found"
+            )
+        
+        app_data = app_doc.to_dict()
+        if app_data['user_id'] != current_user.uid:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Application does not belong to current user"
+            )
+        
+        # Prepare update data
+        update_data = {"updated_at": datetime.utcnow()}
+        if application_update.status is not None:
+            update_data["status"] = application_update.status.value
+        if application_update.ai_filled_form_data is not None:
+            update_data["ai_filled_form_data"] = application_update.ai_filled_form_data
+        
+        # Update application
+        app_ref.update(update_data)
+        
+        # Fetch updated data
+        updated_doc = app_ref.get()
+        updated_data = updated_doc.to_dict()
+        
+        return ApplicationResponse(
+            app_id=updated_data['app_id'],
+            user_id=updated_data['user_id'],
+            requirement_id=updated_data['requirement_id'],
+            status=updated_data['status'],
+            ai_filled_form_data=updated_data['ai_filled_form_data'],
+            created_at=updated_data['created_at'],
+            updated_at=updated_data['updated_at']
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update application: {str(e)}"
+        )
+
+
+@router.post("/applications/{app_id}/submit", response_model=ApplicationResponse)
+async def submit_application(
+    app_id: str,
+    submit_data: ApplicationSubmit,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Submit a visa application for review
+    """
+    try:
+        # Verify application exists and belongs to current user
+        app_ref = db.collection('APPLICATION').document(app_id)
+        app_doc = app_ref.get()
+        
+        if not app_doc.exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Application not found"
+            )
+        
+        app_data = app_doc.to_dict()
+        if app_data['user_id'] != current_user.uid:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Application does not belong to current user"
+            )
+        
+        # Check if application is in DRAFT status
+        if app_data['status'] != ApplicationStatus.DRAFT.value:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Application must be in DRAFT status to submit. Current status: {app_data['status']}"
+            )
+        
+        # Check if all required tasks are completed
+        tasks_query = db.collection('TASK').where(
+            'application_id', '==', app_id
+        ).where('user_id', '==', current_user.uid).stream()
+        
+        incomplete_tasks = []
+        for task_doc in tasks_query:
+            task_data = task_doc.to_dict()
+            if task_data['status'] != TaskStatus.DONE.value:
+                incomplete_tasks.append(task_data['title'])
+        
+        if incomplete_tasks:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Cannot submit application. Incomplete tasks: {', '.join(incomplete_tasks)}"
+            )
+        
+        # Update application status to SUBMITTED
+        update_data = {
+            "status": ApplicationStatus.SUBMITTED.value,
+            "updated_at": datetime.utcnow(),
+            "submitted_at": datetime.utcnow(),
+            "submit_notes": submit_data.submit_notes
+        }
+        
+        app_ref.update(update_data)
+        
+        # Fetch updated data
+        updated_doc = app_ref.get()
+        updated_data = updated_doc.to_dict()
+        
+        return ApplicationResponse(
+            app_id=updated_data['app_id'],
+            user_id=updated_data['user_id'],
+            requirement_id=updated_data['requirement_id'],
+            status=updated_data['status'],
+            ai_filled_form_data=updated_data['ai_filled_form_data'],
+            created_at=updated_data['created_at'],
+            updated_at=updated_data['updated_at']
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to submit application: {str(e)}"
         )
