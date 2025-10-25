@@ -1,171 +1,248 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
 
-class UserRole(str, Enum):
-    INDIVIDUAL = "individual"
-    FAMILY_HEAD = "family_head"
-    COMPANY_ADMIN = "company_admin"
-    COMPANY_EMPLOYEE = "company_employee"
 
-class VisaType(str, Enum):
-    TOURIST = "tourist"
-    BUSINESS = "business"
-    STUDENT = "student"
-    WORK = "work"
-    FAMILY = "family"
-    TRANSIT = "transit"
+# Enums
+class ProfileType(str, Enum):
+    STUDENT = "STUDENT"
+    WORKER = "WORKER"
+    TOURIST = "TOURIST"
+    BUSINESS = "BUSINESS"
+
+
+class PassportType(str, Enum):
+    BORDO = "BORDO"  # Red/Purple passport
+    YESIL = "YESIL"  # Green passport
+
+
+class VisaRequirementType(str, Enum):
+    VISA_REQUIRED = "VISA_REQUIRED"
+    VISA_NOT_REQUIRED = "VISA_NOT_REQUIRED"
+    EVISA = "EVISA"
+    VISA_ON_ARRIVAL = "VISA_ON_ARRIVAL"
+
+
+class TaskStatus(str, Enum):
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    DONE = "DONE"
+    REJECTED = "REJECTED"
+
+
+class DocumentStatus(str, Enum):
+    PENDING_VALIDATION = "PENDING_VALIDATION"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+
 
 class ApplicationStatus(str, Enum):
-    DRAFT = "draft"
-    SUBMITTED = "submitted"
-    UNDER_REVIEW = "under_review"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    REQUIRES_DOCUMENTS = "requires_documents"
+    DRAFT = "DRAFT"
+    SUBMITTED = "SUBMITTED"
+    UNDER_REVIEW = "UNDER_REVIEW"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
 
-class DocumentType(str, Enum):
-    PASSPORT = "passport"
-    PHOTO = "photo"
-    BANK_STATEMENT = "bank_statement"
-    EMPLOYMENT_LETTER = "employment_letter"
-    INVITATION_LETTER = "invitation_letter"
-    TRAVEL_INSURANCE = "travel_insurance"
-    FLIGHT_RESERVATION = "flight_reservation"
-    HOTEL_RESERVATION = "hotel_reservation"
-    OTHER = "other"
 
-# User Models
-class UserBase(BaseModel):
+# Request Models
+class UserCreate(BaseModel):
     email: EmailStr
-    first_name: str
-    last_name: str
+    password: str = Field(..., min_length=6)
+    name: str = Field(..., min_length=2, max_length=100)
+    surname: str = Field(..., min_length=2, max_length=100)
+    profile_type: ProfileType
+    passport_type: PassportType
     phone: Optional[str] = None
-    role: UserRole = UserRole.INDIVIDUAL
+    date_of_birth: Optional[str] = None
+    nationality: Optional[str] = None
 
-class UserCreate(UserBase):
-    password: str
 
 class UserUpdate(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
+    name: Optional[str] = Field(None, min_length=2, max_length=100)
+    surname: Optional[str] = Field(None, min_length=2, max_length=100)
+    profile_type: Optional[ProfileType] = None
+    passport_type: Optional[PassportType] = None
     phone: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    nationality: Optional[str] = None
 
-class User(UserBase):
-    id: str
+
+class ApplicationCreate(BaseModel):
+    requirement_id: str = Field(..., description="Visa requirement ID (e.g., 'tr_de_all')")
+    ai_filled_form_data: Dict[str, Any] = Field(..., description="AI-generated form data")
+
+
+class ApplicationUpdate(BaseModel):
+    status: Optional[ApplicationStatus] = None
+    ai_filled_form_data: Optional[Dict[str, Any]] = None
+
+
+class TaskUpdate(BaseModel):
+    status: Optional[TaskStatus] = None
+    notes: Optional[str] = None
+
+
+# Response Models
+class UserResponse(BaseModel):
+    uid: str
+    email: str
+    name: str
+    surname: str
+    profile_type: ProfileType
+    passport_type: PassportType
+    phone: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    nationality: Optional[str] = None
     created_at: datetime
     updated_at: datetime
-    is_active: bool = True
-    
+
     class Config:
         from_attributes = True
 
-# Visa Application Models
-class VisaApplicationBase(BaseModel):
-    visa_type: VisaType
-    destination_country: str
-    purpose_of_travel: str
-    intended_arrival_date: datetime
-    intended_departure_date: datetime
-    passport_number: str
-    passport_expiry_date: datetime
 
-class VisaApplicationCreate(VisaApplicationBase):
-    pass
-
-class VisaApplicationUpdate(BaseModel):
-    visa_type: Optional[VisaType] = None
-    destination_country: Optional[str] = None
-    purpose_of_travel: Optional[str] = None
-    intended_arrival_date: Optional[datetime] = None
-    intended_departure_date: Optional[datetime] = None
-    passport_number: Optional[str] = None
-    passport_expiry_date: Optional[datetime] = None
-
-class VisaApplication(VisaApplicationBase):
-    id: str
+class ApplicationResponse(BaseModel):
+    app_id: str
     user_id: str
-    status: ApplicationStatus = ApplicationStatus.DRAFT
+    requirement_id: str
+    status: ApplicationStatus
+    ai_filled_form_data: Dict[str, Any]
     created_at: datetime
     updated_at: datetime
-    form_data: Optional[Dict[str, Any]] = None
-    document_checklist: Optional[List[str]] = None
-    
+
     class Config:
         from_attributes = True
 
-# Document Models
-class DocumentBase(BaseModel):
-    document_type: DocumentType
-    filename: str
-    file_path: str
-    file_size: int
-    mime_type: str
 
-class DocumentCreate(DocumentBase):
-    visa_application_id: str
-
-class Document(DocumentBase):
-    id: str
+class TaskResponse(BaseModel):
+    task_id: str
+    application_id: str
     user_id: str
-    visa_application_id: str
-    uploaded_at: datetime
-    ocr_data: Optional[Dict[str, Any]] = None
-    validation_status: Optional[str] = None
-    validation_errors: Optional[List[str]] = None
-    
-    class Config:
-        from_attributes = True
-
-# Social Media Audit Models
-class SocialMediaAuditBase(BaseModel):
-    platform: str
-    username: str
-    audit_status: str = "pending"
-
-class SocialMediaAuditCreate(SocialMediaAuditBase):
-    visa_application_id: str
-
-class SocialMediaAudit(SocialMediaAuditBase):
-    id: str
-    user_id: str
-    visa_application_id: str
-    created_at: datetime
-    completed_at: Optional[datetime] = None
-    risk_score: Optional[float] = None
-    flagged_content: Optional[List[Dict[str, Any]]] = None
-    recommendations: Optional[List[str]] = None
-    
-    class Config:
-        from_attributes = True
-
-# AI Form Filling Models
-class FormField(BaseModel):
-    field_name: str
-    field_value: str
-    field_type: str
-    is_required: bool = True
-
-class FormFillingRequest(BaseModel):
-    visa_application_id: str
-    form_type: str  # e.g., "DS-160", "Schengen"
-    user_responses: Dict[str, str]
-
-class FormFillingResponse(BaseModel):
-    filled_form: Dict[str, str]
-    confidence_score: float
-    warnings: Optional[List[str]] = None
-
-# Document Checklist Models
-class DocumentRequirement(BaseModel):
-    document_type: DocumentType
-    is_required: bool
+    template_id: str
+    title: str
     description: str
-    country_specific_notes: Optional[str] = None
+    status: TaskStatus
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
 
-class DocumentChecklistResponse(BaseModel):
-    visa_type: VisaType
-    destination_country: str
-    requirements: List[DocumentRequirement]
-    estimated_processing_time: str
+    class Config:
+        from_attributes = True
+
+
+class DocumentResponse(BaseModel):
+    doc_id: str
+    task_id: str
+    user_id: str
+    storage_path: str
+    status: DocumentStatus
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class VisaRequirementResponse(BaseModel):
+    req_id: str
+    origin_country: str
+    destination_code: str
+    applicable_passport_types: List[str]
+    visa_requirement_type: VisaRequirementType
+    visa_name: str
+    visa_fee: Optional[str] = None
+    passport_validity: Optional[str] = None
+    application_link: Optional[str] = None
+    embassy_url: Optional[str] = None
+    letter_template: List[str] = []
+    created_at: datetime
+    updated_at: datetime
+    last_verified_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+# Database Models
+class UserInDB(BaseModel):
+    uid: str
+    email: str
+    name: str
+    surname: str
+    profile_type: ProfileType
+    passport_type: PassportType
+    phone: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    nationality: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class ApplicationInDB(BaseModel):
+    app_id: str
+    user_id: str
+    requirement_id: str
+    status: ApplicationStatus
+    ai_filled_form_data: Dict[str, Any]
+    created_at: datetime
+    updated_at: datetime
+
+
+class TaskInDB(BaseModel):
+    task_id: str
+    application_id: str
+    user_id: str
+    template_id: str
+    title: str
+    description: str
+    status: TaskStatus
+    notes: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class DocumentInDB(BaseModel):
+    doc_id: str
+    task_id: str
+    user_id: str
+    storage_path: str
+    status: DocumentStatus
+    created_at: datetime
+    updated_at: datetime
+
+
+class VisaRequirementInDB(BaseModel):
+    req_id: str
+    origin_country: str
+    destination_code: str
+    applicable_passport_types: List[str]
+    visa_requirement_type: VisaRequirementType
+    visa_name: str
+    visa_fee: Optional[str] = None
+    passport_validity: Optional[str] = None
+    application_link: Optional[str] = None
+    embassy_url: Optional[str] = None
+    letter_template: List[str] = []
+    created_at: datetime
+    updated_at: datetime
+    last_verified_at: datetime
+
+
+class ChecklistTemplateInDB(BaseModel):
+    template_id: str
+    requirement_id: str
+    title: str
+    description: str
+    required_for: List[str]  # ["STUDENT", "WORKER", "ALL", etc.]
+    created_at: datetime
+    updated_at: datetime
+
+
+# Error Models
+class ErrorResponse(BaseModel):
+    detail: str
+    error_code: Optional[str] = None
+
+
+class ValidationErrorResponse(BaseModel):
+    detail: List[Dict[str, Any]]

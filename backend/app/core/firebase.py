@@ -1,51 +1,48 @@
 import firebase_admin
-from firebase_admin import credentials, firestore, auth as firebase_auth
+from firebase_admin import credentials, firestore, storage
+from app.core.config import settings
 import os
 
-# Global variables for Firebase services
-db = None
-auth = None
 
-def initialize_firebase():
+def init_firebase():
     """Initialize Firebase Admin SDK"""
-    global db, auth
-    
     try:
         # Check if Firebase is already initialized
         if firebase_admin._apps:
-            print("Firebase already initialized")
-            db = firestore.client()
-            auth = firebase_auth
-            return
+            return firebase_admin.get_app()
         
-        # Path to Firebase service account JSON file
-        firebase_credentials_path = os.path.join(
+        # Get the path to the service account key
+        service_account_path = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
-            "visa-a05d3-firebase-adminsdk-fbsvc-f627f00882.json"
+            settings.firebase_service_account_key_path
         )
         
-        # Initialize Firebase Admin SDK with JSON file
-        cred = credentials.Certificate(firebase_credentials_path)
-        firebase_admin.initialize_app(cred)
+        # Initialize Firebase Admin SDK
+        cred = credentials.Certificate(service_account_path)
+        app = firebase_admin.initialize_app(cred, {
+            'storageBucket': settings.firebase_storage_bucket,
+            'projectId': settings.firebase_project_id
+        })
         
-        # Initialize Firestore and Auth
-        db = firestore.client()
-        auth = firebase_auth
-        
-        print("Firebase initialized successfully")
+        print(f"✅ Firebase initialized successfully for project: {settings.firebase_project_id}")
+        return app
         
     except Exception as e:
-        print(f"Error initializing Firebase: {e}")
+        print(f"❌ Error initializing Firebase: {str(e)}")
         raise e
 
-def get_firestore_db():
-    """Get Firestore database instance"""
-    if db is None:
-        raise Exception("Firebase not initialized")
-    return db
 
-def get_firebase_auth():
-    """Get Firebase Auth instance"""
-    if auth is None:
-        raise Exception("Firebase not initialized")
-    return auth
+def get_firestore_client():
+    """Get Firestore database client"""
+    return firestore.client()
+
+
+def get_storage_client():
+    """Get Firebase Storage client"""
+    return storage.bucket()
+
+
+# Initialize Firebase when this module is imported
+init_firebase()
+db = get_firestore_client()
+bucket = get_storage_client()
