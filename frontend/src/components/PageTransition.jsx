@@ -11,7 +11,7 @@ const PageTransition = ({ children }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{
-        duration: 0.5,
+        duration: 0.7,
         ease: [0.22, 1, 0.36, 1], // Custom cubic-bezier for premium feel
       }}
       style={{

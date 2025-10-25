@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import InteractiveWorldMap from '../components/InteractiveWorldMap';
 import ProcessSteps from '../components/ProcessSteps';
@@ -17,6 +18,61 @@ const Landing = () => {
   const handleStartApplication = (data) => {
     console.log('Starting application from:', data.originCountry, 'to:', data.destinationCountry);
     // TODO: Navigate to application page
+  };
+
+  // Animation variants for hero section - Slower, more cinematic
+  const badgeVariants = {
+    hidden: { opacity: 0, scale: 0.8, y: -20 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      y: 0,
+      transition: {
+        duration: 0.9,
+        ease: [0.22, 1, 0.36, 1],
+        delay: 0.3,
+      },
+    },
+  };
+
+  const headlineVariants = {
+    hidden: { opacity: 0, y: 40 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 1.0,
+        ease: [0.22, 1, 0.36, 1],
+        delay: 0.7,
+      },
+    },
+  };
+
+  const textVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.9,
+        ease: [0.22, 1, 0.36, 1],
+        delay: 1.1,
+      },
+    },
+  };
+
+  const mapVariants = {
+    hidden: { opacity: 0, x: 50, scale: 0.95 },
+    visible: {
+      opacity: 1,
+      x: 0,
+      scale: 1,
+      transition: {
+        duration: 1.2,
+        ease: [0.22, 1, 0.36, 1],
+        delay: 0.8,
+      },
+    },
   };
 
   return (
@@ -50,9 +106,13 @@ const Landing = () => {
         <div className="container mx-auto px-8">
           <div style={{ display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: '3rem', alignItems: 'center' }}>
             {/* Left Side - Text Content */}
-            <div>
+            <div key="hero-content">
               {/* Brand Badge - Eye-Catching with Green Theme */}
-              <div
+              <motion.div
+                key="badge-animation"
+                initial="hidden"
+                animate="visible"
+                variants={badgeVariants}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -77,10 +137,14 @@ const Landing = () => {
                 >
                   Visa Flow
                 </span>
-              </div>
+              </motion.div>
 
               {/* Main Hero Headline - Bold & Attention-Grabbing */}
-              <h1
+              <motion.h1
+                key="headline-animation"
+                initial="hidden"
+                animate="visible"
+                variants={headlineVariants}
                 style={{
                   fontSize: '4rem',
                   fontWeight: '800',
@@ -102,10 +166,14 @@ const Landing = () => {
                   10 Dakikada
                 </span>{' '}
                 Hazırlayın!
-              </h1>
+              </motion.h1>
 
               {/* Supporting Text */}
-              <p
+              <motion.p
+                key="text-animation"
+                initial="hidden"
+                animate="visible"
+                variants={textVariants}
                 style={{
                   fontSize: '1.25rem',
                   color: '#666666',
@@ -115,16 +183,21 @@ const Landing = () => {
                   maxWidth: '95%'
                 }}
               >
-                Yapay zeka destekli çözümümüzle vize başvuru sürecinizi basitleştirin. İhtiyacınız olan tüm belgeleri yapay zeka destekli çözümümüzle hızlıca oluşturun. Seçtiğiniz ülkeye göre özelleştirilmiş rehberlik alın.
-              </p>
+                Yapay zeka destekli çözümümüzle vize başvuru sürecinizi basitleştirin. İhtiyacınız olan niyet mektubunu yapay zeka destekli çözümümüzle hızlıca oluşturun. Seçtiğiniz ülkeye göre özelleştirilmiş rehberlik alın.
+              </motion.p>
             </div>
 
             {/* Right Side - Interactive Map */}
-            <div>
+            <motion.div
+              key="map-animation"
+              initial="hidden"
+              animate="visible"
+              variants={mapVariants}
+            >
               <InteractiveWorldMap
                 onStartApplication={handleStartApplication}
               />
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
