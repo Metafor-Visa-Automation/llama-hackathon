@@ -103,7 +103,8 @@ const FillForm = () => {
     });
     setDocuments(initialDocuments);
     setIsLoading(false);
-  }, [dispatch, user, destinationCountry]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - captures initial values and prevents recreation
 
   useEffect(() => {
     // Load questions only if not already loaded
@@ -133,14 +134,17 @@ const FillForm = () => {
     } else {
       setIsLoading(false);
     }
+  }, [questions.length, processActionSteps]);
 
-    // Cleanup function - reset state when component unmounts
+  // Separate cleanup effect that only runs on unmount
+  useEffect(() => {
     return () => {
       console.log('🧹 FillForm unmounting - cleaning up state');
       dispatch(resetForm());
       dispatch(resetApplication());
     };
-  }, [questions.length, processActionSteps, dispatch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty dependency array - only runs on mount/unmount
 
   const totalQuestions = questions.length;
 
