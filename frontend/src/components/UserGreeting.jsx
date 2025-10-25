@@ -45,6 +45,8 @@ const UserGreeting = () => {
 
   const handleLogoutClick = () => {
     dispatch(logout());
+    // Refresh the page after logout
+    window.location.reload();
   };
 
   if (!isAuthenticated) {

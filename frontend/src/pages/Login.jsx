@@ -267,6 +267,28 @@ const Login = () => {
           >
             {isLoading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
           </Button>
+
+          {/* Register Link */}
+          <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
+            <p style={{ color: '#666666', fontSize: '0.95rem' }}>
+              Hesabınız yok mu?{' '}
+              <button
+                type="button"
+                onClick={() => navigate('/register')}
+                style={{
+                  color: '#10B981',
+                  fontWeight: '600',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textDecoration: 'underline',
+                  fontFamily: '"Playfair Display", serif',
+                }}
+              >
+                Kayıt Olun
+              </button>
+            </p>
+          </div>
         </form>
       </div>
       </div>
