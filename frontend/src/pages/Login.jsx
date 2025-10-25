@@ -32,35 +32,29 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      // TODO: Backend login API entegrasyonu yapılacak
-      // const response = await fetch('/api/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email, password })
-      // });
-      // const data = await response.json();
+      // Call backend login API (proxied through Vite dev server)
+      const response = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 
+          'accept': 'application/json',
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ email, password })
+      });
 
-      // Simulated login for now (backend hazır olunca kaldırılacak)
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock credentials kontrolü
-      const MOCK_EMAIL = 'test@mail.com';
-      const MOCK_PASSWORD = 'test123';
-      
-      if (email !== MOCK_EMAIL || password !== MOCK_PASSWORD) {
-        setError('E-posta veya şifre hatalı. Lütfen tekrar deneyin.');
+      const data = await response.json();
+
+      // Check if login was successful
+      if (!response.ok) {
+        setError(data.detail || 'E-posta veya şifre hatalı. Lütfen tekrar deneyin.');
         setIsLoading(false);
         return;
       }
-      
-      // Extract name from email (before @)
-      const name = email.split('@')[0];
-      const capitalizedName = name.charAt(0).toUpperCase() + name.slice(1);
 
-      // Dispatch login success action
+      // Dispatch login success action with full user data and token
       dispatch(loginSuccess({
-        user: { name: capitalizedName, email },
-        token: 'mock-jwt-token' // TODO: Backend'den gelecek gerçek token
+        user: data.user,
+        token: data.access_token
       }));
 
       // Navigate to landing page
