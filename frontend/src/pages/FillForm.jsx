@@ -19,6 +19,11 @@ import {
   markQuestionIncomplete,
   setFormMetadata,
 } from '../store/formSlice';
+import {
+  createApplication,
+  completeApplicationStep,
+  incompleteApplicationStep,
+} from '../store/applicationSlice';
 
 /**
  * FillForm Page Component - Cards Style
@@ -49,15 +54,15 @@ const FillForm = () => {
   /**
    * Process action steps from AI response into question format
    */
-  const processActionSteps = useCallback((actionSteps) => {
-    const processedQuestions = actionSteps.map(step => ({
+  const processActionSteps = useCallback((responseData) => {
+    const processedQuestions = responseData.action_steps.map(step => ({
       id: step.step_id,
       type: step.requires_document ? 'document' : 'textarea',
       question: step.title,
       title: step.title,
       description: step.description,
-      placeholder: step.requires_document 
-        ? 'Döküman yükleyiniz' 
+      placeholder: step.requires_document
+        ? 'Döküman yükleyiniz'
         : 'Detaylı bilgi veriniz...',
       required: step.mandatory,
       mandatory: step.mandatory,
@@ -74,11 +79,18 @@ const FillForm = () => {
 
     // Dispatch to Redux
     dispatch(setQuestions(processedQuestions));
-    
+
     // Set metadata
     dispatch(setFormMetadata({
-      estimatedTotalTime: mockResponseData.estimated_total_time || '',
-      estimatedTotalCost: mockResponseData.estimated_total_cost || ''
+      estimatedTotalTime: responseData.estimated_total_time || '',
+      estimatedTotalCost: responseData.estimated_total_cost || ''
+    }));
+
+    // Create application object in store
+    dispatch(createApplication({
+      mockResponseData: responseData,
+      user: user,
+      destinationCountry: destinationCountry
     }));
 
     // Initialize local documents state
@@ -88,7 +100,7 @@ const FillForm = () => {
     });
     setDocuments(initialDocuments);
     setIsLoading(false);
-  }, [dispatch]);
+  }, [dispatch, user, destinationCountry]);
 
   useEffect(() => {
     // Load questions only if not already loaded
@@ -113,7 +125,7 @@ const FillForm = () => {
 
       // Using mock data for now
       if (mockResponseData && mockResponseData.action_steps) {
-        processActionSteps(mockResponseData.action_steps);
+        processActionSteps(mockResponseData);
       }
     } else {
       setIsLoading(false);
@@ -156,12 +168,12 @@ const FillForm = () => {
    */
   const checkQuestionCompletion = () => {
     if (questions.length === 0) return;
-    
+
     const currentQ = questions[currentQuestionIndex];
     const questionId = currentQ.id;
-    
+
     let isComplete = false;
-    
+
     if (currentQ.requires_document) {
       const docs = documents[questionId];
       isComplete = Array.isArray(docs) && docs.length > 0;
@@ -169,11 +181,15 @@ const FillForm = () => {
       const answer = answers[questionId];
       isComplete = answer && answer.trim() !== '';
     }
-    
+
     if (isComplete) {
       dispatch(markQuestionComplete(currentQuestionIndex));
+      // Also update the application step
+      dispatch(completeApplicationStep(questionId));
     } else {
       dispatch(markQuestionIncomplete(currentQuestionIndex));
+      // Also update the application step
+      dispatch(incompleteApplicationStep(questionId));
     }
   };
 
