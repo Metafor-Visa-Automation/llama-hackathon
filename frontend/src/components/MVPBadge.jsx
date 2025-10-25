@@ -124,7 +124,6 @@ const MVPBadge = () => {
                 {[
                   '26 Schengen Ülkesi',
                   'AI Form Filling',
-                  'Sosyal Medya Audit',
                   'Belge Kontrol'
                 ].map((item, index) => (
                   <li
@@ -199,7 +198,7 @@ const MVPBadge = () => {
                       fontFamily: '"Playfair Display", serif',
                     }}
                   >
-                    Yakında <span className="font-normal italic text-xl">(Q2 2025)</span>
+                    Yakında
                   </div>
                 </div>
                 <ul className="space-y-4">
@@ -252,7 +251,7 @@ const MVPBadge = () => {
             style={{
               background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
               boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)',
-              fontFamily: '"Playfair Display", serif',
+              fontFamily: '"Roboto", sans-serif',
             }}
           >
             <ConstructionIcon className="animate-pulse" sx={{ fontSize: 24 }} />

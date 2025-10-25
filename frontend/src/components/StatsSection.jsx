@@ -531,7 +531,7 @@ const StatsSection = () => {
             style={{
               backgroundColor: 'rgba(16, 185, 129, 0.12)',
               border: '1.5px solid rgba(16, 185, 129, 0.35)',
-              fontFamily: '"Playfair Display", serif',
+              fontFamily: '"Roboto", sans-serif',
               boxShadow: '0 4px 12px rgba(16, 185, 129, 0.15)',
             }}
           >
