@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { TextField, Button, Chip, IconButton, Tooltip, FormControlLabel, Checkbox } from '@mui/material';
+import { TextField, Button, Chip, IconButton, Tooltip, FormControlLabel, Checkbox, CircularProgress } from '@mui/material';
 import {
   ArrowBack,
   ArrowForward,
@@ -54,7 +54,8 @@ const QuestionCard = ({
   totalQuestions,
   onNext,
   onPrevious,
-  onSubmit
+  onSubmit,
+  isUploading = false
 }) => {
   const isLastQuestion = currentIndex === totalQuestions - 1;
   const isFirstQuestion = currentIndex === 0;
@@ -674,7 +675,8 @@ const QuestionCard = ({
         {!isLastQuestion ? (
           <Button
             onClick={onNext}
-            endIcon={<ArrowForward />}
+            disabled={isUploading}
+            endIcon={isUploading ? <CircularProgress size={20} sx={{ color: '#FFFFFF' }} /> : <ArrowForward />}
             sx={{
               background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
               color: '#FFFFFF',
@@ -690,10 +692,14 @@ const QuestionCard = ({
                 transform: 'translateY(-2px)',
                 boxShadow: '0 8px 25px rgba(16, 185, 129, 0.5)',
               },
+              '&:disabled': {
+                background: 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)',
+                color: '#FFFFFF',
+              },
               transition: 'all 0.3s ease',
             }}
           >
-            İleri
+            {isUploading ? 'Yükleniyor...' : 'İleri'}
           </Button>
         ) : (
           <Button

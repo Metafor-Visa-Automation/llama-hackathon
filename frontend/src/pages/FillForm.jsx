@@ -34,7 +34,7 @@ import {
 const FillForm = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user } = useSelector((state) => state.auth);
+  const { user, token, tokenType } = useSelector((state) => state.auth);
   // eslint-disable-next-line no-unused-vars
   const { originCountry, destinationCountry } = useSelector((state) => state.country);
   
@@ -50,6 +50,7 @@ const FillForm = () => {
   const [documents, setDocuments] = useState({});
   const [direction, setDirection] = useState(0); // For animation direction
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false); // For document upload
 
   /**
    * Process action steps from AI response into question format
@@ -199,8 +200,90 @@ const FillForm = () => {
     }
   };
 
-  const handleNext = () => {
-    if (currentQuestionIndex < totalQuestions - 1) {
+  /**
+   * Upload document to backend
+   */
+  const uploadDocument = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('http://34.3.90.3:8000/api/v1/documents/documents', {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `${tokenType} ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (response.status === 201 && data.doc_id) {
+        console.log('Document uploaded successfully:', data);
+        return { success: true, data };
+      } else {
+        console.error('Document upload failed:', data);
+        return { success: false, error: data };
+      }
+    } catch (error) {
+      console.error('Document upload error:', error);
+      return { success: false, error };
+    }
+  };
+
+  const handleNext = async () => {
+    if (currentQuestionIndex >= totalQuestions - 1) return;
+
+    const currentQ = questions[currentQuestionIndex];
+    const questionId = currentQ.id;
+
+    // Handle requires_document: true
+    if (currentQ.requires_document) {
+      const docs = documents[questionId];
+
+      // If there are documents to upload
+      if (Array.isArray(docs) && docs.length > 0) {
+        setIsUploading(true);
+
+        try {
+          // Upload all documents for this question
+          const uploadPromises = docs.map(doc => uploadDocument(doc));
+          const results = await Promise.all(uploadPromises);
+
+          // Check if all uploads were successful
+          const allSuccess = results.every(result => result.success);
+
+          if (allSuccess) {
+            // Mark step as completed
+            dispatch(markQuestionComplete(currentQuestionIndex));
+            dispatch(completeApplicationStep(questionId));
+
+            // Move to next question
+            setDirection(1);
+            dispatch(nextQuestion());
+          } else {
+            alert('Döküman yükleme başarısız. Lütfen tekrar deneyin.');
+          }
+        } catch (error) {
+          console.error('Upload error:', error);
+          alert('Döküman yükleme sırasında bir hata oluştu.');
+        } finally {
+          setIsUploading(false);
+        }
+      }
+    }
+    // Handle requires_document: false (checkmark questions)
+    else {
+      const answer = answers[questionId];
+
+      // If checkmark is checked (answer is true)
+      if (answer === true) {
+        dispatch(markQuestionComplete(currentQuestionIndex));
+        dispatch(completeApplicationStep(questionId));
+      }
+
+      // Move to next question
       setDirection(1);
       dispatch(nextQuestion());
     }
@@ -430,6 +513,7 @@ const FillForm = () => {
                   onNext={handleNext}
                   onPrevious={handlePrevious}
                   onSubmit={handleSubmit}
+                  isUploading={isUploading}
                 />
               </motion.div>
             </AnimatePresence>
