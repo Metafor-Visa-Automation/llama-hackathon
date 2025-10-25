@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import QuestionCard from '../components/QuestionCard';
-import vibeBg from '../assets/vibe-bg1.webp';
+import vibeBg from '../assets/vibe-bg3.png';
 import { ArrowBack } from '@mui/icons-material';
 
 /**
@@ -223,14 +223,14 @@ const FillForm = () => {
                   fontFamily: '"Playfair Display", serif',
                 }}
               >
-                Vize Başvuru Formu
+                {destinationCountry?.name ? `${destinationCountry.name} Vize Başvuru Formu` : 'Vize Başvuru Formu'}
               </h1>
-              <p style={{ 
-                color: '#666666', 
+              <p style={{
+                color: '#666666',
                 fontSize: '1.1rem',
                 fontFamily: '"Playfair Display", serif',
               }}>
-                Hoşgeldin {user?.name}, lütfen soruları cevaplayın
+                Hoşgeldin {user?.name}, lütfen {destinationCountry?.name ? `${destinationCountry.name} vizesi için` : ''} soruları cevapla
               </p>
             </motion.div>
           )}

@@ -2,7 +2,7 @@ import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
   originCountry: 'TR', // Default to Turkey
-  destinationCountry: null,
+  destinationCountry: null, // Will store { code: 'FR', name: 'Fransa' }
 };
 
 const countrySlice = createSlice({
@@ -13,6 +13,7 @@ const countrySlice = createSlice({
       state.originCountry = action.payload;
     },
     setDestinationCountry: (state, action) => {
+      // Payload should be an object with { code, name }
       state.destinationCountry = action.payload;
     },
     resetCountries: (state) => {

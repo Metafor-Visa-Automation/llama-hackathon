@@ -200,7 +200,10 @@ const InteractiveWorldMap = () => {
     // Create global click handler function
     window.handleSchengenCountryClick = (countryCode) => {
       if (SCHENGEN_CODES.includes(countryCode)) {
-        dispatch(setDestinationCountry(countryCode));
+        dispatch(setDestinationCountry({
+          code: countryCode,
+          name: SCHENGEN_COUNTRIES[countryCode]
+        }));
         console.log('Country selected from map:', countryCode, SCHENGEN_COUNTRIES[countryCode]);
       }
     };
@@ -251,9 +254,9 @@ const InteractiveWorldMap = () => {
     });
 
     // Highlight selected country with darker green
-    if (destinationCountry && md.state_specific[destinationCountry]) {
-      md.state_specific[destinationCountry].color = '#10B981';
-      md.state_specific[destinationCountry].hover_color = '#059669';
+    if (destinationCountry?.code && md.state_specific[destinationCountry.code]) {
+      md.state_specific[destinationCountry.code].color = '#10B981';
+      md.state_specific[destinationCountry.code].hover_color = '#059669';
     }
 
     // Refresh the map
@@ -266,7 +269,10 @@ const InteractiveWorldMap = () => {
    * Handle destination country change from dropdown
    */
   const handleDestinationChange = (countryCode) => {
-    dispatch(setDestinationCountry(countryCode));
+    dispatch(setDestinationCountry({
+      code: countryCode,
+      name: SCHENGEN_COUNTRIES[countryCode]
+    }));
     console.log('Country selected from dropdown:', countryCode, SCHENGEN_COUNTRIES[countryCode]);
   };
 
@@ -274,7 +280,7 @@ const InteractiveWorldMap = () => {
    * Handle start application button click
    */
   const handleStartApplication = () => {
-    if (!originCountry || !destinationCountry) {
+    if (!originCountry || !destinationCountry?.code) {
       return;
     }
 
@@ -288,7 +294,7 @@ const InteractiveWorldMap = () => {
     // User is authenticated, redirect to fill form page
     console.log('Starting application:', {
       from: ORIGIN_COUNTRIES[originCountry],
-      to: SCHENGEN_COUNTRIES[destinationCountry]
+      to: destinationCountry.name
     });
     navigate('/fill-form');
   };
@@ -489,11 +495,11 @@ const InteractiveWorldMap = () => {
               minWidth: '200px',
               '& .MuiOutlinedInput-root': {
                 borderRadius: '12px',
-                backgroundColor: destinationCountry ? '#F0FDF4' : '#F9FAFB',
+                backgroundColor: destinationCountry?.code ? '#F0FDF4' : '#F9FAFB',
                 fontWeight: 500,
                 fontFamily: '"Playfair Display", serif',
                 '& fieldset': {
-                  borderColor: destinationCountry ? '#A7F3D0' : '#E5E7EB',
+                  borderColor: destinationCountry?.code ? '#A7F3D0' : '#E5E7EB',
                   borderWidth: '2px',
                 },
                 '&:hover fieldset': {
@@ -517,7 +523,7 @@ const InteractiveWorldMap = () => {
                 },
               },
               '& .MuiSelect-select': {
-                color: destinationCountry ? '#064E3B' : '#9CA3AF',
+                color: destinationCountry?.code ? '#064E3B' : '#9CA3AF',
                 padding: '0.75rem 1rem',
                 fontFamily: '"Playfair Display", serif',
               }
@@ -528,7 +534,7 @@ const InteractiveWorldMap = () => {
             </InputLabel>
             <Select
               labelId="destination-country-label"
-              value={destinationCountry || ''}
+              value={destinationCountry?.code || ''}
               label="Nereye"
               onChange={(e) => handleDestinationChange(e.target.value)}
               displayEmpty
@@ -555,21 +561,21 @@ const InteractiveWorldMap = () => {
           {/* CTA Button */}
           <button
             onClick={handleStartApplication}
-            disabled={!originCountry || !destinationCountry}
+            disabled={!originCountry || !destinationCountry?.code}
             className={`
               inline-flex items-center gap-2 px-6 py-3 text-base font-semibold rounded-full
               transition-all duration-300 transform
-              ${originCountry && destinationCountry
+              ${originCountry && destinationCountry?.code
                 ? 'hover:scale-105 cursor-pointer'
                 : 'cursor-not-allowed opacity-50'
               }
             `}
             style={{
-              background: originCountry && destinationCountry
+              background: originCountry && destinationCountry?.code
                 ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
                 : '#CCCCCC',
               color: '#FFFFFF',
-              boxShadow: originCountry && destinationCountry
+              boxShadow: originCountry && destinationCountry?.code
                 ? '0 6px 20px rgba(16, 185, 129, 0.4)'
                 : 'none',
               border: 'none',
