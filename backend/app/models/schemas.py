@@ -74,12 +74,12 @@ class UserLogin(BaseModel):
 
 
 class UserCreate(BaseModel):
-    email: EmailStr
-    password: str = Field(..., min_length=6)
+    """Create user request model"""
+    email: str = Field(..., description="User email address")
     name: str = Field(..., min_length=2, max_length=100)
     surname: str = Field(..., min_length=2, max_length=100)
-    profile_type: ProfileType
-    passport_type: PassportType
+    profile_type: str = Field(..., description="User profile type (e.g., 'STUDENT', 'WORKER')")
+    passport_type: str = Field(..., description="Passport type (e.g., 'BORDO', 'YESIL')")
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None
     nationality: Optional[str] = None
@@ -96,13 +96,22 @@ class UserUpdate(BaseModel):
 
 
 class ApplicationCreate(BaseModel):
-    requirement_id: str = Field(..., description="Visa requirement ID (e.g., 'tr_de_all')")
-    ai_filled_form_data: Dict[str, Any] = Field(..., description="AI-generated form data")
+    """
+    Application Create Model - For creating new visa applications
+    """
+    application_name: str = Field(..., description="User's custom name for the application")
+    country_code: str = Field(..., description="Two-letter country code (e.g., 'US', 'DE')")
+    application_steps: List[Dict[str, Any]] = Field(default_factory=list, description="Array of application steps")
 
 
 class ApplicationUpdate(BaseModel):
-    status: Optional[ApplicationStatus] = None
-    ai_filled_form_data: Optional[Dict[str, Any]] = None
+    """
+    Application Update Model - For updating visa applications
+    """
+    application_name: Optional[str] = None
+    country_code: Optional[str] = None
+    status: Optional[str] = None
+    application_steps: Optional[List[Dict[str, Any]]] = None
 
 
 class ApplicationSubmit(BaseModel):
@@ -123,42 +132,36 @@ class TaskComplete(BaseModel):
 
 
 class UserResponse(BaseModel):
+    """
+    User Response Model - Matches the users collection structure
+    """
     uid: str
     email: str
     name: str
     surname: str
-    profile_type: ProfileType
-    passport_type: PassportType
+    profile_type: str
+    passport_type: str
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None
     nationality: Optional[str] = None
-    gender: Optional[Gender] = None
-    passport_number: Optional[str] = None
-    passport_expiry_date: Optional[str] = None
-    passport_issue_date: Optional[str] = None
-    current_teams: List[str] = []
-    preferences: Optional[Dict[str, Any]] = None
+    token: Optional[str] = None  # Authentication token
+    last_login_at: Optional[datetime] = None  # Last login timestamp
     created_at: datetime
     updated_at: datetime
-    last_login_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
 
 
 class UserUpdate(BaseModel):
+    """Update user request model"""
     name: Optional[str] = Field(None, min_length=2, max_length=100)
     surname: Optional[str] = Field(None, min_length=2, max_length=100)
-    profile_type: Optional[ProfileType] = None
-    passport_type: Optional[PassportType] = None
+    profile_type: Optional[str] = None
+    passport_type: Optional[str] = None
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None
     nationality: Optional[str] = None
-    gender: Optional[Gender] = None
-    passport_number: Optional[str] = None
-    passport_expiry_date: Optional[str] = None
-    passport_issue_date: Optional[str] = None
-    preferences: Optional[Dict[str, Any]] = None
 
 
 class LoginResponse(BaseModel):
@@ -506,12 +509,22 @@ class UserFormDataSchema(BaseModel):
 
 
 
+class DocumentCreate(BaseModel):
+    """
+    Document Create Model - For uploading documents
+    """
+    storage_path: str = Field(..., description="Path in Firebase Storage")
+    status: str = "PENDING_VALIDATION"  # Default status
+
+
 class DocumentResponse(BaseModel):
+    """
+    Document Response Model - Matches the documents collection structure
+    """
     doc_id: str
-    task_id: str
     user_id: str
     storage_path: str
-    status: DocumentStatus
+    status: str
     created_at: datetime
     updated_at: datetime
 
@@ -539,85 +552,38 @@ class VisaRequirementResponse(BaseModel):
         from_attributes = True
 
 
-# Database Models
+# Database Models - Simplified according to specification
 class UserInDB(BaseModel):
-    uid: str
+    """
+    Users Collection - Stores user information
+    """
+    uid: str  # Primary Key - Firebase user ID
     email: str
     name: str
     surname: str
-    profile_type: ProfileType
-    passport_type: PassportType
+    profile_type: str  # e.g., "STUDENT", "WORKER"
+    passport_type: str  # e.g., "BORDO", "YESIL"
     phone: Optional[str] = None
     date_of_birth: Optional[str] = None
-    nationality: Optional[str] = None
+    nationality: Optional[str] = None  # Country code, e.g., "TR"
+    token: Optional[str] = None  # Authentication token
+    last_login_at: Optional[datetime] = None  # Last login timestamp
     created_at: datetime
     updated_at: datetime
 
 
-class ApplicationInDB(BaseModel):
-    app_id: str
-    user_id: str
-    requirement_id: str
-    status: ApplicationStatus
-    ai_filled_form_data: Dict[str, Any]
-    created_at: datetime
-    updated_at: datetime
-
-
-class TaskInDB(BaseModel):
-    task_id: str
-    application_id: str
-    user_id: str
-    template_id: str
-    title: str
-    description: str
-    status: TaskStatus
-    notes: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
 
 
 class DocumentInDB(BaseModel):
-    doc_id: str
-    task_id: str
-    user_id: str
-    storage_path: str
-    status: DocumentStatus
+    """
+    Documents Collection - Stores user's uploaded documents
+    """
+    doc_id: str  # Primary Key
+    user_id: str  # Foreign Key to users table
+    storage_path: str  # Full path in Firebase Storage
+    status: str  # e.g., "PENDING_VALIDATION", "APPROVED", "REJECTED"
     created_at: datetime
     updated_at: datetime
-
-
-class VisaRequirementInDB(BaseModel):
-    req_id: str
-    origin_country: str
-    destination_code: str
-    applicable_passport_types: List[str]
-    visa_requirement_type: VisaRequirementType
-    visa_name: str
-    visa_fee: Optional[str] = None
-    passport_validity: Optional[str] = None
-    application_link: Optional[str] = None
-    embassy_url: Optional[str] = None
-    letter_template: List[str] = []
-    created_at: datetime
-    updated_at: datetime
-    last_verified_at: datetime
-
-
-class ChecklistTemplateInDB(BaseModel):
-    checkId: str  # Primary Key - Unique document code
-    docName: str  # Document name (e.g., "Pasaport")
-    docDescription: str  # Document description shown to users
-    category: str  # Document category for grouping (e.g., "personal_documents", "financial")
-    priority: int  # Priority order for sorting
-    referenceUrl: Optional[str] = None  # Help link (optional)
-    isDocumentNeeded: bool  # Whether document upload is required
-    mandatory: bool  # Whether this item is mandatory
-    requiredFor: List[str]  # Who it's required for (e.g., ["ALL", "STUDENT", "EMPLOYEE"])
-    acceptanceCriteria: List[str]  # Acceptance criteria shown to users
-    validationRules: Dict[str, Any]  # System validation rules
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
 
 
 # Additional Enums
@@ -773,29 +739,17 @@ class ApplicationGenerateLetter(BaseModel):
 
 
 class ApplicationResponse(BaseModel):
+    """
+    Application Response Model - Matches the applications collection structure
+    """
     app_id: str
     user_id: str
-    team_id: Optional[str] = None
-    requirement_id: str
-    status: ApplicationStatus
-    generated_letter_url: Optional[str] = None
-    generated_letter_file_name: Optional[str] = None
-    generated_letter_file_size: Optional[int] = None
-    generated_letter_mime_type: Optional[str] = None
-    generated_letter_created_at: Optional[datetime] = None
-    total_items: int
-    completed_items: int
-    progress_percentage: int
-    selected_templates: List[str] = []
-    travel_purpose: Optional[str] = None
-    destination_country: Optional[str] = None
-    company_info: Optional[Dict[str, Any]] = None
-    travel_dates: Optional[Dict[str, Any]] = None
-    travel_insurance: Optional[Dict[str, Any]] = None
+    application_name: str
+    country_code: str
+    status: str
+    application_steps: List[Dict[str, Any]] = []
     created_at: datetime
     updated_at: datetime
-    submitted_at: Optional[datetime] = None
-    approved_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -888,129 +842,21 @@ class NotificationMarkRead(BaseModel):
 # Enhanced User Schemas
 
 
-# Database Models
-class TeamInDB(BaseModel):
-    team_id: str
-    team_name: str
-    owner_id: str
-    members: List[str]
-    team_type: TeamType
-    created_at: datetime
-    updated_at: datetime
-
-
-class UserDocumentInDB(BaseModel):
-    doc_id: str
-    user_id: str
-    storage_path: str
-    doc_type: DocumentType
-    status: DocumentStatus
-    ocr_result: Optional[Dict[str, Any]] = None
-    document_title: str
-    file_name: str
-    file_size: int
-    mime_type: str
-    uploaded_at: datetime
-    updated_at: datetime
-    expiry_date: Optional[datetime] = None
-    issued_date: Optional[datetime] = None
-    issuing_authority: Optional[str] = None
-    notes: Optional[str] = None
-    tags: Optional[List[str]] = None
-
-
-class TaskInDB(BaseModel):
-    task_id: str
-    user_id: str
-    application_id: str
-    template_id: str
-    title: str
-    description: str
-    status: TaskStatus
-    assigned_doc_ids: List[str] = []
-    created_at: datetime
-    updated_at: datetime
-    completed_at: Optional[datetime] = None
-
-
+# Database Models - Only the 3 core collections
 class ApplicationInDB(BaseModel):
-    app_id: str
-    user_id: str
-    team_id: Optional[str] = None
-    requirement_id: str
-    status: ApplicationStatus
-    generated_letter_url: Optional[str] = None
-    generated_letter_file_name: Optional[str] = None
-    generated_letter_file_size: Optional[int] = None
-    generated_letter_mime_type: Optional[str] = None
-    generated_letter_created_at: Optional[datetime] = None
-    total_items: int
-    completed_items: int
-    progress_percentage: int
-    selected_templates: List[str] = []
-    travel_purpose: Optional[str] = None
-    destination_country: Optional[str] = None
-    company_info: Optional[Dict[str, Any]] = None
-    travel_dates: Optional[Dict[str, Any]] = None
-    travel_insurance: Optional[Dict[str, Any]] = None
+    """
+    Applications Collection - Stores visa applications
+    """
+    app_id: str  # Primary Key
+    user_id: str  # Foreign Key to users table
+    application_name: str  # User's custom name for the application, e.g., "Amerika Turist Vizesi 2025"
+    country_code: str  # Two-letter country code, e.g., "US", "DE"
+    status: str  # e.g., "DRAFT", "SUBMITTED", "APPROVED"
+    application_steps: List[Dict[str, Any]] = []  # Array of steps, each step is an object
     created_at: datetime
     updated_at: datetime
-    submitted_at: Optional[datetime] = None
-    approved_at: Optional[datetime] = None
 
 
-class CountryInDB(BaseModel):
-    country_code: str
-    name: str
-    schengen_member: bool
-
-
-class VisaRequirementInDB(BaseModel):
-    req_id: str
-    origin_country: str
-    destination_code: str
-    passport_rules: Dict[str, Any]
-    passport_validity: Optional[str] = None
-    application_link: Optional[str] = None
-    embassy_url: Optional[str] = None
-    letter_template: List[str] = []
-    visa_websites: List[str] = []
-    travel_websites: List[str] = []
-    created_at: datetime
-    updated_at: datetime
-    last_verified_at: datetime
-
-
-class NotificationInDB(BaseModel):
-    notification_id: str
-    user_id: str
-    title: str
-    message: str
-    type: NotificationType
-    is_read: bool
-    created_at: datetime
-    read_at: Optional[datetime] = None
-
-
-class UserInDB(BaseModel):
-    uid: str
-    email: str
-    name: str
-    surname: str
-    profile_type: ProfileType
-    passport_type: PassportType
-    phone: Optional[str] = None
-    date_of_birth: Optional[str] = None
-    nationality: Optional[str] = None
-    gender: Optional[Gender] = None
-    passport_number: Optional[str] = None
-    passport_expiry_date: Optional[str] = None
-    passport_issue_date: Optional[str] = None
-    current_teams: List[str] = []
-    preferences: Optional[Dict[str, Any]] = None
-    created_at: datetime
-    updated_at: datetime
-    last_login_at: Optional[datetime] = None
 
 
 

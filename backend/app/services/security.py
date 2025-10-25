@@ -78,10 +78,10 @@ async def verify_firebase_token(token: str) -> Optional[dict]:
 
 async def get_user_from_firestore(uid: str) -> Optional[UserInDB]:
     """
-    Fetch user data from Firestore USER collection
+    Fetch user data from Firestore users collection
     """
     try:
-        user_doc = db.collection('USER').document(uid).get()
+        user_doc = db.collection('users').document(uid).get()
         if user_doc.exists:
             user_data = user_doc.to_dict()
             return UserInDB(**user_data)
