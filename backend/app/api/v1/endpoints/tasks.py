@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Query
 from app.core.firebase import db
 from app.models.schemas import (
-    TaskResponse, TaskInDB, TaskUpdate, TaskStatus,
+    TaskResponse, TaskInDB, TaskUpdate, TaskStatus, TaskAssignDocument,
     ApplicationResponse, ApplicationInDB, TaskComplete, TaskDashboard
 )
 from app.services.security import get_current_user, UserInDB
@@ -435,4 +435,84 @@ async def get_task_dashboard(current_user: UserInDB = Depends(get_current_user))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch task dashboard: {str(e)}"
+        )
+
+
+@router.post("/tasks/{task_id}/assign-documents", response_model=TaskResponse)
+async def assign_documents_to_task(
+    task_id: str,
+    assign_data: TaskAssignDocument,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Assign documents to a task
+    """
+    try:
+        # Verify task exists and belongs to current user
+        task_ref = db.collection('TASK').document(task_id)
+        task_doc = task_ref.get()
+        
+        if not task_doc.exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Task not found"
+            )
+        
+        task_data = task_doc.to_dict()
+        if task_data['user_id'] != current_user.uid:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: Task does not belong to current user"
+            )
+        
+        # Verify all documents belong to the user
+        for doc_id in assign_data.doc_ids:
+            doc_ref = db.collection('user_documents').document(doc_id)
+            doc = doc_ref.get()
+            
+            if not doc.exists:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Document {doc_id} not found"
+                )
+            
+            doc_data = doc.to_dict()
+            if doc_data.get('user_id') != current_user.uid:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Access denied: Document {doc_id} does not belong to current user"
+                )
+        
+        # Update task with assigned documents
+        update_data = {
+            "assigned_doc_ids": assign_data.doc_ids,
+            "updated_at": datetime.utcnow()
+        }
+        
+        task_ref.update(update_data)
+        
+        # Fetch updated data
+        updated_doc = task_ref.get()
+        updated_data = updated_doc.to_dict()
+        
+        return TaskResponse(
+            task_id=updated_data['task_id'],
+            user_id=updated_data['user_id'],
+            application_id=updated_data['application_id'],
+            template_id=updated_data['template_id'],
+            title=updated_data['title'],
+            description=updated_data['description'],
+            status=updated_data['status'],
+            assigned_doc_ids=updated_data.get('assigned_doc_ids', []),
+            created_at=updated_data['created_at'],
+            updated_at=updated_data['updated_at'],
+            completed_at=updated_data.get('completed_at')
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to assign documents to task: {str(e)}"
         )

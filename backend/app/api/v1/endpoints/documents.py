@@ -1,210 +1,246 @@
-from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File
-from app.core.firebase import db, bucket
-from app.models.schemas import DocumentResponse, DocumentInDB, DocumentStatus, TaskStatus
-from app.services.security import get_current_user, UserInDB
-from datetime import datetime
-import uuid
+"""
+Word Document API Endpoints
+"""
+
+from fastapi import APIRouter, HTTPException, Depends, File, UploadFile
+from fastapi.responses import FileResponse
+from typing import Dict, Any, Optional
 import os
+import logging
+from pydantic import BaseModel, Field
+
+from app.services.word_document_service import WordDocumentService
+from app.services.security import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# Initialize the service
+word_service = WordDocumentService()
 
-@router.post("/docs/task/{task_id}/upload", response_model=DocumentResponse, status_code=status.HTTP_201_CREATED)
-async def upload_document(
-    task_id: str,
-    file: UploadFile = File(...),
-    current_user: UserInDB = Depends(get_current_user)
+
+class FormDataRequest(BaseModel):
+    """Request model for form data"""
+    field_data: Dict[str, str] = Field(..., description="Form field data with FIELD1-FIELD34 keys")
+    filename: Optional[str] = Field(None, description="Optional custom filename for the output")
+
+
+class FormDataResponse(BaseModel):
+    """Response model for form data processing"""
+    success: bool
+    message: str
+    filename: str
+    download_url: str
+
+
+@router.post("/edit-word-document", response_model=FormDataResponse)
+async def edit_word_document(
+    request: FormDataRequest,
+    current_user: dict = Depends(get_current_user)
 ):
     """
-    Upload a document for a specific task
+    Edit the Schengen visa application Word document with user data
+    
+    Args:
+        request: Form data request containing field data and optional filename
+        current_user: Current authenticated user
+        
+    Returns:
+        Response with download URL for the generated document
     """
     try:
-        # Step 1: Verify Task exists and belongs to current user
-        task_doc = db.collection('TASK').document(task_id).get()
-        if not task_doc.exists:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Task not found"
-            )
+        # Validate user data
+        validated_data = word_service.validate_user_data(request.field_data)
         
-        task_data = task_doc.to_dict()
-        if task_data['user_id'] != current_user.uid:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied: Task does not belong to current user"
-            )
+        # Generate the document
+        output_path = word_service.edit_document(
+            user_data=validated_data,
+            filename=request.filename
+        )
         
-        # Step 2: Validate file
-        if not file.filename:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No file provided"
-            )
+        # Extract filename from path
+        filename = os.path.basename(output_path)
         
-        # Check file size (limit to 10MB)
-        file_content = await file.read()
-        if len(file_content) > 10 * 1024 * 1024:  # 10MB
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="File size exceeds 10MB limit"
-            )
+        # Generate download URL
+        download_url = f"/api/v1/documents/download/{filename}"
         
-        # Check file type (allow common document types)
-        allowed_extensions = {'.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx'}
-        file_extension = os.path.splitext(file.filename)[1].lower()
-        if file_extension not in allowed_extensions:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"File type not allowed. Allowed types: {', '.join(allowed_extensions)}"
-            )
+        return FormDataResponse(
+            success=True,
+            message="Word document generated successfully",
+            filename=filename,
+            download_url=download_url
+        )
         
-        # Step 3: Generate unique filename and upload to Firebase Storage
-        doc_id = str(uuid.uuid4())
-        unique_filename = f"{doc_id}{file_extension}"
-        storage_path = f"user_documents/{current_user.uid}/{task_data['application_id']}/{unique_filename}"
+    except FileNotFoundError as e:
+        logger.error(f"Template file not found: {e}")
+        raise HTTPException(status_code=404, detail="Template file not found")
         
-        # Upload to Firebase Storage
-        blob = bucket.blob(storage_path)
-        blob.upload_from_string(file_content, content_type=file.content_type)
+    except Exception as e:
+        logger.error(f"Error generating Word document: {e}")
+        raise HTTPException(status_code=500, detail=f"Error generating document: {str(e)}")
+
+
+@router.get("/sample-data")
+async def get_sample_data(current_user: dict = Depends(get_current_user)):
+    """
+    Get sample form data for testing
+    
+    Returns:
+        Sample data structure for all 34 fields
+    """
+    try:
+        sample_data = word_service.get_sample_data()
         
-        # Make the file publicly accessible (optional, depending on your security needs)
-        # blob.make_public()
-        
-        # Step 4: Create Document record in Firestore
-        now = datetime.utcnow()
-        document_doc = {
-            "doc_id": doc_id,
-            "task_id": task_id,
-            "user_id": current_user.uid,
-            "storage_path": storage_path,
-            "status": DocumentStatus.PENDING_VALIDATION.value,
-            "created_at": now,
-            "updated_at": now
+        return {
+            "success": True,
+            "message": "Sample data retrieved successfully",
+            "data": sample_data,
+            "field_descriptions": {
+                "FIELD1": "Surname (Family name)",
+                "FIELD2": "Surname at birth (Former family name(s))",
+                "FIELD3": "First name(s) (Given name(s))",
+                "FIELD4": "Date of birth (day-month-year)",
+                "FIELD5": "Place of birth",
+                "FIELD6": "Country of birth",
+                "FIELD7": "Current nationality",
+                "FIELD8": "Parental authority (in case of minors) / legal guardian",
+                "FIELD9": "National identity number, where applicable",
+                "FIELD10": "Surname (family name) of family member",
+                "FIELD11": "First name of family member",
+                "FIELD12": "Date of birth of family member",
+                "FIELD13": "Nationality of family member",
+                "FIELD14": "Number of travel document or ID card of family member",
+                "FIELD15": "Applicant's home address and e-mail address",
+                "FIELD16": "Telephone number",
+                "FIELD17": "Current occupation",
+                "FIELD18": "Employer and employer's address and telephone number",
+                "FIELD19": "Purpose of the journey",
+                "FIELD20": "Member State of main destination",
+                "FIELD21": "Address and e-mail address of inviting person(s)/hotel(s)",
+                "FIELD22": "Telephone number of accommodation",
+                "FIELD23": "Name and address of inviting company/organisation",
+                "FIELD24": "Member State of main destination",
+                "FIELD25": "Member State of first entry",
+                "FIELD26": "Number of travel document",
+                "FIELD27": "Date of issue",
+                "FIELD28": "Valid until",
+                "FIELD29": "Issued by (country)",
+                "FIELD30": "Surname and first name of the inviting person(s)",
+                "FIELD31": "Contact person in company/organisation details",
+                "FIELD32": "Telephone number of company/organisation",
+                "FIELD33": "Cost of travelling and living",
+                "FIELD34": "Place and date"
+            }
         }
         
-        db.collection('USER_DOCUMENT').document(doc_id).set(document_doc)
+    except Exception as e:
+        logger.error(f"Error retrieving sample data: {e}")
+        raise HTTPException(status_code=500, detail=f"Error retrieving sample data: {str(e)}")
+
+
+@router.get("/download/{filename}")
+async def download_document(filename: str, current_user: dict = Depends(get_current_user)):
+    """
+    Download a generated document
+    
+    Args:
+        filename: Name of the file to download
+        current_user: Current authenticated user
         
-        # Step 5: Update Task status to DONE
-        db.collection('TASK').document(task_id).update({
-            "status": TaskStatus.DONE.value,
-            "updated_at": now
-        })
+    Returns:
+        File response for download
+    """
+    try:
+        # Security check - ensure filename doesn't contain path traversal
+        if ".." in filename or "/" in filename or "\\" in filename:
+            raise HTTPException(status_code=400, detail="Invalid filename")
         
-        return DocumentResponse(
-            doc_id=doc_id,
-            task_id=task_id,
-            user_id=current_user.uid,
-            storage_path=storage_path,
-            status=DocumentStatus.PENDING_VALIDATION,
-            created_at=now,
-            updated_at=now
+        file_path = os.path.join(word_service.output_dir, filename)
+        
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        return FileResponse(
+            path=file_path,
+            filename=filename,
+            media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
         )
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to upload document: {str(e)}"
-        )
+        logger.error(f"Error downloading document: {e}")
+        raise HTTPException(status_code=500, detail=f"Error downloading document: {str(e)}")
 
 
-@router.get("/docs/task/{task_id}", response_model=list[DocumentResponse])
-async def get_task_documents(
-    task_id: str,
-    current_user: UserInDB = Depends(get_current_user)
-):
+@router.get("/list-documents")
+async def list_documents(current_user: dict = Depends(get_current_user)):
     """
-    Get all documents for a specific task
+    List all generated documents for the current user
+    
+    Returns:
+        List of available documents
     """
     try:
-        # Verify Task exists and belongs to current user
-        task_doc = db.collection('TASK').document(task_id).get()
-        if not task_doc.exists:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Task not found"
-            )
-        
-        task_data = task_doc.to_dict()
-        if task_data['user_id'] != current_user.uid:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied: Task does not belong to current user"
-            )
-        
-        # Fetch all documents for this task
-        docs_query = db.collection('USER_DOCUMENT').where(
-            'task_id', '==', task_id
-        ).where('user_id', '==', current_user.uid).stream()
-        
         documents = []
-        for doc in docs_query:
-            doc_data = doc.to_dict()
-            documents.append(DocumentResponse(
-                doc_id=doc_data['doc_id'],
-                task_id=doc_data['task_id'],
-                user_id=doc_data['user_id'],
-                storage_path=doc_data['storage_path'],
-                status=doc_data['status'],
-                created_at=doc_data['created_at'],
-                updated_at=doc_data['updated_at']
-            ))
         
-        return documents
+        if os.path.exists(word_service.output_dir):
+            for filename in os.listdir(word_service.output_dir):
+                if filename.endswith('.docx'):
+                    file_path = os.path.join(word_service.output_dir, filename)
+                    file_size = os.path.getsize(file_path)
+                    file_mtime = os.path.getmtime(file_path)
+                    
+                    documents.append({
+                        "filename": filename,
+                        "size": file_size,
+                        "created_at": file_mtime,
+                        "download_url": f"/api/v1/documents/download/{filename}"
+                    })
         
-    except HTTPException:
-        raise
+        return {
+            "success": True,
+            "message": "Documents listed successfully",
+            "documents": documents
+        }
+        
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch documents: {str(e)}"
-        )
+        logger.error(f"Error listing documents: {e}")
+        raise HTTPException(status_code=500, detail=f"Error listing documents: {str(e)}")
 
 
-@router.delete("/docs/{doc_id}")
-async def delete_document(
-    doc_id: str,
-    current_user: UserInDB = Depends(get_current_user)
-):
+@router.delete("/delete/{filename}")
+async def delete_document(filename: str, current_user: dict = Depends(get_current_user)):
     """
-    Delete a document
+    Delete a generated document
+    
+    Args:
+        filename: Name of the file to delete
+        current_user: Current authenticated user
+        
+    Returns:
+        Success message
     """
     try:
-        # Verify document exists and belongs to current user
-        doc_ref = db.collection('USER_DOCUMENT').document(doc_id)
-        doc_doc = doc_ref.get()
+        # Security check - ensure filename doesn't contain path traversal
+        if ".." in filename or "/" in filename or "\\" in filename:
+            raise HTTPException(status_code=400, detail="Invalid filename")
         
-        if not doc_doc.exists:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Document not found"
-            )
+        file_path = os.path.join(word_service.output_dir, filename)
         
-        doc_data = doc_doc.to_dict()
-        if doc_data['user_id'] != current_user.uid:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied: Document does not belong to current user"
-            )
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="File not found")
         
-        # Delete from Firebase Storage
-        try:
-            blob = bucket.blob(doc_data['storage_path'])
-            blob.delete()
-        except Exception as e:
-            # Log error but don't fail the operation if storage deletion fails
-            print(f"Warning: Failed to delete file from storage: {str(e)}")
+        os.remove(file_path)
         
-        # Delete from Firestore
-        doc_ref.delete()
-        
-        return {"message": "Document deleted successfully"}
+        return {
+            "success": True,
+            "message": f"Document {filename} deleted successfully"
+        }
         
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to delete document: {str(e)}"
-        )
+        logger.error(f"Error deleting document: {e}")
+        raise HTTPException(status_code=500, detail=f"Error deleting document: {str(e)}")
