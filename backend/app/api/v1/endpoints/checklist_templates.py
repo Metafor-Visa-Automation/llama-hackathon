@@ -42,17 +42,33 @@ async def get_checklist_templates(
         templates = []
         for doc in docs:
             template_data = doc.to_dict()
-            template_data["checkId"] = doc.id
+            
+            # Map Firebase field names to schema field names
+            mapped_data = {
+                "checkid": doc.id,
+                "docname": template_data.get("docName", ""),
+                "docdescription": template_data.get("docDescription", ""),
+                "category": template_data.get("category", ""),
+                "priority": template_data.get("priority", 0),
+                "referenceurl": template_data.get("referenceUrl"),
+                "isdocumentneeded": template_data.get("isDocumentNeeded", False),
+                "mandatory": template_data.get("mandatory", False),
+                "requiredfor": template_data.get("requiredFor", []),
+                "acceptancecriteria": template_data.get("acceptanceCriteria", []),
+                "validationrules": template_data.get("validationRules", {}),
+                "createdat": template_data.get("created_at"),
+                "updatedat": template_data.get("updated_at")
+            }
             
             # Apply required_for filter if provided
             if required_for:
-                required_for_list = template_data.get("requiredFor", [])
+                required_for_list = mapped_data.get("requiredfor", [])
                 if (required_for.upper() not in required_for_list and 
                     "ALL" not in required_for_list and 
                     required_for_list):  # If required_for is not empty
                     continue
             
-            templates.append(ChecklistTemplateResponse(**template_data))
+            templates.append(ChecklistTemplateResponse(**mapped_data))
         
         # Sort by priority
         templates.sort(key=lambda x: x.priority)
@@ -86,9 +102,25 @@ async def get_checklist_template(
             )
         
         template_data = template_doc.to_dict()
-        template_data["checkId"] = template_doc.id
         
-        return ChecklistTemplateResponse(**template_data)
+        # Map Firebase field names to schema field names
+        mapped_data = {
+            "checkid": template_doc.id,
+            "docName": template_data.get("docName", ""),
+            "docDescription": template_data.get("docDescription", ""),
+            "category": template_data.get("category", ""),
+            "priority": template_data.get("priority", 0),
+            "referenceUrl": template_data.get("referenceUrl"),
+            "isDocumentNeeded": template_data.get("isDocumentNeeded", False),
+            "mandatory": template_data.get("mandatory", False),
+            "requiredFor": template_data.get("requiredFor", []),
+            "acceptanceCriteria": template_data.get("acceptanceCriteria", []),
+            "validationRules": template_data.get("validationRules", {}),
+            "created_at": template_data.get("created_at"),
+            "updated_at": template_data.get("updated_at")
+        }
+        
+        return ChecklistTemplateResponse(**mapped_data)
         
     except HTTPException:
         raise
@@ -150,8 +182,25 @@ async def get_templates_by_category(
         templates = []
         for doc in docs:
             template_data = doc.to_dict()
-            template_data["checkId"] = doc.id
-            templates.append(ChecklistTemplateResponse(**template_data))
+            
+            # Map Firebase field names to schema field names
+            mapped_data = {
+                "checkid": doc.id,
+                "docname": template_data.get("docName", ""),
+                "docdescription": template_data.get("docDescription", ""),
+                "category": template_data.get("category", ""),
+                "priority": template_data.get("priority", 0),
+                "referenceurl": template_data.get("referenceUrl"),
+                "isdocumentneeded": template_data.get("isDocumentNeeded", False),
+                "mandatory": template_data.get("mandatory", False),
+                "requiredfor": template_data.get("requiredFor", []),
+                "acceptancecriteria": template_data.get("acceptanceCriteria", []),
+                "validationrules": template_data.get("validationRules", {}),
+                "createdat": template_data.get("created_at"),
+                "updatedat": template_data.get("updated_at")
+            }
+            
+            templates.append(ChecklistTemplateResponse(**mapped_data))
         
         # Sort by priority
         templates.sort(key=lambda x: x.priority)

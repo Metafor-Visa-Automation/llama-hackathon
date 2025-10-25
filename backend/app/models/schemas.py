@@ -57,13 +57,7 @@ class TeamType(str, Enum):
     STUDENT = "STUDENT"
 
 
-class DocumentType(str, Enum):
-    PASSPORT = "PASSPORT"
-    BANK_STATEMENT = "BANK_STATEMENT"
-    EMPLOYMENT_LETTER = "EMPLOYMENT_LETTER"
-    TRAVEL_INSURANCE = "TRAVEL_INSURANCE"
-    HOTEL_RESERVATION = "HOTEL_RESERVATION"
-    FLIGHT_RESERVATION = "FLIGHT_RESERVATION"
+# DocumentType enum moved to later in file for consistency
 
 
 class NotificationType(str, Enum):
@@ -638,15 +632,39 @@ class Gender(str, Enum):
 
 
 class DocumentType(str, Enum):
-    PASSPORT = "PASSPORT"
-    BANK_STATEMENT = "BANK_STATEMENT"
-    INSURANCE = "INSURANCE"
-    INVITATION_LETTER = "INVITATION_LETTER"
-    HOTEL_RESERVATION = "HOTEL_RESERVATION"
-    FLIGHT_RESERVATION = "FLIGHT_RESERVATION"
-    EMPLOYMENT_LETTER = "EMPLOYMENT_LETTER"
-    STUDENT_CERTIFICATE = "STUDENT_CERTIFICATE"
-    OTHER = "OTHER"
+    # Core document types
+    PASSPORT = "passport"
+    BANK_STATEMENT = "bank_statement"
+    BIOMETRIC_PHOTO = "biometric_photo"
+    BIRTH_CERTIFICATE = "birth_certificate"
+    
+    # Business and employment documents
+    BUSINESS_LETTER = "business_letter"
+    EMPLOYMENT_LETTER = "employment_letter"
+    EMPLOYMENT_CERTIFICATE = "employment_certificate"
+    PAYSLIP = "payslip"
+    
+    # Travel and accommodation documents
+    HOTEL_RESERVATION = "hotel_reservation"
+    FLIGHT_RESERVATION = "flight_reservation"
+    TRAVEL_INSURANCE = "travel_insurance"
+    INVITATION_LETTER = "invitation_letter"
+    PREVIOUS_VISAS = "previous_visas"
+    
+    # Academic documents
+    STUDENT_CERTIFICATE = "student_certificate"
+    ACADEMIC_TRANSCRIPT = "academic_transcript"
+    
+    # Financial and legal documents
+    TAX_RETURN = "tax_return"
+    PROPERTY_DEED = "property_deed"
+    SOCIAL_SECURITY = "social_security"
+    
+    # Insurance documents
+    INSURANCE = "insurance"
+    
+    # Other
+    OTHER = "other"
 
 
 class NotificationType(str, Enum):
