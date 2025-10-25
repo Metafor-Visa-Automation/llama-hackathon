@@ -9,6 +9,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     build-essential \
+    pkg-config \
+    libglib2.0-dev \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install build tools first
@@ -34,10 +40,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/home/appuser/.local/bin:$PATH"
 
 # Install runtime dependencies
-# *** ADDED libgl1-mesa-glx HERE ***
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
-    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
