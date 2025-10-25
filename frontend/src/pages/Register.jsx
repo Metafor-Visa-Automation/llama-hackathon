@@ -1,74 +1,88 @@
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { loginSuccess } from '../store/authSlice';
 import PageTransition from '../components/PageTransition';
 import vibeBg from '../assets/vibe-bg1.webp';
 import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import {
+  Person,
   Email,
   Lock,
+  Phone,
+  CalendarToday,
+  Public,
+  Work,
+  CardTravel,
   Visibility,
   VisibilityOff,
   Speed,
-  Security,
-  Public
+  VerifiedUser,
+  Language
 } from '@mui/icons-material';
 
 /**
- * Login Page Component
- * Allows users to login with email and password
+ * Register Page Component
+ * Allows users to create a new account
  */
-const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+const Register = () => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    name: '',
+    surname: '',
+    profile_type: 'STUDENT',
+    passport_type: 'BORDO',
+    phone: '',
+    date_of_birth: '',
+    nationality: 'Turkish'
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [focusedField, setFocusedField] = useState('');
 
-  const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
   /**
-   * Handle login form submission
+   * Handle register form submission
    */
-  const handleLogin = async (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
     try {
-      // Call backend login API (proxied through Vite dev server)
-      const response = await fetch('/api/v1/auth/login', {
+      // Call backend register API (proxied through Vite dev server)
+      const response = await fetch('/api/v1/auth/register', {
         method: 'POST',
         headers: {
           'accept': 'application/json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(formData)
       });
 
       const data = await response.json();
 
-      // Check if login was successful
+      // Check if registration was successful
       if (!response.ok) {
-        setError(data.detail || 'E-posta veya şifre hatalı. Lütfen tekrar deneyin.');
+        setError(data.detail || 'Kayıt başarısız. Lütfen bilgilerinizi kontrol edin.');
         setIsLoading(false);
         return;
       }
 
-      // Dispatch login success action with full user data and token
-      dispatch(loginSuccess({
-        user: data.user,
-        token: data.access_token
-      }));
-
-      // Navigate to landing page
-      navigate('/');
+      // Registration successful - redirect to login page
+      alert('Kayıt başarılı! Giriş yapabilirsiniz.');
+      navigate('/login');
     } catch (err) {
-      setError('Giriş başarısız. Lütfen bilgilerinizi kontrol edin.');
-      console.error('Login error:', err);
+      setError('Kayıt başarısız. Lütfen tekrar deneyin.');
+      console.error('Register error:', err);
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +140,8 @@ const Login = () => {
                 <span style={{
                   fontStyle: 'italic',
                   fontSize: '2.5rem',
-                  fontWeight: '400'
+                  fontWeight: '400',
+                  textShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
                 }}>
                   visa flow
                 </span>
@@ -148,14 +163,14 @@ const Login = () => {
                 lineHeight: '1.1',
                 marginBottom: '1.5rem'
               }}>
-                Tekrar <br/>
+                Dünya Seni <br/>
                 <span style={{
                   background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)',
                   WebkitBackgroundClip: 'text',
                   WebkitTextFillColor: 'transparent',
                   backgroundClip: 'text'
                 }}>
-                  Hoş Geldiniz
+                  Bekliyor
                 </span>
               </h1>
 
@@ -165,16 +180,16 @@ const Login = () => {
                 opacity: '0.8',
                 marginBottom: '2rem'
               }}>
-                Vize başvuru yolculuğunuza kaldığınız yerden devam edin.
-                Hayalleriniz sizi bekliyor.
+                Vize başvuru sürecinizi kolaylaştırıyoruz.
+                Hayalinizdeki destinasyona ulaşmak için gereken her adımda yanınızdayız.
               </p>
 
               {/* Features List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {[
-                  { Icon: Speed, text: 'Hızlı işlem süreci' },
-                  { Icon: Security, text: 'Güvenli veri koruması' },
-                  { Icon: Public, text: 'Global erişim' }
+                  { Icon: Speed, text: 'Hızlı ve güvenli başvuru süreci' },
+                  { Icon: VerifiedUser, text: 'Uzman rehberlik desteği' },
+                  { Icon: Language, text: '27 Schengen ülkesine erişim' }
                 ].map((feature, index) => {
                   const IconComponent = feature.Icon;
                   return (
@@ -204,7 +219,7 @@ const Login = () => {
             </motion.div>
           </motion.div>
 
-          {/* RIGHT SIDE - Login Form */}
+          {/* RIGHT SIDE - Registration Form */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
@@ -222,7 +237,7 @@ const Login = () => {
               borderRadius: '32px',
               padding: '3rem',
               width: '100%',
-              maxWidth: '500px',
+              maxWidth: '550px',
               boxShadow: '0 30px 80px rgba(0, 0, 0, 0.2)',
               border: '1px solid rgba(255, 255, 255, 0.9)'
             }}>
@@ -234,22 +249,46 @@ const Login = () => {
                   color: '#1a1a1a',
                   marginBottom: '0.5rem'
                 }}>
-                  Giriş Yap
+                  Hesap Oluştur
                 </h2>
                 <p style={{ color: '#666666', fontSize: '1rem' }}>
-                  Hesabınıza erişin
+                  Yolculuğunuz birkaç adım ötede
                 </p>
               </div>
 
-              {/* Login Form */}
-              <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Registration Form */}
+              <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {/* Name & Surname Row */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <CustomInput
+                    name="name"
+                    placeholder="Ad"
+                    value={formData.name}
+                    onChange={handleChange}
+                    icon={<Person sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
+                    required
+                    focusedField={focusedField}
+                    setFocusedField={setFocusedField}
+                  />
+                  <CustomInput
+                    name="surname"
+                    placeholder="Soyad"
+                    value={formData.surname}
+                    onChange={handleChange}
+                    icon={<Person sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
+                    required
+                    focusedField={focusedField}
+                    setFocusedField={setFocusedField}
+                  />
+                </div>
+
                 {/* Email */}
                 <CustomInput
                   name="email"
                   type="email"
                   placeholder="E-posta"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formData.email}
+                  onChange={handleChange}
                   icon={<Email sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
                   required
                   focusedField={focusedField}
@@ -261,8 +300,8 @@ const Login = () => {
                   name="password"
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Şifre"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={formData.password}
+                  onChange={handleChange}
                   icon={<Lock sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
                   required
                   showPasswordToggle
@@ -271,6 +310,71 @@ const Login = () => {
                   focusedField={focusedField}
                   setFocusedField={setFocusedField}
                 />
+
+                {/* Phone */}
+                <CustomInput
+                  name="phone"
+                  placeholder="Telefon (05001234567)"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  icon={<Phone sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
+                  required
+                  focusedField={focusedField}
+                  setFocusedField={setFocusedField}
+                />
+
+                {/* Date of Birth */}
+                <CustomInput
+                  name="date_of_birth"
+                  placeholder="Doğum Tarihi (16.07.2000)"
+                  value={formData.date_of_birth}
+                  onChange={handleChange}
+                  icon={<CalendarToday sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
+                  required
+                  focusedField={focusedField}
+                  setFocusedField={setFocusedField}
+                />
+
+                {/* Nationality */}
+                <CustomInput
+                  name="nationality"
+                  placeholder="Uyruk"
+                  value={formData.nationality}
+                  onChange={handleChange}
+                  icon={<Public sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
+                  required
+                  focusedField={focusedField}
+                  setFocusedField={setFocusedField}
+                />
+
+                {/* Profile Type & Passport Type */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <CustomSelect
+                    name="profile_type"
+                    value={formData.profile_type}
+                    onChange={handleChange}
+                    icon={<Work sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
+                    options={[
+                      { value: 'STUDENT', label: 'Öğrenci' },
+                      { value: 'EMPLOYEE', label: 'Çalışan' },
+                      { value: 'TOURIST', label: 'Turist' }
+                    ]}
+                    focusedField={focusedField}
+                    setFocusedField={setFocusedField}
+                  />
+                  <CustomSelect
+                    name="passport_type"
+                    value={formData.passport_type}
+                    onChange={handleChange}
+                    icon={<CardTravel sx={{ color: '#10B981', fontSize: '1.25rem' }} />}
+                    options={[
+                      { value: 'BORDO', label: 'Bordo' },
+                      { value: 'YESIL', label: 'Yeşil' }
+                    ]}
+                    focusedField={focusedField}
+                    setFocusedField={setFocusedField}
+                  />
+                </div>
 
                 {/* Error Message */}
                 {error && (
@@ -321,16 +425,16 @@ const Login = () => {
                     e.target.style.boxShadow = isLoading ? 'none' : '0 8px 24px rgba(16, 185, 129, 0.4)';
                   }}
                 >
-                  {isLoading ? 'Giriş Yapılıyor...' : 'Giriş Yap'}
+                  {isLoading ? 'Kayıt Yapılıyor...' : 'Hesap Oluştur'}
                 </button>
 
-                {/* Register Link */}
+                {/* Login Link */}
                 <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
                   <p style={{ color: '#666666', fontSize: '0.95rem' }}>
-                    Hesabınız yok mu?{' '}
+                    Zaten hesabınız var mı?{' '}
                     <button
                       type="button"
-                      onClick={() => navigate('/register')}
+                      onClick={() => navigate('/login')}
                       style={{
                         color: '#10B981',
                         fontWeight: '600',
@@ -342,7 +446,7 @@ const Login = () => {
                         fontSize: '0.95rem'
                       }}
                     >
-                      Kayıt Olun
+                      Giriş Yap
                     </button>
                   </p>
                 </div>
@@ -380,8 +484,7 @@ const CustomInput = ({
         left: '1rem',
         top: '50%',
         transform: 'translateY(-50%)',
-        display: 'flex',
-        alignItems: 'center',
+        fontSize: '1.25rem',
         opacity: isFocused ? '1' : '0.6',
         transition: 'all 0.3s ease',
         pointerEvents: 'none',
@@ -449,4 +552,62 @@ const CustomInput = ({
   );
 };
 
-export default Login;
+// Custom Select Component
+const CustomSelect = ({ name, value, onChange, icon, options, focusedField, setFocusedField }) => {
+  const isFocused = focusedField === name;
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      {/* Icon */}
+      <span style={{
+        position: 'absolute',
+        left: '1rem',
+        top: '50%',
+        transform: 'translateY(-50%)',
+        fontSize: '1.25rem',
+        opacity: isFocused ? '1' : '0.6',
+        transition: 'all 0.3s ease',
+        pointerEvents: 'none',
+        zIndex: 1
+      }}>
+        {icon}
+      </span>
+
+      {/* Select */}
+      <select
+        name={name}
+        value={value}
+        onChange={onChange}
+        onFocus={() => setFocusedField(name)}
+        onBlur={() => setFocusedField('')}
+        style={{
+          width: '100%',
+          padding: '1rem 1rem 1rem 3.25rem',
+          borderRadius: '14px',
+          border: isFocused ? '2.5px solid #10B981' : '2.5px solid #E5E7EB',
+          backgroundColor: isFocused ? '#F0FDF4' : '#F9FAFB',
+          fontSize: '1rem',
+          fontFamily: '"Playfair Display", serif',
+          color: '#1a1a1a',
+          outline: 'none',
+          cursor: 'pointer',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          boxShadow: isFocused ? '0 0 0 4px rgba(16, 185, 129, 0.1)' : 'none',
+          appearance: 'none',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'right 1rem center'
+        }}
+      >
+        {options.map(option => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
+export default Register;
+

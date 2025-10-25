@@ -2,11 +2,11 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { logout } from '../store/authSlice';
-import { Person, Login, Logout } from '@mui/icons-material';
+import { Person, Login, Logout, PersonAdd, Assignment } from '@mui/icons-material';
 
 /**
- * UserGreeting Component - Dynamic Island Style
- * Shows welcome message if logged in, or login button if not
+ * UserGreeting Component - Modern Glassmorphism Style
+ * Shows welcome message if logged in, or login/register buttons if not
  * Fades out on scroll down, fades in on scroll up
  */
 const UserGreeting = () => {
@@ -19,21 +19,21 @@ const UserGreeting = () => {
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      
+
       // If scrolling down and past 50px, hide
       if (currentScrollY > lastScrollY && currentScrollY > 50) {
         setIsVisible(false);
-      } 
+      }
       // If scrolling up, show
       else if (currentScrollY < lastScrollY) {
         setIsVisible(true);
       }
-      
+
       setLastScrollY(currentScrollY);
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -43,12 +43,22 @@ const UserGreeting = () => {
     navigate('/login');
   };
 
+  const handleRegisterClick = () => {
+    navigate('/register');
+  };
+
   const handleLogoutClick = () => {
     dispatch(logout());
+    // Refresh the page after logout
+    window.location.reload();
+  };
+
+  const handleDashboardClick = () => {
+    navigate('/dashboard');
   };
 
   if (!isAuthenticated) {
-    // Not logged in - Show login button in dynamic island style
+    // Not logged in - Show login and register buttons with modern glassmorphism
     return (
       <div
         style={{
@@ -62,43 +72,103 @@ const UserGreeting = () => {
           pointerEvents: isVisible ? 'auto' : 'none',
         }}
       >
-        <button
-          onClick={handleLoginClick}
+        <div
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '0.75rem',
-            backgroundColor: 'rgba(16, 185, 129, 0.95)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            color: '#FFFFFF',
-            padding: '0.875rem 2rem',
+            gap: '0.625rem',
+            backgroundColor: '#EBF5CF',
+            backgroundImage: `
+              url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E")
+            `,
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+            padding: '0.5rem',
             borderRadius: '50px',
-            border: '2px solid rgba(255, 255, 255, 0.3)',
-            fontSize: '1rem',
-            fontWeight: '600',
-            fontFamily: '"Playfair Display", serif',
-            cursor: 'pointer',
-            boxShadow: '0 8px 32px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.05)';
-            e.currentTarget.style.boxShadow = '0 12px 40px rgba(16, 185, 129, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 8px 32px rgba(16, 185, 129, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)';
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            boxShadow: '0 4px 20px rgba(16, 185, 129, 0.15), 0 0 0 1px rgba(16, 185, 129, 0.1)',
           }}
         >
-          <Login sx={{ fontSize: 20 }} />
-          <span>Giriş Yap</span>
-        </button>
+          {/* Register Button */}
+          <button
+            onClick={handleRegisterClick}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              backgroundColor: 'transparent',
+              color: '#2d5016',
+              padding: '0.625rem 1.25rem',
+              borderRadius: '50px',
+              border: 'none',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              fontFamily: '"Playfair Display", serif',
+              cursor: 'pointer',
+              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+              position: 'relative',
+              overflow: 'hidden',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.12)';
+              e.currentTarget.style.color = '#059669';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = '#2d5016';
+            }}
+          >
+            <PersonAdd sx={{ fontSize: 16 }} />
+            <span>Kayıt Ol</span>
+          </button>
+
+          {/* Divider */}
+          <div
+            style={{
+              width: '1px',
+              height: '20px',
+              backgroundColor: 'rgba(16, 185, 129, 0.25)',
+            }}
+          />
+
+          {/* Login Button */}
+          <button
+            onClick={handleLoginClick}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              color: '#FFFFFF',
+              padding: '0.625rem 1.25rem',
+              borderRadius: '50px',
+              border: 'none',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              fontFamily: '"Playfair Display", serif',
+              cursor: 'pointer',
+              boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)',
+              transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+              position: 'relative',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-1px)';
+              e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = '0 4px 16px rgba(16, 185, 129, 0.3)';
+            }}
+          >
+            <Login sx={{ fontSize: 16 }} />
+            <span>Giriş Yap</span>
+          </button>
+        </div>
       </div>
     );
   }
 
-  // Logged in - Show welcome message with logout button
+  // Logged in - Show modern welcome message with logout button
   return (
     <div
       style={{
@@ -116,74 +186,133 @@ const UserGreeting = () => {
         style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '1rem',
-          backgroundColor: 'rgba(26, 26, 26, 0.95)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          padding: '0.875rem 1.5rem',
+          gap: '0.75rem',
+          backgroundColor: '#EBF5CF',
+          backgroundImage: `
+            url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='2.5' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.15'/%3E%3C/svg%3E")
+          `,
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          padding: '0.625rem 1rem 0.625rem 0.625rem',
           borderRadius: '50px',
-          border: '2px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(16, 185, 129, 0.2)',
+          boxShadow: '0 4px 20px rgba(16, 185, 129, 0.15), 0 0 0 1px rgba(16, 185, 129, 0.1)',
         }}
       >
-        {/* User Avatar Circle */}
+        {/* User Avatar with gradient ring */}
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
+            position: 'relative',
+            padding: '2px',
             background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.4)',
+            borderRadius: '50%',
+            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
           }}
         >
-          <Person sx={{ fontSize: 20, color: '#FFFFFF' }} />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '34px',
+              height: '34px',
+              borderRadius: '50%',
+              backgroundColor: '#EBF5CF',
+            }}
+          >
+            <Person sx={{ fontSize: 19, color: '#059669' }} />
+          </div>
         </div>
 
-        {/* Welcome Text */}
+        {/* Welcome Text with modern typography */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.125rem' }}>
           <span
             style={{
-              color: '#FFFFFF',
-              fontSize: '1rem',
-              fontWeight: '700',
+              color: '#6b8e4e',
+              fontSize: '0.625rem',
+              fontWeight: '500',
+              fontFamily: '"Playfair Display", serif',
+              letterSpacing: '0.05em',
+              textTransform: 'uppercase',
+            }}
+          >
+            Hoşgeldin
+          </span>
+          <span
+            style={{
+              color: '#2d5016',
+              fontSize: '0.875rem',
+              fontWeight: '600',
               fontFamily: '"Playfair Display", serif',
               lineHeight: '1.2',
             }}
           >
-            Hoşgeldin, {user?.name || 'Kullanıcı'}
+            {user?.name || 'Kullanıcı'}
           </span>
         </div>
 
-        {/* Logout Button */}
+        {/* Başvurularım Button */}
+        <button
+          onClick={handleDashboardClick}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.375rem',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            color: '#059669',
+            padding: '0.5rem 0.875rem',
+            borderRadius: '50px',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            fontSize: '0.75rem',
+            fontWeight: '600',
+            fontFamily: '"Playfair Display", serif',
+            cursor: 'pointer',
+            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            marginLeft: '0.25rem',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
+            e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+            e.currentTarget.style.transform = 'translateY(-1px)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+            e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          <Assignment sx={{ fontSize: 14 }} />
+        </button>
+
+        {/* Logout Button with modern hover effect */}
         <button
           onClick={handleLogoutClick}
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            width: '36px',
-            height: '36px',
+            width: '32px',
+            height: '32px',
             borderRadius: '50%',
-            backgroundColor: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
+            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
             marginLeft: '0.5rem',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
-            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.15)';
+            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.3)';
+            e.currentTarget.style.transform = 'scale(1.05)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)';
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+            e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.1)';
+            e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.2)';
+            e.currentTarget.style.transform = 'scale(1)';
           }}
           title="Çıkış Yap"
         >
-          <Logout sx={{ fontSize: 18, color: '#FFFFFF' }} />
+          <Logout sx={{ fontSize: 16, color: '#dc2626' }} />
         </button>
       </div>
     </div>

@@ -2,7 +2,11 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { AnimatePresence } from 'framer-motion';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
+import Register from './pages/Register';
+import LoadingScreen from './pages/LoadingScreen';
 import FillForm from './pages/FillForm';
+import Dashboard from './pages/Dashboard';
+import CoverLetterGeneration from './pages/CoverLetterGeneration';
 
 /**
  * AnimatedRoutes Component
@@ -16,7 +20,11 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/loading-screen" element={<LoadingScreen />} />
         <Route path="/fill-form" element={<FillForm />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/cover-letter-generation" element={<CoverLetterGeneration />} />
       </Routes>
     </AnimatePresence>
   );

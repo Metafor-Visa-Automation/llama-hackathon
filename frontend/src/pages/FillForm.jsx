@@ -1,138 +1,253 @@
-import { useState } from 'react';
-import { useSelector } from 'react-redux';
+import { useState, useEffect, useCallback } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import QuestionCard from '../components/QuestionCard';
-import vibeBg from '../assets/vibe-bg1.webp';
-import { ArrowBack } from '@mui/icons-material';
+import ProgressStepper from '../components/ProgressStepper';
+import vibeBg from '../assets/vibe-bg3.png';
+import { ArrowBack, FlightTakeoff as FlightTakeoffIcon } from '@mui/icons-material';
+// TODO: Replace with actual AI service call
+import mockResponseData from '../ai_responses/response-fransa.json';
+import {
+  setQuestions,
+  setAnswer,
+  nextQuestion,
+  previousQuestion,
+  markQuestionComplete,
+  markQuestionIncomplete,
+  setFormMetadata,
+  resetForm
+} from '../store/formSlice';
 
 /**
- * FillForm Page Component - Jotform Cards Style
+ * FillForm Page Component - Cards Style
  * One question at a time with progress tracking
- * Questions will eventually come from AI
+ * Questions are dynamically generated from AI response (currently using mock data)
+ * Form state managed in Redux, documents stored locally
  */
 const FillForm = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  // Country selection data (will be used in future updates)
   // eslint-disable-next-line no-unused-vars
   const { originCountry, destinationCountry } = useSelector((state) => state.country);
+  
+  // Redux state
+  const { 
+    questions, 
+    answers, 
+    currentQuestionIndex,
+    completedQuestions 
+  } = useSelector((state) => state.form);
 
-  // Current question index
-  const [currentQuestion, setCurrentQuestion] = useState(0);
+  // Local state for documents (not in Redux due to size)
+  const [documents, setDocuments] = useState({});
   const [direction, setDirection] = useState(0); // For animation direction
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock questions (will be replaced with AI-generated questions)
-  const [answers, setAnswers] = useState({
-    fullName: '',
-    passportNumber: '',
-    travelPurpose: '',
-    travelDuration: '',
-    accommodationInfo: '',
-    previousVisas: '',
-    financialStatus: ''
-  });
+  /**
+   * Process action steps from AI response into question format
+   */
+  const processActionSteps = useCallback((actionSteps) => {
+    const processedQuestions = actionSteps.map(step => ({
+      id: step.step_id,
+      type: step.requires_document ? 'document' : 'textarea',
+      question: step.title,
+      title: step.title,
+      description: step.description,
+      placeholder: step.requires_document 
+        ? 'Döküman yükleyiniz' 
+        : 'Detaylı bilgi veriniz...',
+      required: step.mandatory,
+      mandatory: step.mandatory,
+      requires_document: step.requires_document,
+      category: step.category,
+      priority_score: step.priority_score,
+      estimated_duration: step.estimated_duration,
+      cost_estimate: step.cost_estimate,
+      detailed_instructions: step.detailed_instructions,
+      common_mistakes: step.common_mistakes,
+      helpful_tips: step.helpful_tips,
+      source_urls: step.source_urls
+    }));
 
-  // Question definitions
-  const questions = [
-    {
-      id: 'fullName',
-      type: 'text',
-      question: 'Tam adınız nedir?',
-      placeholder: 'Örn: Ahmet Yılmaz',
-      required: true
-    },
-    {
-      id: 'passportNumber',
-      type: 'text',
-      question: 'Pasaport numaranız nedir?',
-      placeholder: 'Örn: U12345678',
-      required: true
-    },
-    {
-      id: 'travelPurpose',
-      type: 'radio',
-      question: 'Seyahat amacınız nedir?',
-      options: [
-        { value: 'tourism', label: 'Turizm' },
-        { value: 'business', label: 'İş' },
-        { value: 'education', label: 'Eğitim' },
-        { value: 'family', label: 'Aile Ziyareti' }
-      ],
-      required: true
-    },
-    {
-      id: 'travelDuration',
-      type: 'text',
-      question: 'Ne kadar süreyle seyahat edeceksiniz?',
-      placeholder: 'Örn: 15 gün',
-      required: true
-    },
-    {
-      id: 'accommodationInfo',
-      type: 'textarea',
-      question: 'Nerede kalacaksınız?',
-      placeholder: 'Otel adı veya adres',
-      required: true
-    },
-    {
-      id: 'previousVisas',
-      type: 'radio',
-      question: 'Daha önce Schengen vizesi aldınız mı?',
-      options: [
-        { value: 'yes', label: 'Evet' },
-        { value: 'no', label: 'Hayır' }
-      ],
-      required: true
-    },
-    {
-      id: 'financialStatus',
-      type: 'textarea',
-      question: 'Seyahatinizi nasıl finanse edeceksiniz?',
-      placeholder: 'Mali durumunuzu açıklayın',
-      required: true
+    // Dispatch to Redux
+    dispatch(setQuestions(processedQuestions));
+    
+    // Set metadata
+    dispatch(setFormMetadata({
+      estimatedTotalTime: mockResponseData.estimated_total_time || '',
+      estimatedTotalCost: mockResponseData.estimated_total_cost || ''
+    }));
+
+    // Initialize local documents state
+    const initialDocuments = {};
+    processedQuestions.forEach(q => {
+      initialDocuments[q.id] = []; // Array for multiple documents
+    });
+    setDocuments(initialDocuments);
+    setIsLoading(false);
+  }, [dispatch]);
+
+  useEffect(() => {
+    // Load questions only if not already loaded
+    if (questions.length === 0) {
+      // TODO: Replace this with actual AI service call
+      // const fetchVisaRequirements = async () => {
+      //   try {
+      //     const response = await fetch('/api/visa-requirements', {
+      //       method: 'POST',
+      //       body: JSON.stringify({
+      //         originCountry,
+      //         destinationCountry
+      //       })
+      //     });
+      //     const data = await response.json();
+      //     processActionSteps(data.action_steps);
+      //   } catch (error) {
+      //     console.error('Error fetching visa requirements:', error);
+      //   }
+      // };
+      // fetchVisaRequirements();
+
+      // Using mock data for now
+      if (mockResponseData && mockResponseData.action_steps) {
+        processActionSteps(mockResponseData.action_steps);
+      }
+    } else {
+      setIsLoading(false);
     }
-  ];
+  }, [questions.length, processActionSteps]);
 
   const totalQuestions = questions.length;
-  const progress = ((currentQuestion + 1) / totalQuestions) * 100;
 
   const handleAnswer = (value) => {
-    setAnswers(prev => ({
+    if (questions.length === 0) return;
+    const questionId = questions[currentQuestionIndex].id;
+    dispatch(setAnswer({ questionId, value }));
+    checkQuestionCompletion();
+  };
+
+  const handleDocumentAdd = (file) => {
+    if (questions.length === 0) return;
+    const questionId = questions[currentQuestionIndex].id;
+    setDocuments(prev => ({
       ...prev,
-      [questions[currentQuestion].id]: value
+      [questionId]: [...(prev[questionId] || []), file]
     }));
+    // Check if question is now complete
+    setTimeout(() => checkQuestionCompletion(), 100);
+  };
+
+  const handleDocumentRemove = (index) => {
+    if (questions.length === 0) return;
+    const questionId = questions[currentQuestionIndex].id;
+    setDocuments(prev => ({
+      ...prev,
+      [questionId]: prev[questionId].filter((_, i) => i !== index)
+    }));
+    // Check if question is still complete
+    setTimeout(() => checkQuestionCompletion(), 100);
+  };
+
+  /**
+   * Check if current question is complete and mark it
+   */
+  const checkQuestionCompletion = () => {
+    if (questions.length === 0) return;
+    
+    const currentQ = questions[currentQuestionIndex];
+    const questionId = currentQ.id;
+    
+    let isComplete = false;
+    
+    if (currentQ.requires_document) {
+      const docs = documents[questionId];
+      isComplete = Array.isArray(docs) && docs.length > 0;
+    } else {
+      const answer = answers[questionId];
+      isComplete = answer && answer.trim() !== '';
+    }
+    
+    if (isComplete) {
+      dispatch(markQuestionComplete(currentQuestionIndex));
+    } else {
+      dispatch(markQuestionIncomplete(currentQuestionIndex));
+    }
   };
 
   const handleNext = () => {
-    if (currentQuestion < totalQuestions - 1) {
+    if (currentQuestionIndex < totalQuestions - 1) {
       setDirection(1);
-      setCurrentQuestion(prev => prev + 1);
+      dispatch(nextQuestion());
     }
   };
 
   const handlePrevious = () => {
-    if (currentQuestion > 0) {
+    if (currentQuestionIndex > 0) {
       setDirection(-1);
-      setCurrentQuestion(prev => prev - 1);
+      dispatch(previousQuestion());
     }
   };
 
   const handleSubmit = () => {
-    console.log('Form submitted:', answers);
+    console.log('Form submitted:', { answers, documents });
     // TODO: Send to backend/AI for processing
-    alert('Başvurunuz başarıyla gönderildi!');
-    navigate('/');
+    // This will include both text answers and uploaded documents
+    navigate('/cover-letter-generation');
   };
 
   const isCurrentQuestionAnswered = () => {
-    const currentAnswer = answers[questions[currentQuestion].id];
+    if (questions.length === 0) return false;
+    
+    const currentQ = questions[currentQuestionIndex];
+    const questionId = currentQ.id;
+    
+    // If it's a document question, check if at least one document is uploaded
+    if (currentQ.requires_document) {
+      const docs = documents[questionId];
+      return Array.isArray(docs) && docs.length > 0;
+    }
+    
+    // For text/textarea questions, check if answer is provided
+    const currentAnswer = answers[questionId];
     return currentAnswer && currentAnswer.trim() !== '';
   };
 
   const canGoNext = isCurrentQuestionAnswered();
+
+  // Show loading state while questions are being processed
+  if (isLoading || questions.length === 0) {
+    return (
+      <PageTransition>
+        <div 
+          className="min-h-screen flex items-center justify-center"
+          style={{
+            backgroundImage: `url(${vibeBg})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed'
+          }}
+        >
+          <div style={{
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(20px)',
+            padding: '2rem',
+            borderRadius: '24px',
+            textAlign: 'center',
+            fontFamily: '"Playfair Display", serif'
+          }}>
+            <h2 style={{ fontSize: '1.5rem', color: '#10B981', marginBottom: '1rem' }}>
+              Vize gereksinimleriniz hazırlanıyor...
+            </h2>
+            <p style={{ color: '#666666' }}>Lütfen bekleyin</p>
+          </div>
+        </div>
+      </PageTransition>
+    );
+  }
 
   // Animation variants for card transitions
   const cardVariants = {
@@ -161,46 +276,72 @@ const FillForm = () => {
           backgroundAttachment: 'fixed'
         }}
       >
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/')}
-          style={{
-            position: 'fixed',
-            top: '2rem',
-            left: '2rem',
+        {/* Back Button & Visa Flow Branding */}
+        <div style={{
+          position: 'fixed',
+          top: '2rem',
+          left: '2rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          zIndex: 100
+        }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '48px',
+              height: '48px',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: '50%',
+              border: '1px solid rgba(255, 255, 255, 0.8)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              color: '#1a1a1a'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateX(-5px)';
+              e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateX(0)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.15)';
+            }}
+          >
+            <ArrowBack sx={{ fontSize: 24 }} />
+          </button>
+
+          <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(20px)',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '50px',
-            border: '1px solid rgba(255, 255, 255, 0.8)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            fontFamily: '"Playfair Display", serif',
-            fontWeight: '600',
-            color: '#1a1a1a',
-            zIndex: 100
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateX(-4px)';
-            e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.2)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateX(0)';
-            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.15)';
-          }}
-        >
-          <ArrowBack sx={{ fontSize: 20 }} />
-          <span>Geri Dön</span>
-        </button>
+            gap: '0.5rem'
+          }}>
+            <span style={{
+              fontStyle: 'italic',
+              fontSize: '2rem',
+              color: '#064E3B',
+              fontWeight: '400',
+              textShadow: '0 2px 10px rgba(255, 255, 255, 0.8)'
+            }}>
+              visa flow
+            </span>
+            <FlightTakeoffIcon sx={{ 
+              fontSize: 32, 
+              color: '#064E3B',
+              paddingTop: '0.3rem',
+              filter: 'drop-shadow(0 2px 10px rgba(255, 255, 255, 0.8))'
+            }} />
+          </div>
+        </div>
 
         {/* Main Container */}
         <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto' }}>
           {/* Welcome Header - Only show on first question */}
-          {currentQuestion === 0 && (
+          {currentQuestionIndex === 0 && (
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -223,14 +364,14 @@ const FillForm = () => {
                   fontFamily: '"Playfair Display", serif',
                 }}
               >
-                Vize Başvuru Formu
+                {destinationCountry?.name ? `${destinationCountry.name} Vize Başvurunuz` : 'Vize Başvurunuz'}
               </h1>
-              <p style={{ 
-                color: '#666666', 
+              <p style={{
+                color: '#666666',
                 fontSize: '1.1rem',
                 fontFamily: '"Playfair Display", serif',
               }}>
-                Hoşgeldin {user?.name}, lütfen soruları cevaplayın
+                Hoşgeldin {user?.name}, lütfen {destinationCountry?.name ? `${destinationCountry.name} vizesi için` : ''} soruları cevapla
               </p>
             </motion.div>
           )}
@@ -239,7 +380,7 @@ const FillForm = () => {
           <div style={{ overflow: 'hidden', width: '100%' }}>
             <AnimatePresence initial={false} custom={direction} mode="wait">
               <motion.div
-                key={currentQuestion}
+                key={currentQuestionIndex}
                 custom={direction}
                 variants={cardVariants}
                 initial="enter"
@@ -251,10 +392,13 @@ const FillForm = () => {
                 }}
               >
                 <QuestionCard
-                  question={questions[currentQuestion]}
-                  value={answers[questions[currentQuestion].id]}
+                  question={questions[currentQuestionIndex]}
+                  value={answers[questions[currentQuestionIndex].id]}
+                  documents={documents[questions[currentQuestionIndex].id] || []}
                   onChange={handleAnswer}
-                  currentIndex={currentQuestion}
+                  onDocumentAdd={handleDocumentAdd}
+                  onDocumentRemove={handleDocumentRemove}
+                  currentIndex={currentQuestionIndex}
                   totalQuestions={totalQuestions}
                   canGoNext={canGoNext}
                   onNext={handleNext}
@@ -265,82 +409,13 @@ const FillForm = () => {
             </AnimatePresence>
           </div>
 
-          {/* Progress Bar - Modern & Compact */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            style={{
-              marginTop: '2rem',
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              backdropFilter: 'blur(20px)',
-              padding: '1.75rem 2rem',
-              borderRadius: '20px',
-              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
-              border: '1px solid rgba(255, 255, 255, 0.6)',
-            }}
-          >
-            {/* Progress Percentage & Label */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '1rem'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{
-                  fontFamily: '"Playfair Display", serif',
-                  fontSize: '0.9rem',
-                  fontWeight: '600',
-                  color: '#666666',
-                  letterSpacing: '0.02em'
-                }}>
-                  İlerleme
-                </span>
-                <span style={{
-                  fontFamily: '"Playfair Display", serif',
-                  fontSize: '0.85rem',
-                  fontWeight: '500',
-                  color: '#9CA3AF',
-                }}>
-                  Soru {currentQuestion + 1} / {totalQuestions}
-                </span>
-              </div>
-              <span style={{
-                fontFamily: '"Playfair Display", serif',
-                fontSize: '1.1rem',
-                fontWeight: '700',
-                color: '#059669',
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-              }}>
-                {Math.round(progress)}%
-              </span>
-            </div>
-            
-            {/* Question Step Indicators */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: '0.75rem',
-              gap: '0.35rem'
-            }}>
-              {questions.map((_, index) => (
-                <div
-                  key={index}
-                  style={{
-                    flex: 1,
-                    height: index === currentQuestion ? '8px' : '6px',
-                    backgroundColor: index <= currentQuestion ? '#10B981' : '#E5E7EB',
-                    borderRadius: '4px',
-                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                  }}
-                />
-              ))}
-            </div>
-          </motion.div>
+          {/* Progress Stepper at Bottom */}
+          <ProgressStepper
+            questions={questions}
+            currentIndex={currentQuestionIndex}
+            completedQuestions={completedQuestions}
+            documents={documents}
+          />
         </div>
       </div>
     </PageTransition>
