@@ -54,5 +54,3 @@ test_*.py
 README.md
 docs/
 
-# Firebase key (should be mounted as volume in production)
-visa-a05d3-firebase-adminsdk-fbsvc-f627f00882.json
