@@ -24,11 +24,11 @@ def init_firebase():
             'projectId': settings.firebase_project_id
         })
         
-        print(f"✅ Firebase initialized successfully for project: {settings.firebase_project_id}")
+        print(f"[SUCCESS] Firebase initialized successfully for project: {settings.firebase_project_id}")
         return app
         
     except Exception as e:
-        print(f"❌ Error initializing Firebase: {str(e)}")
+        print(f"[ERROR] Error initializing Firebase: {str(e)}")
         raise e
 
 

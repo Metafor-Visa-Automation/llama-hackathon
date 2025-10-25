@@ -40,17 +40,17 @@ app = FastAPI(
     version=settings.app_version,
     description="Backend API for VisaPrep AI - Your intelligent visa application assistant",
     lifespan=lifespan,
-    docs_url="/docs" if settings.debug else None,
-    redoc_url="/redoc" if settings.debug else None,
+    docs_url="/docs",
+    redoc_url="/redoc",
 )
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=settings.allowed_origins if hasattr(settings, 'allowed_origins') else ["*"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=settings.allowed_methods if hasattr(settings, 'allowed_methods') else ["*"],
+    allow_headers=settings.allowed_headers if hasattr(settings, 'allowed_headers') else ["*"],
 )
 
 # Include API routes

@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  visa-prep-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+    volumes:
+      - ./visa-a05d3-firebase-adminsdk-fbsvc-f627f00882.json:/app/visa-a05d3-firebase-adminsdk-fbsvc-f627f00882.json:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

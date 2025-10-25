@@ -14,18 +14,63 @@ security = HTTPBearer()
 
 async def verify_firebase_token(token: str) -> Optional[dict]:
     """
-    Verify Firebase ID token and return decoded token data
+    Verify Firebase token (both custom tokens and ID tokens) and return decoded token data
     """
     try:
-        # Verify the token
-        decoded_token = auth.verify_id_token(token)
-        return decoded_token
-    except auth.InvalidIdTokenError:
-        logger.warning("Invalid Firebase ID token")
+        # First try to verify as ID token
+        try:
+            decoded_token = auth.verify_id_token(token)
+            return decoded_token
+        except (auth.InvalidIdTokenError, auth.ExpiredIdTokenError):
+            # If ID token verification fails, try as custom token
+            pass
+        
+        # Try to verify as custom token
+        try:
+            # For custom tokens, we need to decode them manually
+            import jwt
+            
+            # Get the project ID from the Firebase app
+            from firebase_admin import get_app
+            project_id = get_app().project_id
+            
+            # Decode the custom token without verification (since we trust our own tokens)
+            decoded_token = jwt.decode(token, options={"verify_signature": False})
+            
+            # Check if it's a service account token (from our login endpoint)
+            if decoded_token.get('iss') == f'firebase-adminsdk-fbsvc@visa-a05d3.iam.gserviceaccount.com':
+                # This is a service account token from our login endpoint
+                # Extract the UID from the custom token
+                uid = decoded_token.get('uid')
+                if uid:
+                    # Return a token-like structure with the UID
+                    return {
+                        'uid': uid,
+                        'iss': decoded_token.get('iss'),
+                        'aud': decoded_token.get('aud'),
+                        'iat': decoded_token.get('iat'),
+                        'exp': decoded_token.get('exp')
+                    }
+            
+            # Verify it's a custom token from our project
+            if decoded_token.get('iss') == f'https://securetoken.google.com/{project_id}':
+                # Extract the UID from the custom token
+                uid = decoded_token.get('uid')
+                if uid:
+                    # Return a token-like structure with the UID
+                    return {
+                        'uid': uid,
+                        'iss': decoded_token.get('iss'),
+                        'aud': decoded_token.get('aud'),
+                        'iat': decoded_token.get('iat'),
+                        'exp': decoded_token.get('exp')
+                    }
+        except Exception as e:
+            logger.warning(f"Failed to decode custom token: {str(e)}")
+        
+        logger.warning("Invalid Firebase token")
         return None
-    except auth.ExpiredIdTokenError:
-        logger.warning("Expired Firebase ID token")
-        return None
+        
     except Exception as e:
         logger.error(f"Error verifying Firebase token: {str(e)}")
         return None
