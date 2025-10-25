@@ -45,6 +45,34 @@ class ApplicationStatus(str, Enum):
     REJECTED = "REJECTED"
 
 
+class Gender(str, Enum):
+    MALE = "MALE"
+    FEMALE = "FEMALE"
+    OTHER = "OTHER"
+
+
+class TeamType(str, Enum):
+    FAMILY = "FAMILY"
+    BUSINESS = "BUSINESS"
+    STUDENT = "STUDENT"
+
+
+class DocumentType(str, Enum):
+    PASSPORT = "PASSPORT"
+    BANK_STATEMENT = "BANK_STATEMENT"
+    EMPLOYMENT_LETTER = "EMPLOYMENT_LETTER"
+    TRAVEL_INSURANCE = "TRAVEL_INSURANCE"
+    HOTEL_RESERVATION = "HOTEL_RESERVATION"
+    FLIGHT_RESERVATION = "FLIGHT_RESERVATION"
+
+
+class NotificationType(str, Enum):
+    INFO = "INFO"
+    WARNING = "WARNING"
+    SUCCESS = "SUCCESS"
+    ERROR = "ERROR"
+
+
 # Request Models
 class UserLogin(BaseModel):
     email: EmailStr
@@ -100,13 +128,62 @@ class TaskComplete(BaseModel):
 
 
 
+class UserResponse(BaseModel):
+    uid: str
+    email: str
+    name: str
+    surname: str
+    profile_type: ProfileType
+    passport_type: PassportType
+    phone: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    nationality: Optional[str] = None
+    gender: Optional[Gender] = None
+    passport_number: Optional[str] = None
+    passport_expiry_date: Optional[str] = None
+    passport_issue_date: Optional[str] = None
+    current_teams: List[str] = []
+    preferences: Optional[Dict[str, Any]] = None
+    created_at: datetime
+    updated_at: datetime
+    last_login_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=2, max_length=100)
+    surname: Optional[str] = Field(None, min_length=2, max_length=100)
+    profile_type: Optional[ProfileType] = None
+    passport_type: Optional[PassportType] = None
+    phone: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    nationality: Optional[str] = None
+    gender: Optional[Gender] = None
+    passport_number: Optional[str] = None
+    passport_expiry_date: Optional[str] = None
+    passport_issue_date: Optional[str] = None
+    preferences: Optional[Dict[str, Any]] = None
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserResponse
+    expires_in: int = 3600  # Token expires in 1 hour
+
+    class Config:
+        from_attributes = True
+
+
 # class UserDashboard(BaseModel):
 #     user: UserResponse
 #     total_applications: int
 #     active_applications: int
 #     completed_tasks: int
 #     pending_tasks: int
-#     recent_applications: List[ApplicationResponse]
+#     recent_applications: List["ApplicationResponse"]
 #     upcoming_deadlines: List[Dict[str, Any]]
 #     progress_summary: Dict[str, Any]
 
@@ -791,43 +868,6 @@ class NotificationMarkRead(BaseModel):
 
 
 # Enhanced User Schemas
-class UserResponse(BaseModel):
-    uid: str
-    email: str
-    name: str
-    surname: str
-    profile_type: ProfileType
-    passport_type: PassportType
-    phone: Optional[str] = None
-    date_of_birth: Optional[str] = None
-    nationality: Optional[str] = None
-    gender: Optional[Gender] = None
-    passport_number: Optional[str] = None
-    passport_expiry_date: Optional[str] = None
-    passport_issue_date: Optional[str] = None
-    current_teams: List[str] = []
-    preferences: Optional[Dict[str, Any]] = None
-    created_at: datetime
-    updated_at: datetime
-    last_login_at: Optional[datetime] = None
-
-    class Config:
-        from_attributes = True
-
-
-class UserUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=2, max_length=100)
-    surname: Optional[str] = Field(None, min_length=2, max_length=100)
-    profile_type: Optional[ProfileType] = None
-    passport_type: Optional[PassportType] = None
-    phone: Optional[str] = None
-    date_of_birth: Optional[str] = None
-    nationality: Optional[str] = None
-    gender: Optional[Gender] = None
-    passport_number: Optional[str] = None
-    passport_expiry_date: Optional[str] = None
-    passport_issue_date: Optional[str] = None
-    preferences: Optional[Dict[str, Any]] = None
 
 
 # Database Models

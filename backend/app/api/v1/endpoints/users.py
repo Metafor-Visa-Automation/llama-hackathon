@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from app.core.firebase import db
-from app.models.schemas import UserUpdate, UserResponse, UserInDB, UserDashboard, ApplicationResponse, NotificationResponse
+from app.models.schemas import UserUpdate, UserResponse, UserInDB, ApplicationResponse, NotificationResponse
 from app.services.security import get_current_user
 from datetime import datetime
 from typing import List
@@ -85,7 +85,7 @@ async def update_user_profile(
         )
 
 
-@router.get("/me/dashboard", response_model=UserDashboard)
+@router.get("/me/dashboard", response_model=dict)
 async def get_user_dashboard(current_user: UserInDB = Depends(get_current_user)):
     """
     Get user dashboard with comprehensive overview
@@ -182,16 +182,16 @@ async def get_user_dashboard(current_user: UserInDB = Depends(get_current_user))
             "total_documents_uploaded": completed_tasks  # Assuming each completed task has a document
         }
         
-        return UserDashboard(
-            user=user_response,
-            total_applications=total_applications,
-            active_applications=active_applications,
-            completed_tasks=completed_tasks,
-            pending_tasks=pending_tasks,
-            recent_applications=recent_applications,
-            upcoming_deadlines=upcoming_deadlines[:5],  # Limit to 5 upcoming deadlines
-            progress_summary=progress_summary
-        )
+        return {
+            "user": user_response,
+            "total_applications": total_applications,
+            "active_applications": active_applications,
+            "completed_tasks": completed_tasks,
+            "pending_tasks": pending_tasks,
+            "recent_applications": recent_applications,
+            "upcoming_deadlines": upcoming_deadlines[:5],  # Limit to 5 upcoming deadlines
+            "progress_summary": progress_summary
+        }
         
     except Exception as e:
         raise HTTPException(

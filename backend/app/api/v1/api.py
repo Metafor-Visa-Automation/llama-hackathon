@@ -3,7 +3,7 @@ from app.api.v1.endpoints import (
     auth, users, applications, documents, 
     visa_requirements, countries, tasks, 
     social_media_audit, admin, ai, support, analytics, integrations, reports, ocr, form_filling,
-    teams, user_documents, notifications
+    teams, user_documents, notifications, checklist_templates
 )
 
 api_router = APIRouter()
@@ -19,6 +19,7 @@ api_router.include_router(tasks.router, prefix="/tasks", tags=["tasks"])
 api_router.include_router(teams.router, prefix="/teams", tags=["teams"])
 api_router.include_router(user_documents.router, prefix="/user-documents", tags=["user-documents"])
 api_router.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+api_router.include_router(checklist_templates.router, prefix="/checklist-templates", tags=["checklist-templates"])
 api_router.include_router(social_media_audit.router, prefix="/social-audits", tags=["social-media-audit"])
 api_router.include_router(admin.router, prefix="/admin", tags=["admin"])
 api_router.include_router(ai.router, prefix="/ai", tags=["ai"])

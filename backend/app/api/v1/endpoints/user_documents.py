@@ -4,6 +4,7 @@ Handles document upload, listing, updating, and deletion
 """
 
 from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File, Query
+from fastapi.responses import FileResponse
 from app.core.firebase import db
 from app.models.schemas import (
     UserDocumentUpload, UserDocumentUpdate, UserDocumentResponse, 
