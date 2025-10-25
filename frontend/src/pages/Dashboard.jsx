@@ -17,6 +17,7 @@ import {
   DownloadOutlined,
   DeleteOutlined,
   ArrowBack,
+  FlightTakeoff as FlightTakeoffIcon,
 } from '@mui/icons-material';
 
 /**
@@ -596,40 +597,68 @@ const Dashboard = () => {
           }}
         />
 
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/')}
-          style={{
-            position: 'fixed',
-            top: '2rem',
-            left: '2rem',
-            zIndex: 1000,
-            width: '48px',
-            height: '48px',
-            borderRadius: '50%',
-            border: 'none',
-            background: 'rgba(255, 255, 255, 0.98)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            color: '#10b981',
+        {/* Back Button & Visa Flow Branding */}
+        <div style={{
+          position: 'fixed',
+          top: '2rem',
+          left: '2rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          zIndex: 1000
+        }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              border: 'none',
+              background: 'rgba(255, 255, 255, 0.98)',
+              backdropFilter: 'blur(20px)',
+              WebkitBackdropFilter: 'blur(20px)',
+              color: '#10b981',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'scale(1.1)';
+              e.target.style.boxShadow = '0 12px 40px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.9)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'scale(1)';
+              e.target.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8)';
+            }}
+          >
+            <ArrowBack style={{ fontSize: 24 }} />
+          </button>
+
+          <div style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = 'scale(1.1)';
-            e.target.style.boxShadow = '0 12px 40px rgba(16, 185, 129, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.9)';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = 'scale(1)';
-            e.target.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8)';
-          }}
-        >
-          <ArrowBack style={{ fontSize: 24 }} />
-        </button>
+            gap: '0.5rem'
+          }}>
+            <span style={{
+              fontStyle: 'italic',
+              fontSize: '2rem',
+              color: '#064E3B',
+              fontWeight: '400',
+              textShadow: '0 2px 10px rgba(255, 255, 255, 0.8)'
+            }}>
+              visa flow
+            </span>
+            <FlightTakeoffIcon sx={{ 
+              fontSize: 32, 
+              color: '#064E3B',
+              paddingTop: '0.3rem',
+              filter: 'drop-shadow(0 2px 10px rgba(255, 255, 255, 0.8))'
+            }} />
+          </div>
+        </div>
 
         <div
           style={{

@@ -45,7 +45,7 @@ const LoadingScreen = () => {
       setTimeout(() => {
         navigate('/fill-form');
       }, 1500);
-    }, 10000); // 10 seconds simulated loading
+    }, 5000); // 5 seconds simulated loading
 
     return () => clearTimeout(loadingTimer);
   }, [navigate]);

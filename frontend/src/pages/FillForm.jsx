@@ -7,7 +7,7 @@ import PageTransition from '../components/PageTransition';
 import QuestionCard from '../components/QuestionCard';
 import ProgressStepper from '../components/ProgressStepper';
 import vibeBg from '../assets/vibe-bg3.png';
-import { ArrowBack } from '@mui/icons-material';
+import { ArrowBack, FlightTakeoff as FlightTakeoffIcon } from '@mui/icons-material';
 // TODO: Replace with actual AI service call
 import mockResponseData from '../ai_responses/response-fransa.json';
 import {
@@ -276,41 +276,67 @@ const FillForm = () => {
           backgroundAttachment: 'fixed'
         }}
       >
-        {/* Back Button */}
-        <button
-          onClick={() => navigate('/')}
-          style={{
-            position: 'fixed',
-            top: '2rem',
-            left: '2rem',
+        {/* Back Button & Visa Flow Branding */}
+        <div style={{
+          position: 'fixed',
+          top: '2rem',
+          left: '2rem',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '1rem',
+          zIndex: 100
+        }}>
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '48px',
+              height: '48px',
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              backdropFilter: 'blur(20px)',
+              borderRadius: '50%',
+              border: '1px solid rgba(255, 255, 255, 0.8)',
+              boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              color: '#1a1a1a'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateX(-5px)';
+              e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.2)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateX(0)';
+              e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.15)';
+            }}
+          >
+            <ArrowBack sx={{ fontSize: 24 }} />
+          </button>
+
+          <div style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '0.5rem',
-            backgroundColor: 'rgba(255, 255, 255, 0.95)',
-            backdropFilter: 'blur(20px)',
-            padding: '0.75rem 1.5rem',
-            borderRadius: '50px',
-            border: '1px solid rgba(255, 255, 255, 0.8)',
-            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease',
-            fontFamily: '"Playfair Display", serif',
-            fontWeight: '600',
-            color: '#1a1a1a',
-            zIndex: 100
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'translateX(-4px)';
-            e.currentTarget.style.boxShadow = '0 12px 40px rgba(0, 0, 0, 0.2)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'translateX(0)';
-            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.15)';
-          }}
-        >
-          <ArrowBack sx={{ fontSize: 20 }} />
-          <span>Geri Dön</span>
-        </button>
+            gap: '0.5rem'
+          }}>
+            <span style={{
+              fontStyle: 'italic',
+              fontSize: '2rem',
+              color: '#064E3B',
+              fontWeight: '400',
+              textShadow: '0 2px 10px rgba(255, 255, 255, 0.8)'
+            }}>
+              visa flow
+            </span>
+            <FlightTakeoffIcon sx={{ 
+              fontSize: 32, 
+              color: '#064E3B',
+              paddingTop: '0.3rem',
+              filter: 'drop-shadow(0 2px 10px rgba(255, 255, 255, 0.8))'
+            }} />
+          </div>
+        </div>
 
         {/* Main Container */}
         <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto' }}>
