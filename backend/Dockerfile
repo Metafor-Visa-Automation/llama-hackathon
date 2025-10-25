@@ -5,7 +5,7 @@ FROM python:3.12-slim AS builder
 WORKDIR /app
 
 # Install system dependencies for building
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     g++ \
     build-essential \
@@ -34,8 +34,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/home/appuser/.local/bin:$PATH"
 
 # Install runtime dependencies
-RUN apt-get update && apt-get install -y \
+# *** ADDED libgl1-mesa-glx HERE ***
+RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    libgl1-mesa-glx \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
@@ -62,3 +64,17 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 
 # Run the application with gunicorn for production
 CMD ["gunicorn", "app.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--access-logfile", "-", "--error-logfile", "-"]
+
+
+
+**Changes Made:**
+* Added `libgl1-mesa-glx` to the `apt-get install` command in the final `production` stage.
+* Added `--no-install-recommends` to the `apt-get install` commands to keep the image size smaller (good practice).
+
+---
+
+Now, please **replace the content of your `~/llama-hackathon/backend/Dockerfile`** with the code above.
+
+Then, you can proceed with:
+1.  **Rebuilding the image:** `docker build --no-cache -t metafor-backend .`
+2.  **Restarting the containers:** Use the `docker stop/rm` and `docker run` commands from the previous steps.
