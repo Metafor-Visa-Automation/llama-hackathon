@@ -1,16 +1,43 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { logout } from '../store/authSlice';
 import { Person, Login, Logout } from '@mui/icons-material';
 
 /**
  * UserGreeting Component - Dynamic Island Style
  * Shows welcome message if logged in, or login button if not
+ * Fades out on scroll down, fades in on scroll up
  */
 const UserGreeting = () => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // If scrolling down and past 50px, hide
+      if (currentScrollY > lastScrollY && currentScrollY > 50) {
+        setIsVisible(false);
+      } 
+      // If scrolling up, show
+      else if (currentScrollY < lastScrollY) {
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [lastScrollY]);
 
   const handleLoginClick = () => {
     navigate('/login');
@@ -30,6 +57,9 @@ const UserGreeting = () => {
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 1000,
+          opacity: isVisible ? 1 : 0,
+          transition: 'opacity 0.4s ease-in-out',
+          pointerEvents: isVisible ? 'auto' : 'none',
         }}
       >
         <button
@@ -77,6 +107,9 @@ const UserGreeting = () => {
         left: '50%',
         transform: 'translateX(-50%)',
         zIndex: 1000,
+        opacity: isVisible ? 1 : 0,
+        transition: 'opacity 0.4s ease-in-out',
+        pointerEvents: isVisible ? 'auto' : 'none',
       }}
     >
       <div
@@ -91,7 +124,6 @@ const UserGreeting = () => {
           borderRadius: '50px',
           border: '2px solid rgba(255, 255, 255, 0.1)',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-          animation: 'slideDown 0.5s ease-out',
         }}
       >
         {/* User Avatar Circle */}
@@ -154,20 +186,6 @@ const UserGreeting = () => {
           <Logout sx={{ fontSize: 18, color: '#FFFFFF' }} />
         </button>
       </div>
-
-      {/* Animation Keyframes */}
-      <style>{`
-        @keyframes slideDown {
-          from {
-            opacity: 0;
-            transform: translate(-50%, -20px);
-          }
-          to {
-            opacity: 1;
-            transform: translate(-50%, 0);
-          }
-        }
-      `}</style>
     </div>
   );
 };
