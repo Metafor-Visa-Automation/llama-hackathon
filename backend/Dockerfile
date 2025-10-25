@@ -64,17 +64,3 @@ HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
 
 # Run the application with gunicorn for production
 CMD ["gunicorn", "app.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--access-logfile", "-", "--error-logfile", "-"]
-
-
-
-**Changes Made:**
-* Added `libgl1-mesa-glx` to the `apt-get install` command in the final `production` stage.
-* Added `--no-install-recommends` to the `apt-get install` commands to keep the image size smaller (good practice).
-
----
-
-Now, please **replace the content of your `~/llama-hackathon/backend/Dockerfile`** with the code above.
-
-Then, you can proceed with:
-1.  **Rebuilding the image:** `docker build --no-cache -t metafor-backend .`
-2.  **Restarting the containers:** Use the `docker stop/rm` and `docker run` commands from the previous steps.
