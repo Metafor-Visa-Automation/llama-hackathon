@@ -99,7 +99,7 @@ const Landing = () => {
           <div style={{ display: 'grid', gridTemplateColumns: '0.85fr 1.15fr', gap: '3rem', alignItems: 'center' }}>
             {/* Left Side - Text Content */}
             <div key="hero-content">
-              {/* Brand Badge - Eye-Catching with Green Theme */}
+              {/* Brand text */}
               <motion.div
                 key="badge-animation"
                 initial="hidden"
@@ -109,26 +109,20 @@ const Landing = () => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.5rem',
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  padding: '0.6rem 1.5rem',
-                  borderRadius: '50px',
-                  marginBottom: '1.5rem',
-                  boxShadow: '0 4px 20px rgba(16, 185, 129, 0.3)',
-                  animation: 'pulse 2s ease-in-out infinite'
+                  marginBottom: '1.5rem'
                 }}
               >
-                <FlightTakeoffIcon sx={{ fontSize: 20, color: '#FFFFFF' }} />
                 <span
                   style={{
-                    fontSize: '0.95rem',
-                    fontWeight: '700',
-                    color: '#FFFFFF',
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase'
+                    fontStyle: 'italic',
+                    fontSize: '2.5rem',
+                    color: '#064E3B',
+                    fontWeight: '400'
                   }}
                 >
-                  Visa Flow
+                  visa flow
                 </span>
+                <FlightTakeoffIcon sx={{ fontSize: 36, color: '#064E3B', paddingTop: '0.5rem' }} />
               </motion.div>
 
               {/* Main Hero Headline - Bold & Attention-Grabbing */}
