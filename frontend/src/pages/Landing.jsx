@@ -1,7 +1,10 @@
 import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import InteractiveWorldMap from '../components/InteractiveWorldMap';
+import LogoMarquee from '../components/LogoMarquee';
+import MVPBadge from '../components/MVPBadge';
 import ProcessSteps from '../components/ProcessSteps';
+import StatsSection from '../components/StatsSection';
 import UserGreeting from '../components/UserGreeting';
 import PageTransition from '../components/PageTransition';
 import vibeBg from '../assets/vibe-bg1.webp';
@@ -186,8 +189,17 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Stats Section */}
+      <StatsSection />
+
       {/* 3-Step Process Section */}
       <ProcessSteps />
+
+      {/* MVP Badge Section */}
+      <MVPBadge />
+
+      {/* Logo Marquee - Tech Stack */}
+      <LogoMarquee />
 
       <footer style={{ 
         backgroundImage: `url(${vibeBg})`,

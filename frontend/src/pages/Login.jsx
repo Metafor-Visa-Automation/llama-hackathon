@@ -7,6 +7,7 @@ import vibeBg from '../assets/vibe-bg1.webp';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import { TextField, Button, InputAdornment, IconButton } from '@mui/material';
 import { Visibility, VisibilityOff, Mail, Lock } from '@mui/icons-material';
+import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
 
 /**
  * Login Page Component
@@ -98,31 +99,30 @@ const Login = () => {
       >
         {/* Logo & Brand */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              padding: '0.75rem 1.75rem',
-              borderRadius: '50px',
-              marginBottom: '1.5rem',
-              boxShadow: '0 4px 20px rgba(16, 185, 129, 0.3)'
-            }}
-          >
-            <FlightTakeoffIcon sx={{ fontSize: 24, color: '#FFFFFF' }} />
-            <span
-              style={{
-                fontSize: '1.1rem',
-                fontWeight: '700',
-                color: '#FFFFFF',
-                letterSpacing: '0.12em',
-                textTransform: 'uppercase'
-              }}
-            >
-              Visa Flow
-            </span>
-          </div>
+          {/* Brand text */}
+          <motion.div
+                key="badge-animation"
+                initial="hidden"
+                animate="visible"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginBottom: '1.5rem'
+                }}
+              >
+                <span
+                  style={{
+                    fontStyle: 'italic',
+                    fontSize: '2.5rem',
+                    color: '#064E3B',
+                    fontWeight: '400'
+                  }}
+                >
+                  visa flow
+                </span>
+                <FlightTakeoffIcon sx={{ fontSize: 36, color: '#064E3B', paddingTop: '0.5rem' }} />
+              </motion.div>
           
           <h1
             style={{
