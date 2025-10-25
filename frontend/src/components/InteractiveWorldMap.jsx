@@ -291,12 +291,12 @@ const InteractiveWorldMap = () => {
       return;
     }
 
-    // User is authenticated, redirect to fill form page
+    // User is authenticated, redirect to loading screen
     console.log('Starting application:', {
       from: ORIGIN_COUNTRIES[originCountry],
       to: destinationCountry.name
     });
-    navigate('/fill-form');
+    navigate('/loading-screen');
   };
 
   return (
