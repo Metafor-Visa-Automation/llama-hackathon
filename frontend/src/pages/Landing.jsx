@@ -11,14 +11,6 @@ import vibeBg from '../assets/vibe-bg1.webp';
  * Main landing page with interactive world map and application flow
  */
 const Landing = () => {
-  /**
-   * Handles the "Start Application" button click
-   * @param {Object} data - Contains originCountry and destinationCountry
-   */
-  const handleStartApplication = (data) => {
-    console.log('Starting application from:', data.originCountry, 'to:', data.destinationCountry);
-    // TODO: Navigate to application page
-  };
 
   // Animation variants for hero section - Slower, more cinematic
   const badgeVariants = {
@@ -194,9 +186,7 @@ const Landing = () => {
               animate="visible"
               variants={mapVariants}
             >
-              <InteractiveWorldMap
-                onStartApplication={handleStartApplication}
-              />
+              <InteractiveWorldMap />
             </motion.div>
           </div>
         </div>

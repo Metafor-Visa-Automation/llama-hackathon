@@ -57,10 +57,8 @@ const ORIGIN_COUNTRIES = {
 /**
  * InteractiveWorldMap Component using SimpleMaps
  * Displays an interactive world map highlighting Schengen countries with country selection
- * @param {Object} props
- * @param {Function} props.onStartApplication - Callback when application is started
  */
-const InteractiveWorldMap = ({ onStartApplication }) => {
+const InteractiveWorldMap = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const originCountry = useSelector((state) => state.country.originCountry);
@@ -287,12 +285,12 @@ const InteractiveWorldMap = ({ onStartApplication }) => {
       return;
     }
 
-    // User is authenticated, proceed with application
+    // User is authenticated, redirect to fill form page
     console.log('Starting application:', {
       from: ORIGIN_COUNTRIES[originCountry],
       to: SCHENGEN_COUNTRIES[destinationCountry]
     });
-    onStartApplication({ originCountry, destinationCountry });
+    navigate('/fill-form');
   };
 
   return (
