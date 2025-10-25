@@ -122,9 +122,9 @@ const MVPBadge = () => {
               </div>
               <ul className="space-y-4">
                 {[
-                  '26 Schengen Ülkesi',
-                  'AI Form Filling',
-                  'Belge Kontrol'
+                  '26 Schengen Ülkesine özelleşmiş scrapping sistemi',
+                  'Özelleşmiş form oluşturma sistemi',
+                  'Niyet mektubu oluşturma',
                 ].map((item, index) => (
                   <li
                     key={index}
