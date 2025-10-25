@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import FillForm from './pages/FillForm';
 import Dashboard from './pages/Dashboard';
+import CoverLetterGeneration from './pages/CoverLetterGeneration';
 
 /**
  * AnimatedRoutes Component
@@ -21,6 +22,7 @@ function AnimatedRoutes() {
         <Route path="/register" element={<Register />} />
         <Route path="/fill-form" element={<FillForm />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/cover-letter-generation" element={<CoverLetterGeneration />} />
       </Routes>
     </AnimatePresence>
   );

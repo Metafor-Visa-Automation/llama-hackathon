@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { TextField, Button, Radio, RadioGroup, FormControlLabel, FormControl, Chip, IconButton } from '@mui/material';
+import { TextField, Button, Radio, RadioGroup, FormControlLabel, FormControl, Chip, IconButton, Tooltip } from '@mui/material';
 import { 
   ArrowBack, 
   ArrowForward, 
@@ -13,10 +13,7 @@ import {
   Error as ErrorIcon,
   Warning as WarningIcon,
   Info as InfoIcon,
-  FiberManualRecord as CircleIcon,
-  Schedule as ScheduleIcon,
-  Euro as EuroIcon,
-  Lightbulb as LightbulbIcon
+  FiberManualRecord as CircleIcon
 } from '@mui/icons-material';
 
 /**
@@ -47,7 +44,6 @@ const QuestionCard = ({
   onDocumentRemove,
   currentIndex,
   totalQuestions,
-  canGoNext,
   onNext,
   onPrevious,
   onSubmit
@@ -547,11 +543,11 @@ const QuestionCard = ({
       )}
 
       {/* Additional Info Chips */}
-      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-        {question.priority_score && getPriorityInfo(question.priority_score) && (() => {
-          const priorityInfo = getPriorityInfo(question.priority_score);
-          const PriorityIcon = priorityInfo.Icon;
-          return (
+      {question.priority_score && getPriorityInfo(question.priority_score) && (() => {
+        const priorityInfo = getPriorityInfo(question.priority_score);
+        const PriorityIcon = priorityInfo.Icon;
+        return (
+          <div style={{ marginBottom: '1.5rem' }}>
             <Chip 
               icon={<PriorityIcon sx={{ fontSize: 16 }} />}
               label={priorityInfo.label}
@@ -568,91 +564,9 @@ const QuestionCard = ({
                 }
               }}
             />
-          );
-        })()}
-        {question.mandatory && (
-          <Chip 
-            label="Zorunlu" 
-            size="small"
-            sx={{
-              backgroundColor: '#FEE2E2',
-              color: '#DC2626',
-              fontFamily: '"Playfair Display", serif',
-              fontWeight: '600'
-            }}
-          />
-        )}
-        {question.estimated_duration && (
-          <Chip 
-            icon={<ScheduleIcon sx={{ fontSize: 16 }} />}
-            label={question.estimated_duration}
-            size="small"
-            sx={{
-              backgroundColor: '#E0E7FF',
-              color: '#4F46E5',
-              fontFamily: '"Playfair Display", serif',
-              '& .MuiChip-icon': {
-                color: '#4F46E5'
-              }
-            }}
-          />
-        )}
-        {question.cost_estimate && (
-          <Chip 
-            icon={<EuroIcon sx={{ fontSize: 16 }} />}
-            label={question.cost_estimate}
-            size="small"
-            sx={{
-              backgroundColor: '#FEF3C7',
-              color: '#D97706',
-              fontFamily: '"Playfair Display", serif',
-              '& .MuiChip-icon': {
-                color: '#D97706'
-              }
-            }}
-          />
-        )}
-      </div>
-
-      {/* Helpful Tips */}
-      {question.helpful_tips && question.helpful_tips.length > 0 && (
-        <div style={{
-          backgroundColor: '#F0FDF4',
-          border: '1px solid #A7F3D0',
-          borderRadius: '12px',
-          padding: '1rem',
-          marginBottom: '1.5rem'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            marginBottom: '0.5rem'
-          }}>
-            <LightbulbIcon sx={{ fontSize: 20, color: '#059669' }} />
-            <p style={{
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              color: '#059669',
-              margin: 0,
-              fontFamily: '"Playfair Display", serif',
-            }}>
-              Faydalı İpuçları:
-            </p>
           </div>
-          <ul style={{
-            margin: 0,
-            paddingLeft: '1.5rem',
-            color: '#047857',
-            fontFamily: '"Playfair Display", serif',
-            fontSize: '0.9rem'
-          }}>
-            {question.helpful_tips.map((tip, idx) => (
-              <li key={idx} style={{ marginBottom: '0.25rem' }}>{tip}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Input Field */}
       <div style={{ marginBottom: '1.5rem' }}>
@@ -661,69 +575,81 @@ const QuestionCard = ({
 
       {/* Source URLs */}
       {question.source_urls && question.source_urls.length > 0 && (
-        <div style={{
-          backgroundColor: '#F9FAFB',
-          border: '1px solid #E5E7EB',
-          borderRadius: '12px',
-          padding: '1rem',
-          marginBottom: '1.5rem'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            marginBottom: '0.75rem'
-          }}>
-            <LinkIcon sx={{ fontSize: 16, color: '#6B7280' }} />
-            <p style={{
-              fontSize: '0.85rem',
-              fontWeight: '600',
-              color: '#6B7280',
-              margin: 0,
-              fontFamily: '"Playfair Display", serif',
-            }}>
-              Kaynaklar
-            </p>
-          </div>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem'
-          }}>
-            {question.source_urls.slice(0, 3).map((url, idx) => (
-              <a
-                key={idx}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontSize: '0.8rem',
-                  color: '#3B82F6',
-                  textDecoration: 'none',
-                  fontFamily: '"Playfair Display", serif',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  display: 'block',
-                  transition: 'color 0.2s ease'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = '#2563EB'}
-                onMouseLeave={(e) => e.currentTarget.style.color = '#3B82F6'}
-              >
-                {url.length > 60 ? url.substring(0, 60) + '...' : url}
-              </a>
-            ))}
-            {question.source_urls.length > 3 && (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <Tooltip
+            title={
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.5rem',
+                padding: '0.25rem'
+              }}>
+                {question.source_urls.map((url, idx) => (
+                  <a
+                    key={idx}
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: '0.8rem',
+                      color: '#FFFFFF',
+                      textDecoration: 'underline',
+                      fontFamily: '"Playfair Display", serif',
+                      display: 'block',
+                      wordBreak: 'break-all'
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {url}
+                  </a>
+                ))}
+              </div>
+            }
+            arrow
+            placement="top"
+            componentsProps={{
+              tooltip: {
+                sx: {
+                  backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                  maxWidth: '400px',
+                  padding: '0.75rem',
+                  fontSize: '0.8rem'
+                }
+              }
+            }}
+          >
+            <div style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              backgroundColor: '#F9FAFB',
+              border: '1px solid #E5E7EB',
+              borderRadius: '8px',
+              padding: '0.5rem 1rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#F3F4F6';
+              e.currentTarget.style.borderColor = '#10B981';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#F9FAFB';
+              e.currentTarget.style.borderColor = '#E5E7EB';
+            }}
+            >
+              <LinkIcon sx={{ fontSize: 16, color: '#6B7280' }} />
               <p style={{
-                fontSize: '0.75rem',
-                color: '#9CA3AF',
+                fontSize: '0.85rem',
+                fontWeight: '600',
+                color: '#6B7280',
                 margin: 0,
                 fontFamily: '"Playfair Display", serif',
               }}>
-                +{question.source_urls.length - 3} kaynak daha
+                Kaynaklar ({question.source_urls.length})
               </p>
-            )}
-          </div>
+            </div>
+          </Tooltip>
         </div>
       )}
 
@@ -762,12 +688,9 @@ const QuestionCard = ({
         {!isLastQuestion ? (
           <Button
             onClick={onNext}
-            disabled={!canGoNext}
             endIcon={<ArrowForward />}
             sx={{
-              background: canGoNext 
-                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                : '#CCCCCC',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
               color: '#FFFFFF',
               padding: '0.875rem 2rem',
               borderRadius: '50px',
@@ -775,20 +698,11 @@ const QuestionCard = ({
               fontWeight: '700',
               textTransform: 'none',
               fontFamily: '"Playfair Display", serif',
-              boxShadow: canGoNext 
-                ? '0 6px 20px rgba(16, 185, 129, 0.4)'
-                : 'none',
+              boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)',
               '&:hover': {
-                background: canGoNext 
-                  ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
-                  : '#CCCCCC',
-                transform: canGoNext ? 'translateY(-2px)' : 'none',
-                boxShadow: canGoNext 
-                  ? '0 8px 25px rgba(16, 185, 129, 0.5)'
-                  : 'none',
-              },
-              '&:disabled': {
-                cursor: 'not-allowed',
+                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 25px rgba(16, 185, 129, 0.5)',
               },
               transition: 'all 0.3s ease',
             }}
@@ -798,12 +712,9 @@ const QuestionCard = ({
         ) : (
           <Button
             onClick={onSubmit}
-            disabled={!canGoNext}
             endIcon={<Send />}
             sx={{
-              background: canGoNext 
-                ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
-                : '#CCCCCC',
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
               color: '#FFFFFF',
               padding: '0.875rem 2rem',
               borderRadius: '50px',
@@ -811,25 +722,16 @@ const QuestionCard = ({
               fontWeight: '700',
               textTransform: 'none',
               fontFamily: '"Playfair Display", serif',
-              boxShadow: canGoNext 
-                ? '0 6px 20px rgba(16, 185, 129, 0.4)'
-                : 'none',
+              boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)',
               '&:hover': {
-                background: canGoNext 
-                  ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
-                  : '#CCCCCC',
-                transform: canGoNext ? 'translateY(-2px)' : 'none',
-                boxShadow: canGoNext 
-                  ? '0 8px 25px rgba(16, 185, 129, 0.5)'
-                  : 'none',
-              },
-              '&:disabled': {
-                cursor: 'not-allowed',
+                background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 25px rgba(16, 185, 129, 0.5)',
               },
               transition: 'all 0.3s ease',
             }}
           >
-            Gönder
+            Devam Et
           </Button>
         )}
       </div>

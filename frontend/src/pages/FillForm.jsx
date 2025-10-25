@@ -196,9 +196,7 @@ const FillForm = () => {
     console.log('Form submitted:', { answers, documents });
     // TODO: Send to backend/AI for processing
     // This will include both text answers and uploaded documents
-    alert('Başvurunuz başarıyla gönderildi!');
-    dispatch(resetForm()); // Reset form after submission
-    navigate('/dashboard');
+    navigate('/cover-letter-generation');
   };
 
   const isCurrentQuestionAnswered = () => {
