@@ -77,7 +77,15 @@ Kullanıcının profil ve seyahat planına göre profesyonel bir niyet mektubu t
 Yapay zeka, başvuruyla çelişebilecek veya riskli sosyal medya içeriklerini tespit eder ve çözüm önerileri sunar.
 
 ---
+## 💻 Demo Photos
+![WhatsApp Görsel 2025-10-26 saat 11 57 27_0950d49b](https://github.com/user-attachments/assets/282633e9-acdc-4526-9ff5-853d5fcf41ae)
+![WhatsApp Görsel 2025-10-26 saat 11 57 27_6de32355](https://github.com/user-attachments/assets/421c8565-dc70-4f28-88f9-1d2c2a2690f5)
+![WhatsApp Görsel 2025-10-26 saat 11 57 27_078b2f49](https://github.com/user-attachments/assets/aabfd2e9-ba00-4de2-bb4f-9e6ab9d1ce15)
+![WhatsApp Görsel 2025-10-26 saat 11 57 28_365ed608](https://github.com/user-attachments/assets/4c297643-fa11-4f3d-ad57-ec4f98a3a24a)
+![WhatsApp Görsel 2025-10-26 saat 11 57 28_6d0cf6b8](https://github.com/user-attachments/assets/890dfe85-1720-43ad-9baa-8fc72d58441b)
 
+
+---
 ## 🧠 4. Technologies Used  
 
 | Katman | Teknoloji |
