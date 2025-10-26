@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     port: int = 8000
     
     # OCR Configuration
-    groq_api_key: Optional[str] = None
+    groq_api_key: str = "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"
     
     # Security Settings
     secret_key: str = "your-secret-key-here"
