@@ -1,13 +1,13 @@
-# 🖥️ Visa Flow Frontend
+# 🖥️ Oto Vize Frontend
 
-Visa Flow, vize başvuru sürecini kolaylaştırmak için geliştirilmiş yapay zeka destekli bir otomasyon platformudur.  
+Oto Vize, vize başvuru sürecini kolaylaştırmak için geliştirilmiş yapay zeka destekli bir otomasyon platformudur.  
 Bu repo, projenin **kullanıcı arayüzü (frontend)** kısmını içerir ve React + Tailwind CSS teknolojileriyle geliştirilmiştir.  
 
 ---
 
 ## 🚀 1. Overview
 
-Visa Flow Frontend, kullanıcıların:  
+Oto Vize Frontend, kullanıcıların:  
 - Kişisel bilgilerini kolayca girmesini,  
 - Otomatik form doldurma sürecini başlatmasını,  
 - Belgelerini yüklemesini ve kontrol etmesini,  
