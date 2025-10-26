@@ -128,20 +128,3 @@ frontend/
 
 ---
 
-## 🤝 8. Contributing
-
-Katkıda bulunmak isteyenler için:  
-
-1. Fork oluşturun  
-2. Yeni bir branch açın  
-3. Değişikliklerinizi yapın  
-4. Pull request gönderin  
-
----
-
-## 👥 9. Team
-
-- Seçkin Alp Kargı  
-- Mert Çetin  
-- Toprak Necat Gök  
-- Ali Furkan Kaya  
