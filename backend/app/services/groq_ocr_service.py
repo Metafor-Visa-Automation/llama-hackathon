@@ -12,6 +12,7 @@ from groq import Groq
 from pdf2image import convert_from_bytes
 from PIL import Image
 import logging
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -22,9 +23,9 @@ class GroqOCRService:
     def __init__(self):
         """Initialize Groq client"""
         try:
-            api_key = "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"
+            api_key = settings.groq_api_key
             if not api_key:
-                logger.warning("GROQ_API_KEY not found in environment variables")
+                logger.warning("GROQ_API_KEY not found in settings")
                 self.client = None
             else:
                 self.client = Groq(api_key=api_key)
