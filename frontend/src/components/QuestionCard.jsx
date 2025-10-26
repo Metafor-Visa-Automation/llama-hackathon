@@ -373,78 +373,52 @@ const QuestionCard = ({
         borderRadius: '16px',
         padding: '1.5rem 2rem',
         transition: 'all 0.3s ease',
-        cursor: 'pointer',
         boxShadow: isChecked ? '0 4px 20px rgba(16, 185, 129, 0.15)' : '0 2px 8px rgba(0, 0, 0, 0.05)',
       }}
-      onClick={() => onChange(!isChecked)}
-      onMouseEnter={(e) => {
-        if (!isChecked) {
-          e.currentTarget.style.borderColor = '#10B981';
-          e.currentTarget.style.backgroundColor = '#F9FAFB';
-        }
-      }}
-      onMouseLeave={(e) => {
-        if (!isChecked) {
-          e.currentTarget.style.borderColor = '#E5E7EB';
-          e.currentTarget.style.backgroundColor = '#FAFAFA';
-        }
-      }}
       >
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={isChecked}
-              onChange={(e) => {
-                e.stopPropagation();
-                onChange(!isChecked);
-              }}
-              icon={<CheckBoxOutlineBlankIcon sx={{ fontSize: 32 }} />}
-              checkedIcon={<CheckBoxIcon sx={{ fontSize: 32 }} />}
-              sx={{
-                color: '#10B981',
-                '&.Mui-checked': {
-                  color: '#059669',
-                },
-                '& .MuiSvgIcon-root': {
-                  transition: 'all 0.2s ease',
-                }
-              }}
-            />
-          }
-          label={
-            <div style={{ marginLeft: '0.5rem' }}>
-              <p style={{
-                fontFamily: '"Playfair Display", serif',
-                fontSize: '1.1rem',
-                fontWeight: '600',
-                color: isChecked ? '#059669' : '#1a1a1a',
-                margin: 0,
-                marginBottom: '0.25rem',
-                transition: 'color 0.3s ease'
-              }}>
-                {isChecked ? 'Bu adımı tamamladım' : 'Bu adımı tamamlandı olarak işaretle'}
-              </p>
-              <p style={{
-                fontFamily: '"Playfair Display", serif',
-                fontSize: '0.85rem',
-                color: '#666666',
-                margin: 0
-              }}>
-                {isChecked
-                  ? 'Harika! Bir sonraki adıma geçebilirsiniz.'
-                  : 'Bu adım tamamlandığında işaretleyin'}
-              </p>
-            </div>
-          }
-          sx={{
-            width: '100%',
-            margin: 0,
-            alignItems: 'flex-start',
-            '& .MuiFormControlLabel-label': {
-              flex: 1,
-            }
-          }}
-        />
+        <div style={{ display: 'flex', alignItems: 'flex-start', width: '100%', margin: 0 }}>
+          <Checkbox
+            checked={isChecked}
+            onChange={(e) => onChange(e.target.checked)}
+            icon={<CheckBoxOutlineBlankIcon sx={{ fontSize: 32 }} />}
+            checkedIcon={<CheckBoxIcon sx={{ fontSize: 32 }} />}
+            sx={{
+              color: '#10B981',
+              '&.Mui-checked': {
+                color: '#059669',
+              },
+              '& .MuiSvgIcon-root': {
+                transition: 'all 0.2s ease',
+              },
+              padding: 0,
+              marginRight: '1rem',
+              marginTop: '0.2rem'
+            }}
+          />
+          <div style={{ flex: 1 }}>
+            <p style={{
+              fontFamily: '"Playfair Display", serif',
+              fontSize: '1.1rem',
+              fontWeight: '600',
+              color: isChecked ? '#059669' : '#1a1a1a',
+              margin: 0,
+              marginBottom: '0.25rem',
+              transition: 'color 0.3s ease'
+            }}>
+              {isChecked ? 'Bu adımı tamamladım' : 'Bu adımı tamamlandı olarak işaretle'}
+            </p>
+            <p style={{
+              fontFamily: '"Playfair Display", serif',
+              fontSize: '0.85rem',
+              color: '#666666',
+              margin: 0
+            }}>
+              {isChecked
+                ? 'Harika! Bir sonraki adıma geçebilirsiniz.'
+                : 'Bu adım tamamlandığında işaretleyin'}
+            </p>
+          </div>
+        </div>
 
         {isChecked && (
           <div style={{
