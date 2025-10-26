@@ -536,6 +536,10 @@ class DocumentResponse(BaseModel):
     doc_id: str
     user_id: str
     storage_path: str
+    file_name: Optional[str] = None
+    file_size: Optional[int] = None
+    mime_type: Optional[str] = None
+    download_url: Optional[str] = None
     status: str
     created_at: datetime
     updated_at: datetime
