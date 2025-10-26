@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchApplications, fetchDocuments, selectDashboard } from '../store/dashboardSlice';
 import PageTransition from '../components/PageTransition';
 import vibeBg from '../assets/vibe-bg3.png';
 import {
@@ -18,7 +20,74 @@ import {
   DeleteOutlined,
   ArrowBack,
   FlightTakeoff as FlightTakeoffIcon,
+  ErrorOutline as ErrorOutlineIcon,
 } from '@mui/icons-material';
+import { CircularProgress as MuiCircularProgress } from '@mui/material';
+
+const countryData = {
+  DE: { name: 'Almanya', flag: '🇩🇪' },
+  FR: { name: 'Fransa', flag: '🇫🇷' },
+  GB: { name: 'İngiltere', flag: '🇬🇧' },
+  NL: { name: 'Hollanda', flag: '🇳🇱' },
+  US: { name: 'Amerika', flag: '🇺🇸' },
+  // Add other countries as needed
+  default: { name: 'Bilinmeyen Ülke', flag: '🏳️' },
+};
+
+const getCountryInfo = (code) => {
+  const upperCode = code?.toUpperCase();
+  return countryData[upperCode] || countryData.default;
+};
+
+const formatApiDate = (dateString) => {
+  if (!dateString) return 'Tarih bilgisi yok';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('tr-TR', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+};
+
+const mapApplicationData = (app) => {
+  const countryInfo = getCountryInfo(app.country_code);
+  const totalItems = app.application_steps?.length || 1;
+  // This is a placeholder until step completion is available in the API
+  const completedItems = app.application_steps?.filter(s => s.status === 'COMPLETED').length || 0;
+
+  return {
+    id: app.app_id,
+    country: countryInfo.name,
+    flag: countryInfo.flag,
+    visaType: app.travel_purpose || 'Vize Başvurusu',
+    status: app.status === 'DRAFT' ? 'in_progress' : (app.status?.toLowerCase() || 'in_progress'),
+    approvalScore: Math.round((completedItems / totalItems) * 100) || 0, // Placeholder score
+    completedItems: completedItems,
+    totalItems: totalItems,
+    lastUpdated: formatApiDate(app.updated_at),
+  };
+};
+
+const mapDocumentData = (doc) => {
+  const pathParts = doc.storage_path.split('/');
+  const filename = pathParts.pop() || 'dosya';
+  const fileExtension = filename.split('.').pop()?.toLowerCase();
+
+  let type = 'other';
+  if (['pdf', 'doc', 'docx'].includes(fileExtension)) type = 'document';
+  if (['jpg', 'jpeg', 'png'].includes(fileExtension)) type = 'image';
+
+
+  return {
+    id: doc.doc_id,
+    name: filename,
+    type: type, // API doesn't provide this, so we default
+    size: 'N/A', // API doesn't provide this
+    uploadDate: formatApiDate(doc.created_at),
+    expiryDate: null, // API doesn't provide this
+  };
+};
+
 
 /**
  * Circular Progress Component for Approval Score
@@ -493,78 +562,74 @@ const DocumentItem = ({ document }) => {
 };
 
 /**
- * Mock Data
- */
-const mockApplications = [
-  {
-    id: 1,
-    flag: '🇩🇪',
-    country: 'Almanya',
-    visaType: 'İş Vizesi',
-    status: 'in_progress',
-    approvalScore: 78,
-    completedItems: 8,
-    totalItems: 12,
-    lastUpdated: '2 gün önce',
-  },
-  {
-    id: 2,
-    flag: '🇫🇷',
-    country: 'Fransa',
-    visaType: 'Turist Vizesi',
-    status: 'completed',
-    approvalScore: 92,
-    completedItems: 10,
-    totalItems: 10,
-    lastUpdated: '1 hafta önce',
-  },
-  {
-    id: 3,
-    flag: '🇬🇧',
-    country: 'İngiltere',
-    visaType: 'Öğrenci Vizesi',
-    status: 'in_progress',
-    approvalScore: 65,
-    completedItems: 6,
-    totalItems: 14,
-    lastUpdated: '4 gün önce',
-  },
-  {
-    id: 4,
-    flag: '🇳🇱',
-    country: 'Hollanda',
-    visaType: 'İş Vizesi',
-    status: 'submitted',
-    approvalScore: 85,
-    completedItems: 11,
-    totalItems: 11,
-    lastUpdated: '3 gün önce',
-  },
-];
-
-const mockDocuments = [
-  { id: 1, name: 'Pasaport.pdf', type: 'passport', size: '2.4 MB', uploadDate: '15 Eki 2025', expiryDate: '10 Kas 2025' },
-  { id: 2, name: 'Banka Dekontları.pdf', type: 'financial', size: '1.8 MB', uploadDate: '12 Eki 2025', expiryDate: null },
-  { id: 3, name: 'Diploma.pdf', type: 'education', size: '3.2 MB', uploadDate: '8 Eki 2025', expiryDate: null },
-  { id: 4, name: 'İş Mektubu.pdf', type: 'employment', size: '890 KB', uploadDate: '10 Eki 2025', expiryDate: '20 Kas 2025' },
-  { id: 5, name: 'Sigorta Poliçesi.pdf', type: 'financial', size: '1.2 MB', uploadDate: '14 Eki 2025', expiryDate: '5 Ara 2025' },
-  { id: 6, name: 'Otel Rezervasyonu.pdf', type: 'passport', size: '645 KB', uploadDate: '9 Eki 2025', expiryDate: null },
-  { id: 7, name: 'Transkript.pdf', type: 'education', size: '2.1 MB', uploadDate: '7 Eki 2025', expiryDate: null },
-  { id: 8, name: 'Vergi Belgesi.pdf', type: 'financial', size: '1.5 MB', uploadDate: '11 Eki 2025', expiryDate: null },
-];
-
-/**
  * Dashboard Page Component
  */
 const Dashboard = () => {
   const navigate = useNavigate();
-  const totalApplications = mockApplications.length;
-  const inProgressApplications = mockApplications.filter(app => app.status === 'in_progress').length;
-  const completedApplications = mockApplications.filter(app => app.status === 'completed').length;
-  const totalDocuments = mockDocuments.length;
-  const expiringSoonDocuments = mockDocuments.filter(doc =>
+  const dispatch = useDispatch();
+  const {
+    applications: rawApplications,
+    documents: rawDocuments,
+    status,
+    error
+  } = useSelector(selectDashboard);
+
+  useEffect(() => {
+    dispatch(fetchApplications());
+    dispatch(fetchDocuments());
+  }, [dispatch]);
+
+  const applications = Array.isArray(rawApplications) ? rawApplications.map(mapApplicationData) : [];
+  const documents = Array.isArray(rawDocuments) ? rawDocuments.map(mapDocumentData) : [];
+
+  // TODO: Replace with real data transformations once API is integrated
+  const totalApplications = applications.length;
+  const inProgressApplications = applications.filter(app => app.status === 'in_progress').length;
+  const completedApplications = applications.filter(app => app.status === 'completed').length;
+  const totalDocuments = documents.length;
+  const expiringSoonDocuments = documents.filter(doc =>
     doc.expiryDate && new Date(doc.expiryDate) - new Date() < 30 * 24 * 60 * 60 * 1000
   ).length;
+
+
+  if (status === 'loading') {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#f0fdf4' }}>
+        <MuiCircularProgress size={60} sx={{ color: '#10b981' }} />
+      </div>
+    );
+  }
+
+  if (status === 'failed') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', backgroundColor: '#fef2f2', padding: '2rem' }}>
+        <ErrorOutlineIcon sx={{ fontSize: 64, color: '#ef4444', marginBottom: '1rem' }} />
+        <h2 style={{ fontFamily: '"Playfair Display", serif', color: '#ef4444', marginBottom: '0.5rem' }}>Bir Hata Oluştu</h2>
+        <p style={{ fontFamily: '"Playfair Display", serif', color: '#b91c1c', marginBottom: '1.5rem', textAlign: 'center' }}>
+          {error || 'Veriler yüklenirken bir sorun oluştu. Lütfen daha sonra tekrar deneyin.'}
+        </p>
+        <button
+          onClick={() => {
+            dispatch(fetchApplications());
+            dispatch(fetchDocuments());
+          }}
+          style={{
+            background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+            color: 'white',
+            padding: '0.75rem 2rem',
+            borderRadius: '50px',
+            border: 'none',
+            fontFamily: '"Playfair Display", serif',
+            fontSize: '1rem',
+            fontWeight: '700',
+            cursor: 'pointer',
+          }}
+        >
+          Tekrar Dene
+        </button>
+      </div>
+    );
+  }
 
   return (
     <PageTransition>
@@ -725,7 +790,7 @@ const Dashboard = () => {
 
               {/* Applications List */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {mockApplications.map((app) => (
+                {applications.map((app) => (
                   <ApplicationCard
                     key={app.id}
                     application={app}
@@ -790,7 +855,7 @@ const Dashboard = () => {
                 }}
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {mockDocuments.map((doc) => (
+                  {documents.map((doc) => (
                     <DocumentItem key={doc.id} document={doc} />
                   ))}
                 </div>
