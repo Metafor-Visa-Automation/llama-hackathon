@@ -82,7 +82,8 @@ DEBUG=True
 
 <img width="1246" height="1500" alt="image" src="https://github.com/user-attachments/assets/82e37a47-a26e-4296-a612-a167e9cf7d70" />,
 
-<img width="1246" height="1500" alt="image" src="https://github.com/user-attachments/assets/82e37a47-a26e-4296-a612-a167e9cf7d70" />
+<img width="4467" height="8158" alt="image" src="https://github.com/user-attachments/assets/4ffb9f6a-0c2c-4b99-84cc-e237a3cea3dd" />
+
 ## 🔐 Authentication
 
 The API uses Firebase Authentication with JWT tokens:
