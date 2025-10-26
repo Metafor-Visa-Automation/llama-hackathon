@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { getApplications, getDocuments } from '../services/dashboardService';
+import { getApplications } from '../services/dashboardService';
 
 export const fetchApplications = createAsyncThunk(
   'dashboard/fetchApplications',
@@ -17,27 +17,10 @@ export const fetchApplications = createAsyncThunk(
   }
 );
 
-export const fetchDocuments = createAsyncThunk(
-  'dashboard/fetchDocuments',
-  async (_, { getState, rejectWithValue }) => {
-    try {
-      const token = getState().auth.token;
-      if (!token) {
-        return rejectWithValue('No auth token found');
-      }
-      const response = await getDocuments(token);
-      return response;
-    } catch (error) {
-      return rejectWithValue(error.message);
-    }
-  }
-);
-
 const dashboardSlice = createSlice({
   name: 'dashboard',
   initialState: {
     applications: [],
-    documents: [],
     status: 'idle', // 'idle' | 'loading' | 'succeeded' | 'failed'
     error: null,
   },
@@ -53,18 +36,6 @@ const dashboardSlice = createSlice({
         state.applications = action.payload;
       })
       .addCase(fetchApplications.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error = action.payload;
-      })
-      .addCase(fetchDocuments.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
-      })
-      .addCase(fetchDocuments.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.documents = action.payload;
-      })
-      .addCase(fetchDocuments.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload;
       });

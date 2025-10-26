@@ -7,7 +7,8 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import PageTransition from '../components/PageTransition';
 import vibeBg from '../assets/vibe-bg1.webp';
 import { createApplication } from '../store/applicationSlice';
-import mockResponseData from '../ai_responses/response-final.json';
+import { setChecklistData, setChecklistError } from '../store/visaChecklistSlice';
+import { generateVisaChecklist } from '../services/applicationService';
 
 /**
  * LoadingScreen Component
@@ -16,17 +17,20 @@ import mockResponseData from '../ai_responses/response-final.json';
 const LoadingScreen = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  
-  const { 
-    destinationCountry, 
-    startDate, 
-    endDate, 
-    applicationType 
+
+  const {
+    originCountry,
+    destinationCountry,
+    startDate,
+    endDate,
+    applicationType
   } = useSelector((state) => state.country);
   const { user } = useSelector((state) => state.auth);
+  const { checklistData } = useSelector((state) => state.visaChecklist);
 
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [loadingComplete, setLoadingComplete] = useState(false);
+  const [apiError, setApiError] = useState(null);
 
   // Dynamic loading messages
   const loadingMessages = [
@@ -48,29 +52,108 @@ const LoadingScreen = () => {
     return () => clearInterval(messageInterval);
   }, [loadingMessages.length]);
 
-  // Simulate loading (replace with actual AI API call)
+  // Fetch visa checklist from API
   useEffect(() => {
-    const loadingTimer = setTimeout(() => {
-      // Create the application in Redux state
+    const fetchVisaChecklist = async () => {
+      try {
+        console.log('🔄 Fetching visa checklist from API...');
+
+        // Map application type to visa type
+        const visaTypeMapping = {
+          'tourist': 'tourist',
+          'business': 'business',
+          'student': 'student',
+          'work': 'work'
+        };
+
+        // Prepare API parameters
+        const params = {
+          nationality: originCountry?.name || 'Türkiye',
+          destination_country: destinationCountry?.name || '',
+          visa_type: visaTypeMapping[applicationType] || 'tourist',
+          occupation: user?.occupation || 'Software Engineer',
+          travel_purpose: applicationType === 'tourist' ? 'Tourism' :
+                         applicationType === 'business' ? 'Business' :
+                         applicationType === 'student' ? 'Education' :
+                         applicationType === 'work' ? 'Work' : 'Tourism',
+          force_refresh: false,
+          temperature: 0.3
+        };
+
+        // Call the API
+        const result = await generateVisaChecklist(params);
+
+        if (result.success) {
+          console.log('✅ Visa checklist received successfully');
+
+          // Store the response data in Redux
+          dispatch(setChecklistData(result.data));
+
+          // Create the application in Redux state with API response data
+          dispatch(createApplication({
+            mockResponseData: result.data,
+            user,
+            destinationCountry,
+            startDate,
+            endDate,
+            applicationType
+          }));
+
+          setLoadingComplete(true);
+
+          // Navigate to fill-form after showing success message
+          setTimeout(() => {
+            navigate('/fill-form');
+          }, 1500);
+        } else {
+          console.error('❌ Failed to fetch visa checklist:', result.error);
+          setApiError(result.error);
+
+          // Store error in Redux
+          dispatch(setChecklistError(result.error));
+
+          // Show error for 2 seconds then navigate back
+          setTimeout(() => {
+            alert('Vize bilgileri alınamadı. Lütfen tekrar deneyin.');
+            navigate('/');
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('💥 Error in fetchVisaChecklist:', error);
+        setApiError(error);
+        dispatch(setChecklistError(error));
+
+        // Show error for 2 seconds then navigate back
+        setTimeout(() => {
+          alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+          navigate('/');
+        }, 2000);
+      }
+    };
+
+    // Only fetch if we don't already have the data
+    if (!checklistData) {
+      fetchVisaChecklist();
+    } else {
+      // If data already exists (e.g., user navigated back), use it
+      console.log('📋 Using existing checklist data from Redux');
+
       dispatch(createApplication({
-        mockResponseData,
+        mockResponseData: checklistData,
         user,
         destinationCountry,
         startDate,
         endDate,
         applicationType
       }));
-      
+
       setLoadingComplete(true);
-      
-      // Navigate to fill-form after showing success message
+
       setTimeout(() => {
         navigate('/fill-form');
       }, 1500);
-    }, 5000); // 5 seconds simulated loading
-
-    return () => clearTimeout(loadingTimer);
-  }, [navigate, dispatch, user, destinationCountry, startDate, endDate, applicationType]);
+    }
+  }, [navigate, dispatch, user, originCountry, destinationCountry, startDate, endDate, applicationType, checklistData]);
 
   return (
     <PageTransition>
@@ -83,7 +166,7 @@ const LoadingScreen = () => {
           backgroundAttachment: 'fixed'
         }}
       >
-        {/* Visa Flow Branding - Top Left */}
+        {/* Otovize Branding - Top Left */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -107,7 +190,7 @@ const LoadingScreen = () => {
               textShadow: '0 2px 10px rgba(255, 255, 255, 0.8)'
             }}
           >
-            visa flow
+            otovize
           </span>
           <FlightTakeoffIcon sx={{ 
             fontSize: 32, 

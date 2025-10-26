@@ -3,13 +3,15 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Calendar } from 'lucide-react';
 import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
-import { 
-  setOriginCountry, 
+import {
+  setOriginCountry,
   setDestinationCountry,
   setStartDate,
   setEndDate,
   setApplicationType
 } from '../store/countrySlice';
+import { setChecklistLoading } from '../store/visaChecklistSlice';
+import { generateVisaChecklist } from '../services/applicationService';
 
 // Schengen countries ISO codes with names (ISO2 format for SimpleMaps)
 const SCHENGEN_COUNTRIES = {
@@ -309,7 +311,7 @@ const InteractiveWorldMap = () => {
   /**
    * Handle start application button click
    */
-  const handleStartApplication = () => {
+  const handleStartApplication = async () => {
     if (!originCountry?.code || !destinationCountry?.code || !startDate || !endDate || !applicationType) {
       return;
     }
@@ -321,12 +323,19 @@ const InteractiveWorldMap = () => {
       return;
     }
 
-    // User is authenticated, redirect to loading screen
+    // User is authenticated, start the API call and redirect to loading screen
     console.log('Starting application:', {
       from: originCountry.name,
       to: destinationCountry.name
     });
+
+    // Set loading state
+    dispatch(setChecklistLoading(true));
+
+    // Navigate to loading screen immediately
     navigate('/loading-screen');
+
+    // The API call will be handled in LoadingScreen component
   };
 
   return (

@@ -10,7 +10,7 @@ import PageTransition from '../components/PageTransition';
 import vibeBg from '../assets/vibe-bg1.webp';
 
 /**
- * Landing Page Component for Visa Flow
+ * Landing Page Component for Otovize
  * Main landing page with interactive world map and application flow
  */
 const Landing = () => {
@@ -123,7 +123,7 @@ const Landing = () => {
                     fontWeight: '400'
                   }}
                 >
-                  visa flow
+                  otovize
                 </span>
                 <FlightTakeoffIcon sx={{ fontSize: 36, color: '#064E3B', paddingTop: '0.5rem' }} />
               </motion.div>

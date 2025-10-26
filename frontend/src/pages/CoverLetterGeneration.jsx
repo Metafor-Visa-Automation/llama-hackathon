@@ -209,7 +209,7 @@ const CoverLetterGeneration = () => {
           backgroundAttachment: 'fixed'
         }}
       >
-        {/* Back Button & Visa Flow Branding */}
+        {/* Back Button & Otovize Branding */}
         <div style={{
           position: 'fixed',
           top: '2rem',
@@ -260,7 +260,7 @@ const CoverLetterGeneration = () => {
               fontWeight: '400',
               textShadow: '0 2px 10px rgba(255, 255, 255, 0.8)'
             }}>
-              visa flow
+              otovize
             </span>
             <FlightTakeoffIcon sx={{ 
               fontSize: 32, 

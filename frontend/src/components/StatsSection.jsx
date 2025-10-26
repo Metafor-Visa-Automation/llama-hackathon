@@ -397,7 +397,7 @@ const StatsSection = () => {
                   fontFamily: '"Playfair Display", serif',
                 }}
               >
-                "visa flow
+                "otovize
               </span>
               <FlightTakeoffIcon sx={{ fontSize: 36, color: '#064E3B', paddingTop: '0.5rem' }} />
               <span

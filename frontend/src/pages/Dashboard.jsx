@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { fetchApplications, fetchDocuments, selectDashboard } from '../store/dashboardSlice';
+import { fetchApplications, selectDashboard } from '../store/dashboardSlice';
 import PageTransition from '../components/PageTransition';
 import vibeBg from '../assets/vibe-bg3.png';
 import {
@@ -11,87 +11,11 @@ import {
   TrendingUpOutlined,
   TrendingDownOutlined,
   RemoveOutlined,
-  FolderOpenOutlined,
-  WarningAmberOutlined,
-  PictureAsPdfOutlined,
-  AddOutlined,
-  VisibilityOutlined,
-  DownloadOutlined,
-  DeleteOutlined,
   ArrowBack,
   FlightTakeoff as FlightTakeoffIcon,
   ErrorOutline as ErrorOutlineIcon,
-  Search as SearchIcon,
-  CheckCircle,
-  Error,
-  Warning,
-  Cancel,
-  Info,
 } from '@mui/icons-material';
-import { CircularProgress as MuiCircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box } from '@mui/material';
-
-/**
- * Get user-friendly message and styling based on document status
- */
-const getDocumentStatusInfo = (analysisData) => {
-  const status = analysisData?.status;
-  const ocrResult = analysisData?.ocr_result;
-
-  // Check if OCR failed
-  if (ocrResult && !ocrResult.success && ocrResult.error) {
-    return {
-      icon: <Warning sx={{ fontSize: '2.5rem', color: '#F59E0B' }} />,
-      title: 'OCR İşlemi Başarısız',
-      message: 'Belgenizden metin çıkarılamadı. Lütfen belgenizin net ve okunabilir olduğundan emin olun.',
-      backgroundColor: '#FFFBEB',
-      borderColor: '#F59E0B',
-      textColor: '#92400E'
-    };
-  }
-
-  switch (status) {
-    case 'VALIDATED':
-    case 'APPROVED':
-      return {
-        icon: <CheckCircle sx={{ fontSize: '2.5rem', color: '#10B981' }} />,
-        title: 'Belge Onaylandı',
-        message: 'Belgeniz kontrol edildi ve uygun bulundu. İşleme devam edebilirsiniz.',
-        backgroundColor: '#F0FDF4',
-        borderColor: '#10B981',
-        textColor: '#064E3B'
-      };
-
-    case 'REJECTED':
-      return {
-        icon: <Cancel sx={{ fontSize: '2.5rem', color: '#EF4444' }} />,
-        title: 'Belge Reddedildi',
-        message: 'Belgeniz kontrol edildi ve uygun görülmedi. Lütfen belgenizi gözden geçirin ve tekrar yükleyin.',
-        backgroundColor: '#FEF2F2',
-        borderColor: '#EF4444',
-        textColor: '#991B1B'
-      };
-
-    case 'PENDING_VALIDATION':
-      return {
-        icon: <Info sx={{ fontSize: '2.5rem', color: '#3B82F6' }} />,
-        title: 'Belge İnceleniyor',
-        message: 'Belgeniz başarıyla yüklendi ve şu anda inceleme aşamasında.',
-        backgroundColor: '#EFF6FF',
-        borderColor: '#3B82F6',
-        textColor: '#1E3A8A'
-      };
-
-    default:
-      return {
-        icon: <Info sx={{ fontSize: '2.5rem', color: '#6B7280' }} />,
-        title: 'Belge Durumu',
-        message: 'Belgeniz sisteme yüklendi.',
-        backgroundColor: '#F9FAFB',
-        borderColor: '#6B7280',
-        textColor: '#1F2937'
-      };
-  }
-};
+import { CircularProgress as MuiCircularProgress, Button } from '@mui/material';
 
 const countryData = {
   DE: { name: 'Almanya', flag: '🇩🇪' },
@@ -135,26 +59,6 @@ const mapApplicationData = (app) => {
     totalItems: totalItems,
     lastUpdated: formatApiDate(app.updated_at),
     steps: app.application_steps || [], // Include all steps for detailed view
-  };
-};
-
-const mapDocumentData = (doc) => {
-  const pathParts = doc.storage_path.split('/');
-  const filename = pathParts.pop() || 'dosya';
-  const fileExtension = filename.split('.').pop()?.toLowerCase();
-
-  let type = 'other';
-  if (['pdf', 'doc', 'docx'].includes(fileExtension)) type = 'document';
-  if (['jpg', 'jpeg', 'png'].includes(fileExtension)) type = 'image';
-
-
-  return {
-    id: doc.doc_id,
-    name: filename,
-    type: type, // API doesn't provide this, so we default
-    size: 'N/A', // API doesn't provide this
-    uploadDate: formatApiDate(doc.created_at),
-    expiryDate: null, // API doesn't provide this
   };
 };
 
@@ -551,360 +455,27 @@ const ApplicationCard = ({ application, onClick }) => {
 };
 
 /**
- * Document Item Component
- */
-const DocumentItem = ({ document, onProcessOCR, isProcessingOCR }) => {
-  const getTypeColor = () => {
-    switch (document.type) {
-      case 'passport': return '#3b82f6';
-      case 'financial': return '#10b981';
-      case 'education': return '#a855f7';
-      case 'employment': return '#f59e0b';
-      default: return '#6b7280';
-    }
-  };
-
-  const getTypeText = () => {
-    switch (document.type) {
-      case 'passport': return 'Pasaport';
-      case 'financial': return 'Finansal';
-      case 'education': return 'Eğitim';
-      case 'employment': return 'İş';
-      default: return 'Diğer';
-    }
-  };
-
-  const isExpiringSoon = document.expiryDate && new Date(document.expiryDate) - new Date() < 30 * 24 * 60 * 60 * 1000;
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '1.125rem',
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        backdropFilter: 'blur(10px)',
-        WebkitBackdropFilter: 'blur(10px)',
-        borderRadius: '12px',
-        border: '1px solid rgba(16, 185, 129, 0.1)',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        cursor: 'pointer',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(240, 253, 244, 0.95)';
-        e.currentTarget.style.borderColor = '#10b981';
-        e.currentTarget.style.transform = 'translateX(4px)';
-        e.currentTarget.style.boxShadow = '0 4px 16px rgba(16, 185, 129, 0.15)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.9)';
-        e.currentTarget.style.borderColor = 'rgba(16, 185, 129, 0.1)';
-        e.currentTarget.style.transform = 'translateX(0)';
-        e.currentTarget.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.04)';
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-        <PictureAsPdfOutlined style={{ fontSize: 28, color: '#ef4444' }} />
-        <div style={{ flex: 1 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-            <span style={{ fontFamily: '"Playfair Display", serif', fontSize: '0.875rem', fontWeight: '600', color: '#1a1a1a' }}>
-              {document.name}
-            </span>
-            <span
-              style={{
-                padding: '0.125rem 0.5rem',
-                borderRadius: '50px',
-                backgroundColor: `${getTypeColor()}15`,
-                color: getTypeColor(),
-                fontSize: '0.65rem',
-                fontWeight: '600',
-                fontFamily: '"Playfair Display", serif',
-              }}
-            >
-              {getTypeText()}
-            </span>
-            {isExpiringSoon && (
-              <span
-                style={{
-                  padding: '0.125rem 0.5rem',
-                  borderRadius: '50px',
-                  backgroundColor: '#fef2f2',
-                  color: '#ef4444',
-                  fontSize: '0.65rem',
-                  fontWeight: '600',
-                  fontFamily: '"Playfair Display", serif',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.25rem',
-                }}
-              >
-                <WarningAmberOutlined style={{ fontSize: 12 }} />
-                Yakında Dolacak
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.75rem', color: '#9ca3af' }}>
-            <span>{document.size}</span>
-            <span>•</span>
-            <span>{document.uploadDate}</span>
-            {document.expiryDate && (
-              <>
-                <span>•</span>
-                <span>Son Geçerlilik: {document.expiryDate}</span>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-      <div style={{ display: 'flex', gap: '0.5rem' }}>
-        {/* OCR Check Button */}
-        <button
-          style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            border: 'none',
-            backgroundColor: isProcessingOCR ? '#dbeafe' : '#eff6ff',
-            color: '#3b82f6',
-            cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            if (!isProcessingOCR) {
-              e.target.style.backgroundColor = '#dbeafe';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isProcessingOCR) {
-              e.target.style.backgroundColor = '#eff6ff';
-            }
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            if (!isProcessingOCR) {
-              onProcessOCR(document.id, document.name);
-            }
-          }}
-          disabled={isProcessingOCR}
-          title="OCR Kontrolü Yap"
-        >
-          {isProcessingOCR ? (
-            <MuiCircularProgress size={16} sx={{ color: '#3b82f6' }} />
-          ) : (
-            <SearchIcon style={{ fontSize: 16 }} />
-          )}
-        </button>
-
-        <button
-          style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            border: 'none',
-            backgroundColor: '#f0fdf4',
-            color: '#10b981',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#dcfce7';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = '#f0fdf4';
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log('View:', document.name);
-          }}
-          title="Görüntüle"
-        >
-          <VisibilityOutlined style={{ fontSize: 16 }} />
-        </button>
-        <button
-          style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            border: 'none',
-            backgroundColor: '#f0fdf4',
-            color: '#10b981',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#dcfce7';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = '#f0fdf4';
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log('Download:', document.name);
-          }}
-          title="İndir"
-        >
-          <DownloadOutlined style={{ fontSize: 16 }} />
-        </button>
-        <button
-          style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            border: 'none',
-            backgroundColor: '#fef2f2',
-            color: '#ef4444',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s ease',
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.backgroundColor = '#fee2e2';
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.backgroundColor = '#fef2f2';
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log('Delete:', document.name);
-          }}
-          title="Sil"
-        >
-          <DeleteOutlined style={{ fontSize: 16 }} />
-        </button>
-      </div>
-    </div>
-  );
-};
-
-/**
  * Dashboard Page Component
  */
 const Dashboard = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { token } = useSelector((state) => state.auth);
   const {
     applications: rawApplications,
-    documents: rawDocuments,
     status,
     error
   } = useSelector(selectDashboard);
 
-  // OCR state
-  const [ocrModalOpen, setOcrModalOpen] = useState(false);
-  const [ocrResult, setOcrResult] = useState(null);
-  const [isProcessingOCR, setIsProcessingOCR] = useState(false);
-
   useEffect(() => {
     dispatch(fetchApplications());
-    dispatch(fetchDocuments());
   }, [dispatch]);
 
-  /**
-   * Process OCR for a document
-   */
-  const processOCR = async (docId, fileName) => {
-    setIsProcessingOCR(true);
-    try {
-      console.log('🔍 Processing OCR for document:', docId);
-
-      const response = await fetch(`/api/v1/documents/${docId}/process-ocr`, {
-        method: 'POST',
-        headers: {
-          'accept': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: ''
-      });
-
-      const data = await response.json();
-      console.log('🔍 OCR Response Status:', response.status);
-      console.log('🔍 OCR Response Data:', data);
-
-      if (response.status === 200 || response.status === 201) {
-        console.log('✅ OCR processing completed:', data);
-
-        // Fetch analysis after successful OCR
-        console.log('📊 Fetching OCR analysis for document:', docId);
-        const analysisResponse = await fetch(`/api/v1/documents/${docId}/ocr-analysis`, {
-          method: 'GET',
-          headers: {
-            'accept': 'application/json',
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        let analysisData = null;
-        let analysisSuccess = false;
-
-        if (analysisResponse.status === 200) {
-          analysisData = await analysisResponse.json();
-          analysisSuccess = true;
-          console.log('✅ Analysis retrieved successfully:', analysisData);
-        } else {
-          console.warn('⚠️ Analysis retrieval failed');
-        }
-
-        setOcrResult({
-          success: true,
-          fileName: fileName,
-          docId: docId,
-          ocrData: data,
-          analysisData: analysisData,
-          analysisSuccess: analysisSuccess
-        });
-      } else {
-        console.error('❌ OCR processing failed:', data);
-        setOcrResult({
-          success: false,
-          fileName: fileName,
-          docId: docId,
-          error: data
-        });
-      }
-    } catch (error) {
-      console.error('💥 OCR processing error:', error);
-      setOcrResult({
-        success: false,
-        fileName: fileName,
-        docId: docId,
-        error: { detail: 'Bir hata oluştu', message: error.message }
-      });
-    } finally {
-      setIsProcessingOCR(false);
-      setOcrModalOpen(true);
-    }
-  };
-
-  const handleOcrModalClose = () => {
-    setOcrModalOpen(false);
-    setOcrResult(null);
-  };
-
   const applications = Array.isArray(rawApplications) ? rawApplications.map(mapApplicationData) : [];
-  const documents = Array.isArray(rawDocuments) ? rawDocuments.map(mapDocumentData) : [];
 
   // TODO: Replace with real data transformations once API is integrated
   const totalApplications = applications.length;
   const inProgressApplications = applications.filter(app => app.status === 'in_progress').length;
   const completedApplications = applications.filter(app => app.status === 'completed').length;
-  const totalDocuments = documents.length;
-  const expiringSoonDocuments = documents.filter(doc =>
-    doc.expiryDate && new Date(doc.expiryDate) - new Date() < 30 * 24 * 60 * 60 * 1000
-  ).length;
 
 
   if (status === 'loading') {
@@ -926,7 +497,6 @@ const Dashboard = () => {
         <button
           onClick={() => {
             dispatch(fetchApplications());
-            dispatch(fetchDocuments());
           }}
           style={{
             background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
@@ -977,7 +547,7 @@ const Dashboard = () => {
           }}
         />
 
-        {/* Back Button & Visa Flow Branding */}
+        {/* Back Button & Otovize Branding */}
         <div style={{
           position: 'fixed',
           top: '2rem',
@@ -1029,7 +599,7 @@ const Dashboard = () => {
               fontWeight: '400',
               textShadow: '0 2px 10px rgba(255, 255, 255, 0.8)'
             }}>
-              visa flow
+              otovize
             </span>
             <FlightTakeoffIcon sx={{ 
               fontSize: 32, 
@@ -1048,15 +618,9 @@ const Dashboard = () => {
             zIndex: 1,
           }}
         >
-          {/* Two Column Layout */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(600px, 1fr))',
-              gap: '2rem',
-            }}
-          >
-            {/* Left Section - Applications */}
+          {/* Applications Section */}
+          <div>
+            {/* Applications */}
             <div>
               <h2
                 style={{
@@ -1114,289 +678,9 @@ const Dashboard = () => {
                 ))}
               </div>
             </div>
-
-            {/* Right Section - Documents */}
-            <div>
-              <h2
-                style={{
-                  fontFamily: '"Playfair Display", serif',
-                  fontSize: '2.25rem',
-                  fontWeight: '700',
-                  color: '#064e3b',
-                  marginBottom: '1.75rem',
-                  letterSpacing: '-0.02em',
-                  textShadow: '0 2px 8px rgba(16, 185, 129, 0.15)',
-                }}
-              >
-                Dökümanlarım
-              </h2>
-
-              {/* Quick Stats */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(2, 1fr)',
-                  gap: '1rem',
-                  marginBottom: '1.5rem',
-                }}
-              >
-                <StatCard
-                  icon={<FolderOpenOutlined style={{ fontSize: 32 }} />}
-                  title="Toplam Belge"
-                  value={totalDocuments}
-                  subtitle="8 kategoride"
-                />
-                <StatCard
-                  icon={<WarningAmberOutlined style={{ fontSize: 32 }} />}
-                  title="Yakında Dolacak"
-                  value={expiringSoonDocuments}
-                  subtitle="30 gün içinde"
-                  trend={expiringSoonDocuments > 0 ? 'up' : null}
-                />
-              </div>
-
-              {/* Documents List */}
-              <div
-                style={{
-                  backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                  borderRadius: '20px',
-                  padding: '1.75rem',
-                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.8)',
-                  border: '1px solid rgba(255, 255, 255, 0.6)',
-                  maxHeight: '700px',
-                  overflowY: 'auto',
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {documents.map((doc) => (
-                    <DocumentItem
-                      key={doc.id}
-                      document={doc}
-                      onProcessOCR={processOCR}
-                      isProcessingOCR={isProcessingOCR}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Floating Action Button */}
-              <button
-                style={{
-                  position: 'fixed',
-                  bottom: '2rem',
-                  right: '2rem',
-                  width: '56px',
-                  height: '56px',
-                  borderRadius: '50%',
-                  border: 'none',
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                  color: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  boxShadow: '0 6px 20px rgba(16, 185, 129, 0.4)',
-                  transition: 'all 0.3s ease',
-                  zIndex: 1000,
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.transform = 'scale(1.1) rotate(90deg)';
-                  e.target.style.boxShadow = '0 8px 25px rgba(16, 185, 129, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.transform = 'scale(1) rotate(0deg)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.4)';
-                }}
-                onClick={() => console.log('Upload new document')}
-              >
-                <AddOutlined style={{ fontSize: 28 }} />
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* OCR Result Modal */}
-        <Dialog
-          open={ocrModalOpen}
-          onClose={handleOcrModalClose}
-          maxWidth="sm"
-          fullWidth
-          PaperProps={{
-            sx: {
-              borderRadius: '20px',
-              padding: '1rem',
-              fontFamily: '"Playfair Display", serif',
-              backgroundColor: 'rgba(255, 255, 255, 0.98)',
-              backdropFilter: 'blur(20px)',
-            }
-          }}
-        >
-          <DialogTitle sx={{
-            fontFamily: '"Playfair Display", serif',
-            fontSize: '1.75rem',
-            fontWeight: 700,
-            color: '#1a1a1a',
-            textAlign: 'center',
-            paddingBottom: '1rem'
-          }}>
-            OCR İşlem Sonucu
-          </DialogTitle>
-
-          <DialogContent>
-            {ocrResult && (() => {
-              const statusInfo = ocrResult.analysisSuccess && ocrResult.analysisData
-                ? getDocumentStatusInfo(ocrResult.analysisData)
-                : null;
-
-              return (
-                <Box
-                  sx={{
-                    padding: '1.5rem',
-                    borderRadius: '12px',
-                    backgroundColor: statusInfo?.backgroundColor || (ocrResult.success ? '#F0FDF4' : '#FEF2F2'),
-                    border: `2px solid ${statusInfo?.borderColor || (ocrResult.success ? '#10B981' : '#EF4444')}`,
-                    display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: '1rem'
-                  }}
-                >
-                  {/* Icon */}
-                  <Box sx={{ flexShrink: 0, marginTop: '0.25rem' }}>
-                    {statusInfo ? statusInfo.icon : (
-                      ocrResult.success ? (
-                        <CheckCircle sx={{ fontSize: '2rem', color: '#10B981' }} />
-                      ) : ocrResult.error?.status_code === 503 ? (
-                        <Warning sx={{ fontSize: '2rem', color: '#F59E0B' }} />
-                      ) : (
-                        <Error sx={{ fontSize: '2rem', color: '#EF4444' }} />
-                      )
-                    )}
-                  </Box>
-
-                  {/* Content */}
-                  <Box sx={{ flex: 1 }}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontFamily: '"Playfair Display", serif',
-                        fontWeight: 600,
-                        fontSize: '1.1rem',
-                        color: '#1a1a1a',
-                        marginBottom: '0.5rem'
-                      }}
-                    >
-                      {ocrResult.fileName}
-                    </Typography>
-
-                    <Typography
-                      sx={{
-                        fontFamily: '"Inter", sans-serif',
-                        fontSize: '0.875rem',
-                        color: '#666666',
-                        marginBottom: '0.75rem'
-                      }}
-                    >
-                      <strong>Döküman ID:</strong> {ocrResult.docId}
-                    </Typography>
-
-                    {ocrResult.success ? (
-                      <>
-                        {/* Show status info if available */}
-                        {statusInfo ? (
-                          <Box sx={{ marginTop: '0.5rem' }}>
-                            <Typography
-                              sx={{
-                                fontFamily: '"Playfair Display", serif',
-                                fontSize: '1rem',
-                                fontWeight: 700,
-                                color: statusInfo.textColor,
-                                marginBottom: '0.5rem'
-                              }}
-                            >
-                              {statusInfo.title}
-                            </Typography>
-                            <Typography
-                              sx={{
-                                fontFamily: '"Inter", sans-serif',
-                                fontSize: '0.875rem',
-                                color: statusInfo.textColor,
-                                lineHeight: 1.6
-                              }}
-                            >
-                              {statusInfo.message}
-                            </Typography>
-                          </Box>
-                        ) : (
-                          <Typography
-                            sx={{
-                              fontFamily: '"Inter", sans-serif',
-                              fontSize: '0.875rem',
-                              color: '#10B981',
-                              fontWeight: 600
-                            }}
-                          >
-                            ✓ OCR işlemi başarıyla tamamlandı
-                          </Typography>
-                        )}
-
-                        {ocrResult.success && !ocrResult.analysisSuccess && (
-                          <Typography
-                            sx={{
-                              fontFamily: '"Inter", sans-serif',
-                              fontSize: '0.75rem',
-                              color: '#F59E0B',
-                              fontStyle: 'italic',
-                              marginTop: '0.5rem'
-                            }}
-                          >
-                            ⚠️ Analiz bilgisi alınamadı
-                          </Typography>
-                        )}
-                      </>
-                    ) : (
-                      <Typography
-                        sx={{
-                          fontFamily: '"Inter", sans-serif',
-                          fontSize: '0.875rem',
-                          color: ocrResult.error?.status_code === 503 ? '#F59E0B' : '#EF4444',
-                          fontWeight: 500
-                        }}
-                      >
-                        {ocrResult.error?.detail || ocrResult.error?.message || 'OCR işlemi başarısız oldu'}
-                      </Typography>
-                    )}
-                  </Box>
-                </Box>
-              );
-            })()}
-          </DialogContent>
-
-          <DialogActions sx={{ padding: '1.5rem', justifyContent: 'center' }}>
-            <Button
-              onClick={handleOcrModalClose}
-              variant="contained"
-              sx={{
-                fontFamily: '"Playfair Display", serif',
-                fontSize: '1rem',
-                fontWeight: 600,
-                padding: '0.75rem 2.5rem',
-                borderRadius: '12px',
-                backgroundColor: '#10B981',
-                color: '#FFFFFF',
-                textTransform: 'none',
-                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
-                '&:hover': {
-                  backgroundColor: '#059669',
-                  boxShadow: '0 6px 16px rgba(16, 185, 129, 0.4)',
-                }
-              }}
-            >
-              Tamam
-            </Button>
-          </DialogActions>
-        </Dialog>
       </div>
 
       {/* Responsive Styles */}

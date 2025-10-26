@@ -4,6 +4,7 @@ import authReducer from './authSlice';
 import formReducer from './formSlice';
 import applicationReducer from './applicationSlice';
 import dashboardReducer from './dashboardSlice';
+import visaChecklistReducer from './visaChecklistSlice';
 
 
 export const store = configureStore({
@@ -13,6 +14,7 @@ export const store = configureStore({
     form: formReducer,
     application: applicationReducer,
     dashboard: dashboardReducer,
+    visaChecklist: visaChecklistReducer,
   },
 });
 

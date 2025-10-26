@@ -72,8 +72,6 @@ const getDocumentStatusInfo = (analysisData) => {
       };
   }
 };
-// TODO: Replace with actual AI service call
-import mockResponseData from '../ai_responses/response-final.json';
 import { saveApplication } from '../services/applicationService';
 import {
   setQuestions,
@@ -106,6 +104,7 @@ const FillForm = () => {
   const { application } = useSelector((state) => state.application);
   // eslint-disable-next-line no-unused-vars
   const { originCountry, destinationCountry } = useSelector((state) => state.country);
+  const { checklistData } = useSelector((state) => state.visaChecklist);
   
   // Redux state
   const { 
@@ -206,32 +205,19 @@ const FillForm = () => {
   useEffect(() => {
     // Load questions only if not already loaded
     if (questions.length === 0) {
-      // TODO: Replace this with actual AI service call
-      // const fetchVisaRequirements = async () => {
-      //   try {
-      //     const response = await fetch('/api/visa-requirements', {
-      //       method: 'POST',
-      //       body: JSON.stringify({
-      //         originCountry,
-      //         destinationCountry
-      //       })
-      //     });
-      //     const data = await response.json();
-      //     processActionSteps(data.action_steps);
-      //   } catch (error) {
-      //     console.error('Error fetching visa requirements:', error);
-      //   }
-      // };
-      // fetchVisaRequirements();
-
-      // Using mock data for now
-      if (mockResponseData && mockResponseData.action_steps) {
-        processActionSteps(mockResponseData);
+      // Check if we have checklist data from API
+      if (checklistData && checklistData.action_steps) {
+        console.log('📋 Using checklist data from API:', checklistData);
+        processActionSteps(checklistData);
+      } else {
+        console.warn('⚠️ No checklist data available, redirecting to home');
+        // If no data is available, redirect to home
+        navigate('/');
       }
     } else {
       setIsLoading(false);
     }
-  }, [questions.length, processActionSteps]);
+  }, [questions.length, processActionSteps, checklistData, navigate]);
 
   // Separate cleanup effect that only runs on unmount
   useEffect(() => {
@@ -691,7 +677,7 @@ const FillForm = () => {
           backgroundAttachment: 'fixed'
         }}
       >
-        {/* Back Button & Visa Flow Branding */}
+        {/* Back Button & Otovize Branding */}
         <div style={{
           position: 'fixed',
           top: '2rem',
@@ -742,7 +728,7 @@ const FillForm = () => {
               fontWeight: '400',
               textShadow: '0 2px 10px rgba(255, 255, 255, 0.8)'
             }}>
-              visa flow
+              otovize
             </span>
             <FlightTakeoffIcon sx={{ 
               fontSize: 32, 

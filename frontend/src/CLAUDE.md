@@ -1,4 +1,4 @@
-# 🎨 Visa Flow - Design System & Style Guide
+# 🎨 Otovize - Design System & Style Guide
 
 > Premium, elegant, and modern design system for visa application platform
 

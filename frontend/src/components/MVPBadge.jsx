@@ -58,9 +58,9 @@ const MVPBadge = () => {
           }`}
         >
           <h3
-            className="text-3xl md:text-4xl font-extrabold mb-4 italic"
+            className="text-3xl md:text-4xl font-extrabold mb-4 bold"
             style={{
-              fontFamily: '"Playfair Display", serif',
+              fontFamily: '"Roboto", sans-serif',
               color: '#047857',
               letterSpacing: '-0.03em',
             }}
@@ -114,7 +114,7 @@ const MVPBadge = () => {
                   className="font-bold text-2xl"
                   style={{
                     color: '#047857',
-                    fontFamily: '"Playfair Display", serif',
+                    fontFamily: '"Roboto", sans-serif',
                   }}
                 >
                   Şu An
@@ -194,8 +194,8 @@ const MVPBadge = () => {
                   <div
                     className="font-bold text-2xl"
                     style={{
-                      color: '#047857',
-                      fontFamily: '"Playfair Display", serif',
+                      color: '#047857', 
+                      fontFamily: '"Roboto", sans-serif',
                     }}
                   >
                     Yakında
