@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     port: int = 8000
     
     # OCR Configuration
-    groq_api_key: Optional[str] = "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"
+    groq_api_key: str = "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"
     
     # Security Settings
     secret_key: str = "your-secret-key-here"
@@ -67,8 +67,9 @@ class Settings(BaseSettings):
     rate_limit_window: int = 60
     
     class Config:
-        env_file = ".env"
+        env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env")
         case_sensitive = False
+        env_file_encoding = 'utf-8'
 
 
 settings = Settings()

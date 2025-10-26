@@ -919,3 +919,20 @@ class LetterGenerationResponse(BaseModel):
     
     class Config:
         from_attributes = True
+
+
+# AI Visa Checklist Schemas
+class AIVisaChecklistRequest(BaseModel):
+    """Request model for AI visa checklist generation"""
+    visa_type: Optional[str] = Field(None, description="Type of visa (will use user's travel purpose if not provided)")
+    travel_purpose: Optional[str] = Field(None, description="Purpose of travel (will use from user info if not provided)")
+    occupation: Optional[str] = Field(None, description="Occupation (will use from user info if not provided)")
+    force_refresh: bool = Field(True, description="Force refresh the checklist")
+    temperature: float = Field(0.3, ge=0.0, le=1.0, description="AI temperature parameter")
+
+
+class AIVisaChecklistResponse(BaseModel):
+    """Response model for AI visa checklist - passes through external API response"""
+    # This will contain whatever the external API returns
+    # We're just passing it through without modification
+    pass

@@ -33,17 +33,6 @@ async def process_document_with_ocr(doc_id: str, file_content: bytes, mime_type:
     try:
         logger.info(f"Starting OCR processing for document {doc_id}")
         
-        # Check if Groq OCR is available
-        if not groq_ocr_service.is_available():
-            logger.warning(f"Groq OCR service not available for document {doc_id}")
-            # Update status to indicate OCR not available
-            db.collection("user_documents").document(doc_id).update({
-                "status": DocumentStatus.VALIDATED.value,
-                "ocr_result": {"error": "OCR service not available"},
-                "updated_at": datetime.utcnow()
-            })
-            return
-        
         # Extract data using Groq OCR
         ocr_result = groq_ocr_service.extract_document_data(
             file_data=file_content,
@@ -335,13 +324,6 @@ async def trigger_ocr_processing(
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="You don't have permission to process this document"
-            )
-        
-        # Check if Groq OCR is available
-        if not groq_ocr_service.is_available():
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="OCR service is not available. Please set GROQ_API_KEY environment variable."
             )
         
         # Download file from storage

@@ -10,6 +10,7 @@ from typing import Dict, Any, Optional
 from groq import Groq
 from datetime import datetime
 import json
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -86,20 +87,16 @@ class SchengenFormFillingService:
     def __init__(self):
         """Initialize Groq client"""
         try:
-            api_key = "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"
-            if not api_key:
-                logger.warning("GROQ_API_KEY not found in environment variables")
-                self.client = None
-            else:
-                self.client = Groq(api_key=api_key)
-                logger.info("Schengen Form Filling service initialized successfully")
+            api_key = settings.groq_api_key
+            self.client = Groq(api_key=api_key)
+            logger.info("Schengen Form Filling service initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing Groq client: {e}")
             self.client = None
     
     def is_available(self) -> bool:
         """Check if form filling service is available"""
-        return self.client is not None
+        return True
     
     def _build_form_filling_prompt(
         self,
@@ -236,9 +233,6 @@ Return ONLY the JSON object, no explanations.
         Returns:
             Dict containing filled form fields and metadata
         """
-        if not self.is_available():
-            raise ValueError("Form filling service is not available. Please set GROQ_API_KEY.")
-        
         try:
             logger.info(f"Filling Schengen form for user {user_data.get('email')}")
             

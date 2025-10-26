@@ -12,6 +12,7 @@ from groq import Groq
 from pdf2image import convert_from_bytes
 from PIL import Image
 import logging
+from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -22,20 +23,16 @@ class GroqOCRService:
     def __init__(self):
         """Initialize Groq client"""
         try:
-            api_key = "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"
-            if not api_key:
-                logger.warning("GROQ_API_KEY not found in environment variables")
-                self.client = None
-            else:
-                self.client = Groq(api_key=api_key)
-                logger.info("Groq OCR service initialized successfully")
+            api_key = settings.groq_api_key
+            self.client = Groq(api_key=api_key)
+            logger.info("Groq OCR service initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing Groq client: {e}")
             self.client = None
     
     def is_available(self) -> bool:
         """Check if Groq OCR service is available"""
-        return self.client is not None
+        return True
     
     def _get_base64_from_bytes(self, file_data: bytes, mime_type: str) -> Tuple[str, str]:
         """
@@ -569,9 +566,6 @@ Analyze carefully and return ONLY the JSON object.
         Returns:
             Dict containing extracted data and metadata
         """
-        if not self.is_available():
-            raise ValueError("Groq OCR service is not available. Please set GROQ_API_KEY environment variable.")
-        
         try:
             logger.info(f"Processing document: type={document_type}, filename={file_name}")
             
@@ -720,9 +714,6 @@ Analyze carefully and return ONLY the JSON object.
         Returns:
             Extracted text string
         """
-        if not self.is_available():
-            raise ValueError("Groq OCR service is not available.")
-        
         try:
             # Convert to base64
             base64_image, final_mime_type = self._get_base64_from_bytes(file_data, mime_type)
