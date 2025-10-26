@@ -1,0 +1,61 @@
+{
+    "example_user_1": {
+        "user_id": "user_001",
+        "full_name": "Ahmet Yılmaz",
+        "nationality": "Turkey",
+        "destination_country": "France",
+        "visa_type": "tourist",
+        "travel_purpose": "Tourism and visiting historical landmarks in Paris and Lyon",
+        "travel_dates": {
+            "start": "2024-06-15",
+            "end": "2024-06-30"
+        },
+        "occupation": "Software Engineer",
+        "education": "Bachelor's Degree in Computer Science",
+        "previous_travel_history": ["Germany", "Italy", "Spain", "Greece"],
+        "financial_status": "Employed with stable income, monthly salary $4,000, savings $15,000",
+        "ties_to_home_country": [
+            "Permanent full-time employment at Tech Company for 5 years",
+            "Owns apartment in Istanbul",
+            "Family members (parents and siblings) living in Turkey",
+            "Active bank accounts and investments"
+        ],
+        "additional_info": {
+            "company": "Tech Solutions Inc.",
+            "years_of_employment": 5,
+            "marital_status": "Single"
+        }
+    },
+    "example_user_2": {
+        "user_id": "user_002",
+        "full_name": "Maria Silva",
+        "nationality": "Brazil",
+        "destination_country": "France",
+        "visa_type": "business",
+        "travel_purpose": "Attending international conference on renewable energy and meeting potential business partners",
+        "travel_dates": {
+            "start": "2024-07-10",
+            "end": "2024-07-20"
+        },
+        "occupation": "Business Development Manager",
+        "education": "Master's Degree in International Business",
+        "previous_travel_history": [
+            "United States",
+            "Canada",
+            "Portugal",
+            "Argentina"
+        ],
+        "financial_status": "Senior manager position, annual salary $80,000, company covers travel expenses",
+        "ties_to_home_country": [
+            "Senior management position at renewable energy company",
+            "Owns home in São Paulo",
+            "Married with two children in Brazil",
+            "Active business interests and contracts"
+        ],
+        "additional_info": {
+            "company": "GreenTech Brazil",
+            "conference": "European Renewable Energy Summit 2024",
+            "invitation_letter": "Received official invitation from conference organizers"
+        }
+    }
+}
