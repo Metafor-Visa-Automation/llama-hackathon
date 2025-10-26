@@ -88,19 +88,15 @@ class SchengenFormFillingService:
         """Initialize Groq client"""
         try:
             api_key = settings.groq_api_key
-            if not api_key:
-                logger.warning("GROQ_API_KEY not found in settings")
-                self.client = None
-            else:
-                self.client = Groq(api_key=api_key)
-                logger.info("Schengen Form Filling service initialized successfully")
+            self.client = Groq(api_key=api_key)
+            logger.info("Schengen Form Filling service initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing Groq client: {e}")
             self.client = None
     
     def is_available(self) -> bool:
         """Check if form filling service is available"""
-        return self.client is not None
+        return True
     
     def _build_form_filling_prompt(
         self,
@@ -237,9 +233,6 @@ Return ONLY the JSON object, no explanations.
         Returns:
             Dict containing filled form fields and metadata
         """
-        if not self.is_available():
-            raise ValueError("Form filling service is not available. Please set GROQ_API_KEY.")
-        
         try:
             logger.info(f"Filling Schengen form for user {user_data.get('email')}")
             

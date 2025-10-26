@@ -43,19 +43,15 @@ class LetterGenerationService:
         """Initialize Groq client"""
         try:
             api_key = settings.groq_api_key
-            if not api_key:
-                logger.warning("GROQ_API_KEY not found in settings")
-                self.client = None
-            else:
-                self.client = Groq(api_key=api_key)
-                logger.info("Letter Generation service initialized successfully")
+            self.client = Groq(api_key=api_key)
+            logger.info("Letter Generation service initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing Groq client: {e}")
             self.client = None
     
     def is_available(self) -> bool:
         """Check if letter generation service is available"""
-        return self.client is not None
+        return True
     
     def _build_user_context(self, user_data: Dict[str, Any]) -> str:
         """
@@ -198,9 +194,6 @@ Use proper formatting with paragraphs and appropriate spacing.
         Returns:
             Dict containing generated letter and metadata
         """
-        if not self.is_available():
-            raise ValueError("Letter generation service is not available. Please set GROQ_API_KEY.")
-        
         try:
             logger.info(f"Generating {letter_type} in {language} for user {user_data.get('email')}")
             

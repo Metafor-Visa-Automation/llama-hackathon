@@ -32,13 +32,6 @@ async def generate_visa_letter(
     in the specified language and letter type.
     """
     try:
-        # Check if service is available
-        if not letter_service.is_available():
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Letter generation service is not available"
-            )
-        
         # Get user data
         user_ref = db.collection("users").document(current_user.uid)
         user_doc = user_ref.get()
