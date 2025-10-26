@@ -91,6 +91,8 @@ import {
 } from '../store/applicationSlice';
 import { Pencil } from 'lucide-react';
 
+import otovizePng from '../assets/otovize.png';
+
 /**
  * FillForm Page Component - Cards Style
  * One question at a time with progress tracking
@@ -730,12 +732,17 @@ const FillForm = () => {
             }}>
               otovize
             </span>
-            <FlightTakeoffIcon sx={{ 
-              fontSize: 32, 
-              color: '#064E3B',
-              paddingTop: '0.3rem',
-              filter: 'drop-shadow(0 2px 10px rgba(255, 255, 255, 0.8))'
-            }} />
+            <img 
+                   src={otovizePng} 
+                   alt="Otovize" 
+                   style={{
+                     width: '72px',
+                     height: '72px',
+                     marginTop: '0.5rem',
+                     marginLeft: '-0.5rem',
+                     filter: 'brightness(0) saturate(100%) invert(17%) sepia(71%) saturate(1088%) hue-rotate(137deg) brightness(93%) contrast(97%)',
+                   }}
+                 /> 
           </div>
         </div>
 

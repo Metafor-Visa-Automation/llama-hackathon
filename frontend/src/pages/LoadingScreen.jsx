@@ -9,6 +9,7 @@ import vibeBg from '../assets/vibe-bg1.webp';
 import { createApplication } from '../store/applicationSlice';
 import { setChecklistData, setChecklistError } from '../store/visaChecklistSlice';
 import { generateVisaChecklist } from '../services/applicationService';
+import otovizePng from '../assets/otovize.png';
 
 /**
  * LoadingScreen Component
@@ -192,12 +193,17 @@ const LoadingScreen = () => {
           >
             otovize
           </span>
-          <FlightTakeoffIcon sx={{ 
-            fontSize: 32, 
-            color: '#064E3B',
-            paddingTop: '0.3rem',
-            filter: 'drop-shadow(0 2px 10px rgba(255, 255, 255, 0.8))'
-          }} />
+          <img 
+                   src={otovizePng} 
+                   alt="Otovize" 
+                   style={{
+                     width: '72px',
+                     height: '72px',
+                     marginTop: '0.5rem',
+                     marginLeft: '-0.5rem',
+                     filter: 'brightness(0) saturate(100%) invert(17%) sepia(71%) saturate(1088%) hue-rotate(137deg) brightness(93%) contrast(97%)',
+                   }}
+                 />
         </motion.div>
 
         {/* Animated Background Gradients */}

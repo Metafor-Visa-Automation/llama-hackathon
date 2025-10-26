@@ -6,8 +6,8 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import MonetizationOnIcon from '@mui/icons-material/MonetizationOn';
 import AnalyticsIcon from '@mui/icons-material/Analytics';
 import AirplanemodeActiveIcon from '@mui/icons-material/AirplanemodeActive';
-import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import vibeBg from '../assets/vibe-bg1.webp';
+import otovizePng from '../assets/otovize.png';
 
 const StatsSection = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -399,7 +399,17 @@ const StatsSection = () => {
               >
                 "otovize
               </span>
-              <FlightTakeoffIcon sx={{ fontSize: 36, color: '#064E3B', paddingTop: '0.5rem' }} />
+              <img 
+                   src={otovizePng} 
+                   alt="Otovize" 
+                   style={{
+                     width: '48px',
+                     height: '48px',
+                     marginTop: '0.5rem',
+                     marginLeft: '-0.5rem',
+                     filter: 'brightness(0) saturate(100%) invert(17%) sepia(71%) saturate(1088%) hue-rotate(137deg) brightness(93%) contrast(97%)',
+                   }}
+                 />
               <span
                 style={{
                   fontStyle: 'italic',
