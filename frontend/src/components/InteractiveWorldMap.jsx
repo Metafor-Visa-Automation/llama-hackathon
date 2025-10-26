@@ -11,7 +11,6 @@ import {
   setApplicationType
 } from '../store/countrySlice';
 import { setChecklistLoading } from '../store/visaChecklistSlice';
-import { generateVisaChecklist } from '../services/applicationService';
 
 // Schengen countries ISO codes with names (ISO2 format for SimpleMaps)
 const SCHENGEN_COUNTRIES = {

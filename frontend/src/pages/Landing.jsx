@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'; // eslint-disable-line no-unused-vars
-import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import InteractiveWorldMap from '../components/InteractiveWorldMap';
 import LogoMarquee from '../components/LogoMarquee';
 import MVPBadge from '../components/MVPBadge';
@@ -8,6 +7,7 @@ import StatsSection from '../components/StatsSection';
 import UserGreeting from '../components/UserGreeting';
 import PageTransition from '../components/PageTransition';
 import vibeBg from '../assets/vibe-bg1.webp';
+import otovizePng from '../assets/otovize.png';
 
 /**
  * Landing Page Component for Otovize
@@ -125,7 +125,17 @@ const Landing = () => {
                 >
                   otovize
                 </span>
-                <FlightTakeoffIcon sx={{ fontSize: 36, color: '#064E3B', paddingTop: '0.5rem' }} />
+                  <img 
+                   src={otovizePng} 
+                   alt="Otovize" 
+                   style={{
+                     width: '72px',
+                     height: '72px',
+                     marginTop: '0.5rem',
+                     marginLeft: '-0.5rem',
+                     filter: 'brightness(0) saturate(100%) invert(17%) sepia(71%) saturate(1088%) hue-rotate(137deg) brightness(93%) contrast(97%)',
+                   }}
+                 />
               </motion.div>
 
               {/* Main Hero Headline - Bold & Attention-Grabbing */}
