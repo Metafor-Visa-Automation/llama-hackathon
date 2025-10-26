@@ -36,7 +36,7 @@ import {
 const FillForm = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user, token, tokenType } = useSelector((state) => state.auth);
+  const { user, token } = useSelector((state) => state.auth);
   // eslint-disable-next-line no-unused-vars
   const { originCountry, destinationCountry } = useSelector((state) => state.country);
   
@@ -221,11 +221,11 @@ const FillForm = () => {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('http://34.3.90.3:8000/api/v1/documents/documents', {
+      const response = await fetch('/api/v1/documents/documents', {
         method: 'POST',
         headers: {
           'accept': 'application/json',
-          'Authorization': `${tokenType} ${token}`
+          'Authorization': `Bearer ${token}`
         },
         body: formData
       });
