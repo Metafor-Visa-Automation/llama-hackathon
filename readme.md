@@ -1,54 +1,98 @@
 # Visa Flow
 
-**VisaPrep AI** (veya projenizin adı), vize başvuru sürecini otomatikleştirmek için tasarlanmış, yapay zeka destekli bir verimlilik aracıdır. Bu proje, karmaşık, stresli ve zaman alıcı bürokratik süreci; basit, rehberli ve verimli bir dijital iş akışına dönüştürür.
+## 🧭 1. Project Description and Purpose  
 
-Platformumuz, kullanıcıların saatler süren manuel form doldurma, belge araştırma ve profil denetleme yükünü ortadan kaldırarak kişisel verimliliklerini en üst düzeye çıkarmayı hedefler.
+**Oto Vize**, vize başvuru sürecini modernleştiren yapay zeka destekli bir otomasyon platformudur.  
+Geleneksel, karmaşık ve stresli vize işlemlerini basitleştirerek kullanıcıların tüm süreci **tek bir dijital ortamda**, hatasız ve hızlı şekilde tamamlamasına olanak tanır.  
 
-## 🚀 The Problem We Solve
+**Amaç:**  
+- Form doldurma, belge kontrolü ve sosyal medya inceleme adımlarını otomatikleştirmek  
+- Kişiye özel belge listesi, hatasız form doldurma ve niyet mektubu oluşturma süreçlerini hızlandırmak  
+- Kullanıcıların başvuru kabul oranını artırmak ve zamandan tasarruf ettirmek  
 
-Geleneksel vize başvuru süreci bozuktur. Kullanıcılar şu sorunlarla boğuşur:
+---
 
-* **Muazzam Zaman Kaybı:** Karmaşık formları doldurmak ve forumlarda/konsolosluk sitelerinde doğru belge listesini aramak saatler, hatta günler sürer.
-* **Yüksek Hata Riski:** Manuel veri girişinde (yanlış tarih, tutarsız bilgi) yapılan basit hatalar, başvurunun doğrudan reddedilmesine ve tüm sürecin başa sarmasına neden olabilir.
-* **Gizli Stres Faktörü:** Vize memurlarının sosyal medya profillerini kontrol edebileceği endişesi, kullanıcıların yıllar süren sosyal medya geçmişlerini manuel olarak denetleme gibi verimsiz bir çabaya girmesine yol açar.
+## ⚙️ 2. Installation Instructions  
 
-**VisaPrep AI, tüm bu süreci otomatize eder.**
+### Prerequisites  
+- Python 3.10+  
+- Node.js 18+  
+- npm veya yarn  
+- Firebase hesabı  
+- Google Cloud hesabı (AI model dağıtımı için)
 
-## ✨ Core Features
+### Steps  
 
-Platformumuz, vize başvurusunun her aşamasını otomatize ederek verimliliği artırır:
+1. **Repository’yi klonlayın:**  
+   ```bash
+   git clone https://github.com/Metafor-Visa-Automation/llama-hackathon.git
+   cd llama-hackathon
+   ```
 
-### 1. Vize Süreci Otomasyonu
+2. **Backend kurulumu:**  
+   ```bash
+   cd backend
+   python -m venv env
+   source env/bin/activate  # (Windows için: env\Scripts\activate)
+   pip install -r requirements.txt
+   uvicorn main:app --reload
+   ```
 
-* **🤖 AI-Powered Form Filling:** 1-2 saatlik karmaşık form (DS-160, Schengen vb.) doldurma işlemini 5 dakikaya indirir. Yapay zekamız, sohbet arayüzünde basit sorular sorar ve cevapları doğrudan resmi formdaki doğru alanlara yerleştirir.
-* **📋 Dynamic Document Checklist:** Kullanıcının profiline (öğrenci, çalışan), seyahat amacına ve gideceği ülkeye göre %100 kişiselleştirilmiş bir belge kontrol listesini saniyeler içinde oluşturur. Forumlarda saatlerce araştırma yapmayı engeller.
-* **📄 Document OCR & Validation:** Kullanıcılar belgelerini (banka dökümü, maaş bordrosu, davetiye) yükler; yapay zekamız bu belgeleri okur (OCR), eksik imza, yanlış tarih veya formdaki bilgilerle tutarsızlık (örn: farklı bakiye) gibi basit ama kritik hataları anında tespit eder.
-* **✍️ AI Letter of Intent Generator:** Kullanıcının seyahat planına ve profiline göre profesyonel, ikna edici bir dille niyet mektubu/vize dilekçesi taslağı oluşturur. Yazma stresini ve harcanan zamanı sıfıra indirir.
+3. **Frontend kurulumu:**  
+   ```bash
+   cd ../frontend
+   npm install
+   npm run dev
+   ```
 
-### 2. Sosyal Medya Profili Denetimi (Risk Audit)
+4. **Ortam değişkenlerini ekleyin (.env):**  
+   ```env
+   FIREBASE_API_KEY=...
+   GCP_API_KEY=...
+   OLLAMA_MODEL=llama3
+   ```
 
-* **🕵️ Automated Social Media Audit:** Kullanıcının 10 yıllık sosyal medya geçmişini manuel olarak (post post) incelemesi için harcayacağı onlarca saati birkaç dakikaya indirir.
-* **💡 Actionable Insights:** Sadece sorunlu içeriği (nefret söylemi, yasa dışı faaliyet imaları, başvuruyla çelişen ifadeler) bulmakla kalmaz, aynı zamanda kullanıcıya **ne yapması gerektiğini (Sil, Gizle, Düzenle)** söyleyerek karar verme sürecini otomatikleştirir.
+5. **Uygulamayı tarayıcıda açın:**  
+   ```
+   http://localhost:5173
+   ```
 
-### 3. Yönetim Paneli (Productivity Dashboard)
+---
 
-* **📈 Centralized Task Management:** Başvuru sürecini (Belge Topla, Formu Doldur, Sosyal Medyayı İncele, Randevu Al) Trello benzeri basit bir arayüzde tek bir yerden yönetmeyi sağlar. Otomatik hatırlatıcılar kurar.
-* **👨‍👩‍👧‍👦 Team & Family Application:** Sadece bireysel değil, bir şirket (İK departmanı) veya aile olarak başvuru yapılıyorsa, İK'nın veya aile reisinin tüm ekibin profil uyumluluğunu ve başvuru durumunu tek bir panelden yönetmesini sağlar.
+## 💻 3. Usage Guide  
 
-## 🛠️ Tech Stack
+### 🔹 Form Otomasyonu  
+Kullanıcıdan alınan temel bilgiler, DS-160 veya Schengen gibi resmi formlara otomatik olarak işlenir.
 
-* **Frontend:** React, Tailwind CSS
-* **Backend:** FastAPI (Python)
-* **Database:** Firebase (Kullanıcı verileri, ülke bazlı gereksinimler ve dinamik kontrol listeleri için Firestore/Realtime Database)
-* **AI Platform:** Google Cloud (VM/GKE)
-* **AI Model:** Ollama (Llama 3 modelini sunmak için)
-  
-## 🛠️ Arch (Edit from here: https://www.mermaidchart.com/d/529a48fe-299c-40cf-944e-bae6994234a7)
+### 🔹 Belge Kontrol Listesi  
+Kullanıcının profiline (öğrenci, çalışan, aile bireyi vb.) göre kişiselleştirilmiş bir belge listesi oluşturulur.
 
-<img width="1246" height="1500" alt="Untitled diagram-2025-10-24-175128" src="https://github.com/user-attachments/assets/a1b88361-ba43-4ef7-8d16-6b85429a3f50" />
+### 🔹 Belge OCR & Doğrulama  
+Yüklenen belgelerde tarih, imza veya tutarsız veri hataları otomatik olarak tespit edilir.
 
-## 🛠️ Database (Edit from here: https://www.mermaidchart.com/d/965a71e2-ca92-43d9-8cd8-8d9d7ef0283b )
+### 🔹 Niyet Mektubu Üretimi  
+Kullanıcının profil ve seyahat planına göre profesyonel bir niyet mektubu taslağı oluşturulur.
 
-<img width="4390" height="2943" alt="image" src="https://github.com/user-attachments/assets/c69ca404-d3b4-4aa7-b923-7bc4b259174a" />
+### 🔹 Sosyal Medya Analizi  
+Yapay zeka, başvuruyla çelişebilecek veya riskli sosyal medya içeriklerini tespit eder ve çözüm önerileri sunar.
 
+---
 
+## 🧠 4. Technologies Used  
+
+| Katman | Teknoloji |
+|--------|------------|
+| **Frontend** | React, Tailwind CSS |
+| **Backend** | FastAPI (Python) |
+| **Database** | Firebase (Firestore / Realtime Database) |
+| **AI Platform** | Google Cloud (VM / GKE) |
+| **AI Model** | Ollama (Llama 3) |
+
+---
+
+## 👥 5. Team Members  
+
+- Seçkin Alp Kargı  
+- Mert Çetin  
+- Toprak Necat Gök  
+- Ali Furkan Kaya  
