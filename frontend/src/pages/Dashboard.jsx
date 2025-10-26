@@ -21,8 +21,77 @@ import {
   ArrowBack,
   FlightTakeoff as FlightTakeoffIcon,
   ErrorOutline as ErrorOutlineIcon,
+  Search as SearchIcon,
+  CheckCircle,
+  Error,
+  Warning,
+  Cancel,
+  Info,
 } from '@mui/icons-material';
-import { CircularProgress as MuiCircularProgress } from '@mui/material';
+import { CircularProgress as MuiCircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box } from '@mui/material';
+
+/**
+ * Get user-friendly message and styling based on document status
+ */
+const getDocumentStatusInfo = (analysisData) => {
+  const status = analysisData?.status;
+  const ocrResult = analysisData?.ocr_result;
+
+  // Check if OCR failed
+  if (ocrResult && !ocrResult.success && ocrResult.error) {
+    return {
+      icon: <Warning sx={{ fontSize: '2.5rem', color: '#F59E0B' }} />,
+      title: 'OCR İşlemi Başarısız',
+      message: 'Belgenizden metin çıkarılamadı. Lütfen belgenizin net ve okunabilir olduğundan emin olun.',
+      backgroundColor: '#FFFBEB',
+      borderColor: '#F59E0B',
+      textColor: '#92400E'
+    };
+  }
+
+  switch (status) {
+    case 'VALIDATED':
+    case 'APPROVED':
+      return {
+        icon: <CheckCircle sx={{ fontSize: '2.5rem', color: '#10B981' }} />,
+        title: 'Belge Onaylandı',
+        message: 'Belgeniz kontrol edildi ve uygun bulundu. İşleme devam edebilirsiniz.',
+        backgroundColor: '#F0FDF4',
+        borderColor: '#10B981',
+        textColor: '#064E3B'
+      };
+
+    case 'REJECTED':
+      return {
+        icon: <Cancel sx={{ fontSize: '2.5rem', color: '#EF4444' }} />,
+        title: 'Belge Reddedildi',
+        message: 'Belgeniz kontrol edildi ve uygun görülmedi. Lütfen belgenizi gözden geçirin ve tekrar yükleyin.',
+        backgroundColor: '#FEF2F2',
+        borderColor: '#EF4444',
+        textColor: '#991B1B'
+      };
+
+    case 'PENDING_VALIDATION':
+      return {
+        icon: <Info sx={{ fontSize: '2.5rem', color: '#3B82F6' }} />,
+        title: 'Belge İnceleniyor',
+        message: 'Belgeniz başarıyla yüklendi ve şu anda inceleme aşamasında.',
+        backgroundColor: '#EFF6FF',
+        borderColor: '#3B82F6',
+        textColor: '#1E3A8A'
+      };
+
+    default:
+      return {
+        icon: <Info sx={{ fontSize: '2.5rem', color: '#6B7280' }} />,
+        title: 'Belge Durumu',
+        message: 'Belgeniz sisteme yüklendi.',
+        backgroundColor: '#F9FAFB',
+        borderColor: '#6B7280',
+        textColor: '#1F2937'
+      };
+  }
+};
 
 const countryData = {
   DE: { name: 'Almanya', flag: '🇩🇪' },
@@ -52,19 +121,20 @@ const formatApiDate = (dateString) => {
 const mapApplicationData = (app) => {
   const countryInfo = getCountryInfo(app.country_code);
   const totalItems = app.application_steps?.length || 1;
-  // This is a placeholder until step completion is available in the API
-  const completedItems = app.application_steps?.filter(s => s.status === 'COMPLETED').length || 0;
+  // Check for completed steps
+  const completedItems = app.application_steps?.filter(s => s.completed === true).length || 0;
 
   return {
     id: app.app_id,
     country: countryInfo.name,
     flag: countryInfo.flag,
-    visaType: app.travel_purpose || 'Vize Başvurusu',
+    visaType: app.application_name || app.travel_purpose || 'Vize Başvurusu',
     status: app.status === 'DRAFT' ? 'in_progress' : (app.status?.toLowerCase() || 'in_progress'),
-    approvalScore: Math.round((completedItems / totalItems) * 100) || 0, // Placeholder score
+    approvalScore: Math.round((completedItems / totalItems) * 100) || 0,
     completedItems: completedItems,
     totalItems: totalItems,
     lastUpdated: formatApiDate(app.updated_at),
+    steps: app.application_steps || [], // Include all steps for detailed view
   };
 };
 
@@ -220,6 +290,8 @@ const StatCard = ({ icon, title, value, subtitle, trend }) => {
  * Application Card Component
  */
 const ApplicationCard = ({ application, onClick }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   const getStatusColor = () => {
     switch (application.status) {
       case 'completed': return '#10b981';
@@ -239,6 +311,10 @@ const ApplicationCard = ({ application, onClick }) => {
   };
 
   const progressPercentage = (application.completedItems / application.totalItems) * 100;
+
+  // Group steps by completion status
+  const completedSteps = application.steps?.filter(s => s.completed) || [];
+  const pendingSteps = application.steps?.filter(s => !s.completed) || [];
 
   return (
     <div
@@ -331,12 +407,120 @@ const ApplicationCard = ({ application, onClick }) => {
         </div>
       </div>
 
+      {/* Steps Preview */}
+      {application.steps && application.steps.length > 0 && (
+        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #f3f4f6' }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontFamily: '"Playfair Display", serif',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: '#10b981',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.5rem 0',
+              marginBottom: isExpanded ? '0.75rem' : '0',
+            }}
+          >
+            {isExpanded ? '▼' : '▶'} Adımları Göster ({completedSteps.length}/{application.totalItems})
+          </button>
+
+          {isExpanded && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '300px', overflowY: 'auto', paddingRight: '0.5rem' }}>
+              {/* Completed Steps */}
+              {completedSteps.length > 0 && (
+                <div>
+                  <div style={{ fontFamily: '"Playfair Display", serif', fontSize: '0.75rem', fontWeight: '600', color: '#10b981', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <CheckCircleOutlined style={{ fontSize: 14 }} />
+                    Tamamlanan ({completedSteps.length})
+                  </div>
+                  {completedSteps.map((step, idx) => (
+                    <div
+                      key={`completed-${idx}`}
+                      style={{
+                        padding: '0.5rem 0.75rem',
+                        backgroundColor: '#f0fdf4',
+                        borderRadius: '8px',
+                        marginBottom: '0.25rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                      }}
+                    >
+                      <CheckCircleOutlined style={{ fontSize: 16, color: '#10b981', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: '"Playfair Display", serif', fontSize: '0.75rem', fontWeight: '600', color: '#064e3b' }}>
+                          {step.title}
+                        </div>
+                        {step.requires_document && (
+                          <div style={{ fontFamily: '"Playfair Display", serif', fontSize: '0.65rem', color: '#059669', marginTop: '0.125rem' }}>
+                            📄 Döküman gerekli
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Pending Steps */}
+              {pendingSteps.length > 0 && (
+                <div style={{ marginTop: completedSteps.length > 0 ? '0.75rem' : 0 }}>
+                  <div style={{ fontFamily: '"Playfair Display", serif', fontSize: '0.75rem', fontWeight: '600', color: '#f59e0b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <PendingActionsOutlined style={{ fontSize: 14 }} />
+                    Bekleyen ({pendingSteps.length})
+                  </div>
+                  {pendingSteps.map((step, idx) => (
+                    <div
+                      key={`pending-${idx}`}
+                      style={{
+                        padding: '0.5rem 0.75rem',
+                        backgroundColor: '#fffbeb',
+                        borderRadius: '8px',
+                        marginBottom: '0.25rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                      }}
+                    >
+                      <PendingActionsOutlined style={{ fontSize: 16, color: '#f59e0b', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontFamily: '"Playfair Display", serif', fontSize: '0.75rem', fontWeight: '600', color: '#92400e' }}>
+                          {step.title}
+                        </div>
+                        {step.requires_document && (
+                          <div style={{ fontFamily: '"Playfair Display", serif', fontSize: '0.65rem', color: '#d97706', marginTop: '0.125rem' }}>
+                            📄 Döküman gerekli
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Footer */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid #f3f4f6' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px solid #f3f4f6', marginTop: '1rem' }}>
         <span style={{ fontFamily: '"Playfair Display", serif', fontSize: '0.75rem', color: '#9ca3af' }}>
           {application.lastUpdated}
         </span>
         <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick();
+          }}
           style={{
             background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
             color: 'white',
@@ -369,7 +553,7 @@ const ApplicationCard = ({ application, onClick }) => {
 /**
  * Document Item Component
  */
-const DocumentItem = ({ document }) => {
+const DocumentItem = ({ document, onProcessOCR, isProcessingOCR }) => {
   const getTypeColor = () => {
     switch (document.type) {
       case 'passport': return '#3b82f6';
@@ -475,6 +659,47 @@ const DocumentItem = ({ document }) => {
         </div>
       </div>
       <div style={{ display: 'flex', gap: '0.5rem' }}>
+        {/* OCR Check Button */}
+        <button
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            border: 'none',
+            backgroundColor: isProcessingOCR ? '#dbeafe' : '#eff6ff',
+            color: '#3b82f6',
+            cursor: isProcessingOCR ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (!isProcessingOCR) {
+              e.target.style.backgroundColor = '#dbeafe';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isProcessingOCR) {
+              e.target.style.backgroundColor = '#eff6ff';
+            }
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (!isProcessingOCR) {
+              onProcessOCR(document.id, document.name);
+            }
+          }}
+          disabled={isProcessingOCR}
+          title="OCR Kontrolü Yap"
+        >
+          {isProcessingOCR ? (
+            <MuiCircularProgress size={16} sx={{ color: '#3b82f6' }} />
+          ) : (
+            <SearchIcon style={{ fontSize: 16 }} />
+          )}
+        </button>
+
         <button
           style={{
             width: '32px',
@@ -499,6 +724,7 @@ const DocumentItem = ({ document }) => {
             e.stopPropagation();
             console.log('View:', document.name);
           }}
+          title="Görüntüle"
         >
           <VisibilityOutlined style={{ fontSize: 16 }} />
         </button>
@@ -526,6 +752,7 @@ const DocumentItem = ({ document }) => {
             e.stopPropagation();
             console.log('Download:', document.name);
           }}
+          title="İndir"
         >
           <DownloadOutlined style={{ fontSize: 16 }} />
         </button>
@@ -553,6 +780,7 @@ const DocumentItem = ({ document }) => {
             e.stopPropagation();
             console.log('Delete:', document.name);
           }}
+          title="Sil"
         >
           <DeleteOutlined style={{ fontSize: 16 }} />
         </button>
@@ -567,6 +795,7 @@ const DocumentItem = ({ document }) => {
 const Dashboard = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const { token } = useSelector((state) => state.auth);
   const {
     applications: rawApplications,
     documents: rawDocuments,
@@ -574,10 +803,96 @@ const Dashboard = () => {
     error
   } = useSelector(selectDashboard);
 
+  // OCR state
+  const [ocrModalOpen, setOcrModalOpen] = useState(false);
+  const [ocrResult, setOcrResult] = useState(null);
+  const [isProcessingOCR, setIsProcessingOCR] = useState(false);
+
   useEffect(() => {
     dispatch(fetchApplications());
     dispatch(fetchDocuments());
   }, [dispatch]);
+
+  /**
+   * Process OCR for a document
+   */
+  const processOCR = async (docId, fileName) => {
+    setIsProcessingOCR(true);
+    try {
+      console.log('🔍 Processing OCR for document:', docId);
+
+      const response = await fetch(`/api/v1/documents/${docId}/process-ocr`, {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: ''
+      });
+
+      const data = await response.json();
+      console.log('🔍 OCR Response Status:', response.status);
+      console.log('🔍 OCR Response Data:', data);
+
+      if (response.status === 200 || response.status === 201) {
+        console.log('✅ OCR processing completed:', data);
+
+        // Fetch analysis after successful OCR
+        console.log('📊 Fetching OCR analysis for document:', docId);
+        const analysisResponse = await fetch(`/api/v1/documents/${docId}/ocr-analysis`, {
+          method: 'GET',
+          headers: {
+            'accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        let analysisData = null;
+        let analysisSuccess = false;
+
+        if (analysisResponse.status === 200) {
+          analysisData = await analysisResponse.json();
+          analysisSuccess = true;
+          console.log('✅ Analysis retrieved successfully:', analysisData);
+        } else {
+          console.warn('⚠️ Analysis retrieval failed');
+        }
+
+        setOcrResult({
+          success: true,
+          fileName: fileName,
+          docId: docId,
+          ocrData: data,
+          analysisData: analysisData,
+          analysisSuccess: analysisSuccess
+        });
+      } else {
+        console.error('❌ OCR processing failed:', data);
+        setOcrResult({
+          success: false,
+          fileName: fileName,
+          docId: docId,
+          error: data
+        });
+      }
+    } catch (error) {
+      console.error('💥 OCR processing error:', error);
+      setOcrResult({
+        success: false,
+        fileName: fileName,
+        docId: docId,
+        error: { detail: 'Bir hata oluştu', message: error.message }
+      });
+    } finally {
+      setIsProcessingOCR(false);
+      setOcrModalOpen(true);
+    }
+  };
+
+  const handleOcrModalClose = () => {
+    setOcrModalOpen(false);
+    setOcrResult(null);
+  };
 
   const applications = Array.isArray(rawApplications) ? rawApplications.map(mapApplicationData) : [];
   const documents = Array.isArray(rawDocuments) ? rawDocuments.map(mapDocumentData) : [];
@@ -856,7 +1171,12 @@ const Dashboard = () => {
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   {documents.map((doc) => (
-                    <DocumentItem key={doc.id} document={doc} />
+                    <DocumentItem
+                      key={doc.id}
+                      document={doc}
+                      onProcessOCR={processOCR}
+                      isProcessingOCR={isProcessingOCR}
+                    />
                   ))}
                 </div>
               </div>
@@ -896,6 +1216,187 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* OCR Result Modal */}
+        <Dialog
+          open={ocrModalOpen}
+          onClose={handleOcrModalClose}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: '20px',
+              padding: '1rem',
+              fontFamily: '"Playfair Display", serif',
+              backgroundColor: 'rgba(255, 255, 255, 0.98)',
+              backdropFilter: 'blur(20px)',
+            }
+          }}
+        >
+          <DialogTitle sx={{
+            fontFamily: '"Playfair Display", serif',
+            fontSize: '1.75rem',
+            fontWeight: 700,
+            color: '#1a1a1a',
+            textAlign: 'center',
+            paddingBottom: '1rem'
+          }}>
+            OCR İşlem Sonucu
+          </DialogTitle>
+
+          <DialogContent>
+            {ocrResult && (() => {
+              const statusInfo = ocrResult.analysisSuccess && ocrResult.analysisData
+                ? getDocumentStatusInfo(ocrResult.analysisData)
+                : null;
+
+              return (
+                <Box
+                  sx={{
+                    padding: '1.5rem',
+                    borderRadius: '12px',
+                    backgroundColor: statusInfo?.backgroundColor || (ocrResult.success ? '#F0FDF4' : '#FEF2F2'),
+                    border: `2px solid ${statusInfo?.borderColor || (ocrResult.success ? '#10B981' : '#EF4444')}`,
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '1rem'
+                  }}
+                >
+                  {/* Icon */}
+                  <Box sx={{ flexShrink: 0, marginTop: '0.25rem' }}>
+                    {statusInfo ? statusInfo.icon : (
+                      ocrResult.success ? (
+                        <CheckCircle sx={{ fontSize: '2rem', color: '#10B981' }} />
+                      ) : ocrResult.error?.status_code === 503 ? (
+                        <Warning sx={{ fontSize: '2rem', color: '#F59E0B' }} />
+                      ) : (
+                        <Error sx={{ fontSize: '2rem', color: '#EF4444' }} />
+                      )
+                    )}
+                  </Box>
+
+                  {/* Content */}
+                  <Box sx={{ flex: 1 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        fontFamily: '"Playfair Display", serif',
+                        fontWeight: 600,
+                        fontSize: '1.1rem',
+                        color: '#1a1a1a',
+                        marginBottom: '0.5rem'
+                      }}
+                    >
+                      {ocrResult.fileName}
+                    </Typography>
+
+                    <Typography
+                      sx={{
+                        fontFamily: '"Inter", sans-serif',
+                        fontSize: '0.875rem',
+                        color: '#666666',
+                        marginBottom: '0.75rem'
+                      }}
+                    >
+                      <strong>Döküman ID:</strong> {ocrResult.docId}
+                    </Typography>
+
+                    {ocrResult.success ? (
+                      <>
+                        {/* Show status info if available */}
+                        {statusInfo ? (
+                          <Box sx={{ marginTop: '0.5rem' }}>
+                            <Typography
+                              sx={{
+                                fontFamily: '"Playfair Display", serif',
+                                fontSize: '1rem',
+                                fontWeight: 700,
+                                color: statusInfo.textColor,
+                                marginBottom: '0.5rem'
+                              }}
+                            >
+                              {statusInfo.title}
+                            </Typography>
+                            <Typography
+                              sx={{
+                                fontFamily: '"Inter", sans-serif',
+                                fontSize: '0.875rem',
+                                color: statusInfo.textColor,
+                                lineHeight: 1.6
+                              }}
+                            >
+                              {statusInfo.message}
+                            </Typography>
+                          </Box>
+                        ) : (
+                          <Typography
+                            sx={{
+                              fontFamily: '"Inter", sans-serif',
+                              fontSize: '0.875rem',
+                              color: '#10B981',
+                              fontWeight: 600
+                            }}
+                          >
+                            ✓ OCR işlemi başarıyla tamamlandı
+                          </Typography>
+                        )}
+
+                        {ocrResult.success && !ocrResult.analysisSuccess && (
+                          <Typography
+                            sx={{
+                              fontFamily: '"Inter", sans-serif',
+                              fontSize: '0.75rem',
+                              color: '#F59E0B',
+                              fontStyle: 'italic',
+                              marginTop: '0.5rem'
+                            }}
+                          >
+                            ⚠️ Analiz bilgisi alınamadı
+                          </Typography>
+                        )}
+                      </>
+                    ) : (
+                      <Typography
+                        sx={{
+                          fontFamily: '"Inter", sans-serif',
+                          fontSize: '0.875rem',
+                          color: ocrResult.error?.status_code === 503 ? '#F59E0B' : '#EF4444',
+                          fontWeight: 500
+                        }}
+                      >
+                        {ocrResult.error?.detail || ocrResult.error?.message || 'OCR işlemi başarısız oldu'}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+              );
+            })()}
+          </DialogContent>
+
+          <DialogActions sx={{ padding: '1.5rem', justifyContent: 'center' }}>
+            <Button
+              onClick={handleOcrModalClose}
+              variant="contained"
+              sx={{
+                fontFamily: '"Playfair Display", serif',
+                fontSize: '1rem',
+                fontWeight: 600,
+                padding: '0.75rem 2.5rem',
+                borderRadius: '12px',
+                backgroundColor: '#10B981',
+                color: '#FFFFFF',
+                textTransform: 'none',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                '&:hover': {
+                  backgroundColor: '#059669',
+                  boxShadow: '0 6px 16px rgba(16, 185, 129, 0.4)',
+                }
+              }}
+            >
+              Tamam
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
 
       {/* Responsive Styles */}

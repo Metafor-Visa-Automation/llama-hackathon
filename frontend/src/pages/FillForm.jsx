@@ -7,7 +7,71 @@ import PageTransition from '../components/PageTransition';
 import QuestionCard from '../components/QuestionCard';
 import ProgressStepper from '../components/ProgressStepper';
 import vibeBg from '../assets/vibe-bg3.png';
-import { ArrowBack, FlightTakeoff as FlightTakeoffIcon } from '@mui/icons-material';
+import { ArrowBack, FlightTakeoff as FlightTakeoffIcon, CheckCircle, Error, Warning, Cancel, Info } from '@mui/icons-material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, Box } from '@mui/material';
+
+/**
+ * Get user-friendly message and styling based on document status
+ */
+const getDocumentStatusInfo = (analysisData) => {
+  const status = analysisData?.status;
+  const ocrResult = analysisData?.ocr_result;
+
+  // Check if OCR failed
+  if (ocrResult && !ocrResult.success && ocrResult.error) {
+    return {
+      icon: <Warning sx={{ fontSize: '2.5rem', color: '#F59E0B' }} />,
+      title: 'OCR İşlemi Başarısız',
+      message: 'Belgenizden metin çıkarılamadı. Lütfen belgenizin net ve okunabilir olduğundan emin olun.',
+      backgroundColor: '#FFFBEB',
+      borderColor: '#F59E0B',
+      textColor: '#92400E'
+    };
+  }
+
+  switch (status) {
+    case 'VALIDATED':
+    case 'APPROVED':
+      return {
+        icon: <CheckCircle sx={{ fontSize: '2.5rem', color: '#10B981' }} />,
+        title: 'Belge Onaylandı',
+        message: 'Belgeniz kontrol edildi ve uygun bulundu. İşleme devam edebilirsiniz.',
+        backgroundColor: '#F0FDF4',
+        borderColor: '#10B981',
+        textColor: '#064E3B'
+      };
+
+    case 'REJECTED':
+      return {
+        icon: <Cancel sx={{ fontSize: '2.5rem', color: '#EF4444' }} />,
+        title: 'Belge Reddedildi',
+        message: 'Belgeniz kontrol edildi ve uygun görülmedi. Lütfen belgenizi gözden geçirin ve tekrar yükleyin.',
+        backgroundColor: '#FEF2F2',
+        borderColor: '#EF4444',
+        textColor: '#991B1B'
+      };
+
+    case 'PENDING_VALIDATION':
+      return {
+        icon: <Info sx={{ fontSize: '2.5rem', color: '#3B82F6' }} />,
+        title: 'Belge İnceleniyor',
+        message: 'Belgeniz başarıyla yüklendi ve şu anda inceleme aşamasında.',
+        backgroundColor: '#EFF6FF',
+        borderColor: '#3B82F6',
+        textColor: '#1E3A8A'
+      };
+
+    default:
+      return {
+        icon: <Info sx={{ fontSize: '2.5rem', color: '#6B7280' }} />,
+        title: 'Belge Durumu',
+        message: 'Belgeniz sisteme yüklendi.',
+        backgroundColor: '#F9FAFB',
+        borderColor: '#6B7280',
+        textColor: '#1F2937'
+      };
+  }
+};
 // TODO: Replace with actual AI service call
 import mockResponseData from '../ai_responses/response-final.json';
 import { saveApplication } from '../services/applicationService';
@@ -53,13 +117,19 @@ const FillForm = () => {
 
   // Local state for documents (not in Redux due to size)
   const [documents, setDocuments] = useState({});
+  const [documentTypes, setDocumentTypes] = useState({}); // Store document type for each question
   const [direction, setDirection] = useState(0); // For animation direction
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false); // For document upload
+  const [uploadStage, setUploadStage] = useState(''); // Track upload stage: 'uploading' or 'processing'
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [applicationName, setApplicationName] = useState('');
+
+  // OCR Modal state
+  const [ocrModalOpen, setOcrModalOpen] = useState(false);
+  const [ocrResults, setOcrResults] = useState([]);
 
   useEffect(() => {
     if (application) {
@@ -122,10 +192,13 @@ const FillForm = () => {
 
     // Initialize local documents state
     const initialDocuments = {};
+    const initialDocumentTypes = {};
     processedQuestions.forEach(q => {
       initialDocuments[q.id] = []; // Array for multiple documents
+      initialDocumentTypes[q.id] = ''; // Initialize document type as empty
     });
     setDocuments(initialDocuments);
+    setDocumentTypes(initialDocumentTypes);
     setIsLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty deps - captures initial values and prevents recreation
@@ -200,6 +273,15 @@ const FillForm = () => {
     setTimeout(() => checkQuestionCompletion(), 100);
   };
 
+  const handleDocumentTypeChange = (type) => {
+    if (questions.length === 0) return;
+    const questionId = questions[currentQuestionIndex].id;
+    setDocumentTypes(prev => ({
+      ...prev,
+      [questionId]: type
+    }));
+  };
+
   /**
    * Check if current question is complete and mark it
    */
@@ -238,20 +320,38 @@ const FillForm = () => {
 
   /**
    * Upload document to backend
+   * Uses multipart/form-data with query parameters
    */
-  const uploadDocument = async (file) => {
+  const uploadDocument = async (file, docType) => {
     try {
       console.log('🔐 Upload Debug - Token:', token);
       console.log('👤 Upload Debug - User:', user);
+      console.log('📄 Upload Debug - File:', file.name, file.type, file.size);
+      console.log('🏷️ Upload Debug - Document Type:', docType);
 
+      // Create FormData for file upload
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch('/api/v1/documents/documents', {
+      // Use filename without extension as default document title
+      const documentTitle = file.name.split('.')[0];
+
+      // Build query parameters
+      const queryParams = new URLSearchParams({
+        document_type: docType || 'other',
+        document_title: documentTitle,
+        auto_ocr: 'true' // Enable automatic OCR processing
+      });
+
+      const uploadUrl = `/api/v1/documents/upload?${queryParams.toString()}`;
+      console.log('📤 Upload URL:', uploadUrl);
+
+      const response = await fetch(uploadUrl, {
         method: 'POST',
         headers: {
           'accept': 'application/json',
           'Authorization': `Bearer ${token}`
+          // Don't set Content-Type - browser will set it with boundary for multipart/form-data
         },
         body: formData
       });
@@ -260,7 +360,7 @@ const FillForm = () => {
       console.log('📤 Upload Response Status:', response.status);
       console.log('📤 Upload Response Data:', data);
 
-      if (response.status === 201 && data.doc_id) {
+      if (response.status === 201 || response.status === 200) {
         console.log('✅ Document uploaded successfully:', data);
         return { success: true, data };
       } else {
@@ -269,6 +369,71 @@ const FillForm = () => {
       }
     } catch (error) {
       console.error('💥 Document upload error:', error);
+      return { success: false, error };
+    }
+  };
+
+  /**
+   * Process OCR for uploaded document
+   */
+  const processOCR = async (docId) => {
+    try {
+      console.log('🔍 Processing OCR for document:', docId);
+
+      const response = await fetch(`/api/v1/documents/${docId}/process-ocr`, {
+        method: 'POST',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: ''
+      });
+
+      const data = await response.json();
+      console.log('🔍 OCR Response Status:', response.status);
+      console.log('🔍 OCR Response Data:', data);
+
+      if (response.status === 200 || response.status === 201) {
+        console.log('✅ OCR processing completed:', data);
+        return { success: true, data };
+      } else {
+        console.error('❌ OCR processing failed:', data);
+        return { success: false, error: data };
+      }
+    } catch (error) {
+      console.error('💥 OCR processing error:', error);
+      return { success: false, error };
+    }
+  };
+
+  /**
+   * Get OCR analysis for a document
+   */
+  const getOCRAnalysis = async (docId) => {
+    try {
+      console.log('📊 Fetching OCR analysis for document:', docId);
+
+      const response = await fetch(`/api/v1/documents/${docId}/ocr-analysis`, {
+        method: 'GET',
+        headers: {
+          'accept': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      console.log('📊 Analysis Response Status:', response.status);
+      console.log('📊 Analysis Response Data:', data);
+
+      if (response.status === 200) {
+        console.log('✅ Analysis retrieved successfully:', data);
+        return { success: true, data };
+      } else {
+        console.error('❌ Analysis retrieval failed:', data);
+        return { success: false, error: data };
+      }
+    } catch (error) {
+      console.error('💥 Analysis retrieval error:', error);
       return { success: false, error };
     }
   };
@@ -282,27 +447,84 @@ const FillForm = () => {
     // Handle requires_document: true
     if (currentQ.requires_document) {
       const docs = documents[questionId];
+      const docType = documentTypes[questionId];
+
+      // Validate that document type is selected
+      if (!docType) {
+        alert('Lütfen döküman tipini seçin.');
+        return;
+      }
 
       // If there are documents to upload
       if (Array.isArray(docs) && docs.length > 0) {
         setIsUploading(true);
+        setUploadStage('uploading');
 
         try {
-          // Upload all documents for this question
-          const uploadPromises = docs.map(doc => uploadDocument(doc));
-          const results = await Promise.all(uploadPromises);
+          // Upload all documents for this question with the selected document type
+          const uploadPromises = docs.map(doc => uploadDocument(doc, docType));
+          const uploadResults = await Promise.all(uploadPromises);
 
           // Check if all uploads were successful
-          const allSuccess = results.every(result => result.success);
+          const allUploadsSuccess = uploadResults.every(result => result.success);
 
-          if (allSuccess) {
-            // Mark step as completed
+          if (allUploadsSuccess) {
+            console.log('✅ All documents uploaded successfully');
+
+            // Change stage to OCR processing
+            setUploadStage('processing');
+
+            // Trigger OCR processing for all uploaded documents
+            const ocrPromises = uploadResults.map(result => {
+              const docId = result.data?.doc_id;
+              if (docId) {
+                console.log('🔍 Triggering OCR for doc_id:', docId);
+                return processOCR(docId);
+              }
+              return Promise.resolve({ success: false, error: 'No doc_id returned' });
+            });
+
+            const ocrResultsData = await Promise.all(ocrPromises);
+
+            // Check OCR results
+            const allOCRSuccess = ocrResultsData.every(result => result.success);
+
+            // Fetch analysis for successfully processed documents
+            const analysisPromises = ocrResultsData.map(async (result, index) => {
+              const docId = uploadResults[index].data?.doc_id;
+              if (result.success && docId) {
+                console.log('📊 Fetching analysis for doc_id:', docId);
+                return await getOCRAnalysis(docId);
+              }
+              return { success: false, error: 'OCR processing failed or no doc_id' };
+            });
+
+            const analysisResults = await Promise.all(analysisPromises);
+
+            // Prepare combined results for modal display
+            const resultsWithFiles = ocrResultsData.map((result, index) => ({
+              fileName: uploadResults[index].data?.file_name || docs[index].name,
+              docId: uploadResults[index].data?.doc_id,
+              success: result.success,
+              ocrData: result.data,
+              analysisData: analysisResults[index]?.data,
+              analysisSuccess: analysisResults[index]?.success || false,
+              error: result.error
+            }));
+
+            // Store results and show modal
+            setOcrResults(resultsWithFiles);
+            setOcrModalOpen(true);
+
+            if (allOCRSuccess) {
+              console.log('✅ All OCR processing completed successfully');
+            } else {
+              console.warn('⚠️ Some OCR processing failed, but continuing anyway');
+            }
+
+            // Mark step as completed regardless of OCR status
             dispatch(markQuestionComplete(currentQuestionIndex));
             dispatch(completeApplicationStep(questionId));
-
-            // Move to next question
-            setDirection(1);
-            dispatch(nextQuestion());
           } else {
             alert('Döküman yükleme başarısız. Lütfen tekrar deneyin.');
           }
@@ -311,6 +533,7 @@ const FillForm = () => {
           alert('Döküman yükleme sırasında bir hata oluştu.');
         } finally {
           setIsUploading(false);
+          setUploadStage('');
         }
       }
     }
@@ -337,6 +560,13 @@ const FillForm = () => {
     }
   };
 
+  const handleOcrModalClose = () => {
+    setOcrModalOpen(false);
+    // Move to next question after closing modal
+    setDirection(1);
+    dispatch(nextQuestion());
+  };
+
   const handleSubmit = async () => {
     console.log('Form submitted:', { answers, documents });
     if (!application) {
@@ -360,7 +590,13 @@ const FillForm = () => {
 
       if (result.success) {
         dispatch(updateApplication(result.data));
-        navigate('/cover-letter-generation');
+        // Navigate with application_id from saved result
+        navigate('/cover-letter-generation', {
+          state: {
+            application_id: result.data.app_id,
+            application_name: result.data.application_name
+          }
+        });
       } else {
         alert('Uygulama kaydedilemedi. Lütfen tekrar deneyin.');
         console.error("Failed to save application:", result.error);
@@ -625,9 +861,11 @@ const FillForm = () => {
                   question={questions[currentQuestionIndex]}
                   value={answers[questions[currentQuestionIndex].id]}
                   documents={documents[questions[currentQuestionIndex].id] || []}
+                  documentType={documentTypes[questions[currentQuestionIndex].id] || ''}
                   onChange={handleAnswer}
                   onDocumentAdd={handleDocumentAdd}
                   onDocumentRemove={handleDocumentRemove}
+                  onDocumentTypeChange={handleDocumentTypeChange}
                   currentIndex={currentQuestionIndex}
                   totalQuestions={totalQuestions}
                   canGoNext={canGoNext}
@@ -635,6 +873,7 @@ const FillForm = () => {
                   onPrevious={handlePrevious}
                   onSubmit={handleSubmit}
                   isUploading={isUploading}
+                  uploadStage={uploadStage}
                   isSubmitting={isSubmitting}
                 />
               </motion.div>
@@ -649,6 +888,180 @@ const FillForm = () => {
             documents={documents}
           />
         </div>
+
+        {/* OCR Results Modal */}
+        <Dialog
+          open={ocrModalOpen}
+          onClose={handleOcrModalClose}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: '20px',
+              padding: '1rem',
+              fontFamily: '"Playfair Display", serif',
+              backgroundColor: 'rgba(255, 255, 255, 0.98)',
+              backdropFilter: 'blur(20px)',
+            }
+          }}
+        >
+          <DialogTitle sx={{
+            fontFamily: '"Playfair Display", serif',
+            fontSize: '1.75rem',
+            fontWeight: 700,
+            color: '#1a1a1a',
+            textAlign: 'center',
+            paddingBottom: '1rem'
+          }}>
+            OCR İşlem Sonuçları
+          </DialogTitle>
+
+          <DialogContent>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {ocrResults.map((result, index) => {
+                // Get status info if analysis data is available
+                const statusInfo = result.analysisSuccess && result.analysisData
+                  ? getDocumentStatusInfo(result.analysisData)
+                  : null;
+
+                return (
+                  <Box
+                    key={index}
+                    sx={{
+                      padding: '1.5rem',
+                      borderRadius: '12px',
+                      backgroundColor: statusInfo?.backgroundColor || (result.success ? '#F0FDF4' : '#FEF2F2'),
+                      border: `2px solid ${statusInfo?.borderColor || (result.success ? '#10B981' : '#EF4444')}`,
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '1rem'
+                    }}
+                  >
+                    {/* Icon */}
+                    <Box sx={{ flexShrink: 0, marginTop: '0.25rem' }}>
+                      {statusInfo ? statusInfo.icon : (
+                        result.success ? (
+                          <CheckCircle sx={{ fontSize: '2rem', color: '#10B981' }} />
+                        ) : result.error?.status_code === 503 ? (
+                          <Warning sx={{ fontSize: '2rem', color: '#F59E0B' }} />
+                        ) : (
+                          <Error sx={{ fontSize: '2rem', color: '#EF4444' }} />
+                        )
+                      )}
+                    </Box>
+
+                    {/* Content */}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          fontFamily: '"Playfair Display", serif',
+                          fontWeight: 600,
+                          fontSize: '1.1rem',
+                          color: '#1a1a1a',
+                          marginBottom: '0.5rem'
+                        }}
+                      >
+                        {result.fileName}
+                      </Typography>
+
+                      {result.success ? (
+                        <>
+                          {/* Show status info if available */}
+                          {statusInfo ? (
+                            <Box sx={{ marginTop: '0.5rem' }}>
+                              <Typography
+                                sx={{
+                                  fontFamily: '"Playfair Display", serif',
+                                  fontSize: '1rem',
+                                  fontWeight: 700,
+                                  color: statusInfo.textColor,
+                                  marginBottom: '0.5rem'
+                                }}
+                              >
+                                {statusInfo.title}
+                              </Typography>
+                              <Typography
+                                sx={{
+                                  fontFamily: '"Inter", sans-serif',
+                                  fontSize: '0.875rem',
+                                  color: statusInfo.textColor,
+                                  lineHeight: 1.6
+                                }}
+                              >
+                                {statusInfo.message}
+                              </Typography>
+                            </Box>
+                          ) : (
+                            <Typography
+                              sx={{
+                                fontFamily: '"Inter", sans-serif',
+                                fontSize: '0.875rem',
+                                color: '#10B981',
+                                fontWeight: 600
+                              }}
+                            >
+                              ✓ OCR işlemi başarıyla tamamlandı
+                            </Typography>
+                          )}
+
+                          {result.success && !result.analysisSuccess && (
+                            <Typography
+                              sx={{
+                                fontFamily: '"Inter", sans-serif',
+                                fontSize: '0.75rem',
+                                color: '#F59E0B',
+                                fontStyle: 'italic',
+                                marginTop: '0.5rem'
+                              }}
+                            >
+                              ⚠️ Analiz bilgisi alınamadı
+                            </Typography>
+                          )}
+                        </>
+                      ) : (
+                        <Typography
+                          sx={{
+                            fontFamily: '"Inter", sans-serif',
+                            fontSize: '0.875rem',
+                            color: result.error?.status_code === 503 ? '#F59E0B' : '#EF4444',
+                            fontWeight: 500
+                          }}
+                        >
+                          {result.error?.detail || result.error?.message || 'OCR işlemi başarısız oldu'}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Box>
+          </DialogContent>
+
+          <DialogActions sx={{ padding: '1.5rem', justifyContent: 'center' }}>
+            <Button
+              onClick={handleOcrModalClose}
+              variant="contained"
+              sx={{
+                fontFamily: '"Playfair Display", serif',
+                fontSize: '1rem',
+                fontWeight: 600,
+                padding: '0.75rem 2.5rem',
+                borderRadius: '12px',
+                backgroundColor: '#10B981',
+                color: '#FFFFFF',
+                textTransform: 'none',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                '&:hover': {
+                  backgroundColor: '#059669',
+                  boxShadow: '0 6px 16px rgba(16, 185, 129, 0.4)',
+                }
+              }}
+            >
+              Devam Et
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </PageTransition>
   );

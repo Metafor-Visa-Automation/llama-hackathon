@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { TextField, Button, Chip, IconButton, Tooltip, FormControlLabel, Checkbox, CircularProgress } from '@mui/material';
+import { TextField, Button, Chip, IconButton, Tooltip, FormControlLabel, Checkbox, CircularProgress, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import {
   ArrowBack,
   ArrowForward,
@@ -56,12 +56,49 @@ const QuestionCard = ({
   onPrevious,
   onSubmit,
   isUploading = false,
-  isSubmitting = false
+  uploadStage = '',
+  isSubmitting = false,
+  documentType,
+  onDocumentTypeChange
 }) => {
   const isLastQuestion = currentIndex === totalQuestions - 1;
   const isFirstQuestion = currentIndex === 0;
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Get upload status text based on stage
+  const getUploadStatusText = () => {
+    if (uploadStage === 'uploading') {
+      return 'Belgeleriniz yükleniyor...';
+    } else if (uploadStage === 'processing') {
+      return 'Belgeleriniz kontrol ediliyor...';
+    }
+    return 'Yükleniyor...';
+  };
+
+  // Document type options
+  const documentTypes = [
+    { value: 'passport', label: 'Pasaport' },
+    { value: 'bank_statement', label: 'Banka Ekstresi' },
+    { value: 'biometric_photo', label: 'Biyometrik Fotoğraf' },
+    { value: 'birth_certificate', label: 'Doğum Belgesi' },
+    { value: 'business_letter', label: 'İş Mektubu' },
+    { value: 'employment_letter', label: 'Çalışma Mektubu' },
+    { value: 'employment_certificate', label: 'Çalışma Belgesi' },
+    { value: 'payslip', label: 'Maaş Bordrosu' },
+    { value: 'hotel_reservation', label: 'Otel Rezervasyonu' },
+    { value: 'flight_reservation', label: 'Uçak Rezervasyonu' },
+    { value: 'travel_insurance', label: 'Seyahat Sigortası' },
+    { value: 'invitation_letter', label: 'Davet Mektubu' },
+    { value: 'previous_visas', label: 'Önceki Vizeler' },
+    { value: 'student_certificate', label: 'Öğrenci Belgesi' },
+    { value: 'academic_transcript', label: 'Akademik Transkript' },
+    { value: 'tax_return', label: 'Vergi Beyannamesi' },
+    { value: 'property_deed', label: 'Tapu Belgesi' },
+    { value: 'social_security', label: 'Sosyal Güvenlik' },
+    { value: 'insurance', label: 'Sigorta' },
+    { value: 'other', label: 'Diğer' }
+  ];
 
   /**
    * Handle file drop - supports multiple files
@@ -181,6 +218,71 @@ const QuestionCard = ({
     if (question.requires_document) {
       return (
         <div>
+          {/* Document Type Dropdown */}
+          <FormControl
+            fullWidth
+            sx={{
+              marginBottom: '1.5rem',
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
+                fontFamily: '"Playfair Display", serif',
+              }
+            }}
+          >
+            <InputLabel
+              sx={{
+                fontFamily: '"Playfair Display", serif',
+                fontWeight: 600,
+                color: '#059669',
+                '&.Mui-focused': {
+                  color: '#059669'
+                }
+              }}
+            >
+              Döküman Tipi Seçin
+            </InputLabel>
+            <Select
+              value={documentType || ''}
+              onChange={(e) => onDocumentTypeChange(e.target.value)}
+              label="Döküman Tipi Seçin"
+              sx={{
+                fontFamily: '"Playfair Display", serif',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#D1FAE5',
+                  borderWidth: '2px',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#10B981',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: '#059669',
+                  borderWidth: '2px',
+                }
+              }}
+            >
+              {documentTypes.map((type) => (
+                <MenuItem
+                  key={type.value}
+                  value={type.value}
+                  sx={{
+                    fontFamily: '"Playfair Display", serif',
+                    '&:hover': {
+                      backgroundColor: '#F0FDF4'
+                    },
+                    '&.Mui-selected': {
+                      backgroundColor: '#D1FAE5',
+                      '&:hover': {
+                        backgroundColor: '#A7F3D0'
+                      }
+                    }
+                  }}
+                >
+                  {type.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
           <input
             type="file"
             ref={fileInputRef}
@@ -455,7 +557,7 @@ const QuestionCard = ({
         WebkitBackdropFilter: 'blur(20px)',
         borderRadius: '24px',
         padding: '2.5rem',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
         border: '1px solid rgba(255, 255, 255, 0.8)',
         overflow: 'hidden',
       }}
@@ -674,7 +776,7 @@ const QuestionCard = ({
               transition: 'all 0.3s ease',
             }}
           >
-            {isUploading ? 'Yükleniyor...' : 'İleri'}
+            {isUploading ? getUploadStatusText() : 'İleri'}
           </Button>
         ) : (
           <Button
