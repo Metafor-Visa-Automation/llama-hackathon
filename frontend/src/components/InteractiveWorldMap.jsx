@@ -1,9 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Calendar } from 'lucide-react';
 import { Select, MenuItem, FormControl, InputLabel } from '@mui/material';
-import { setOriginCountry, setDestinationCountry } from '../store/countrySlice';
+import { 
+  setOriginCountry, 
+  setDestinationCountry,
+  setStartDate,
+  setEndDate,
+  setApplicationType
+} from '../store/countrySlice';
 
 // Schengen countries ISO codes with names (ISO2 format for SimpleMaps)
 const SCHENGEN_COUNTRIES = {
@@ -34,6 +40,13 @@ const SCHENGEN_COUNTRIES = {
   'CH': 'İsviçre'
 };
 
+const APPLICATION_TYPES = {
+  'tourist': 'Turistik',
+  'business': 'İş',
+  'student': 'Öğrenci',
+  'work': 'Çalışma'
+};
+
 const SCHENGEN_CODES = Object.keys(SCHENGEN_COUNTRIES);
 
 // Common origin countries for Turkish users (ISO2 format)
@@ -61,13 +74,20 @@ const ORIGIN_COUNTRIES = {
 const InteractiveWorldMap = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const originCountry = useSelector((state) => state.country.originCountry);
-  const destinationCountry = useSelector((state) => state.country.destinationCountry);
+  const {
+    originCountry,
+    destinationCountry,
+    startDate,
+    endDate,
+    applicationType
+  } = useSelector((state) => state.country);
   const { isAuthenticated } = useSelector((state) => state.auth);
   
   const [mapLoaded, setMapLoaded] = useState(false);
   const mapInitialized = useRef(false);
   const scriptsLoaded = useRef(false);
+  const startDateInputRef = useRef(null);
+  const endDateInputRef = useRef(null);
 
   /**
    * Load SimpleMaps scripts dynamically
@@ -357,10 +377,176 @@ const InteractiveWorldMap = () => {
           width: 20px !important;
           height: 20px !important;
         }
+
+        .custom-input-root {
+          flex: 1 1 200px;
+          min-width: 200px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .custom-label-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding-left: 12px;
+            margin-bottom: 4px;
+        }
+        .custom-label-wrapper label {
+            font-family: "Playfair Display", serif;
+            color: #064E3B;
+            font-weight: 600;
+            font-size: 0.875rem;
+            white-space: nowrap;
+        }
+        .custom-label-wrapper .line {
+            width: 100%;
+            height: 1px;
+            background-color: #A7F3D0;
+        }
+        .custom-input-wrapper {
+            display: flex;
+            align-items: center;
+            border: 2px solid #34D399;
+            border-radius: 12px;
+            padding: 0.6rem 1rem;
+            background-color: #FFFFFF;
+            transition: border-color 0.2s ease-in-out;
+        }
+
+        .custom-input-wrapper:hover {
+          border-color: #10B981;
+        }
+
+        .custom-input-wrapper:focus-within {
+          border-color: #10B981;
+          box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+        }
+
+        .custom-input-wrapper input, .custom-input-wrapper select {
+          border: none;
+          outline: none;
+          background-color: transparent;
+          width: 100%;
+          font-family: "Playfair Display", serif;
+          font-size: 1rem;
+          color: #064E3B;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          appearance: none;
+        }
+
+        .custom-input-wrapper input[type="date"]::-webkit-calendar-picker-indicator {
+          display: none;
+        }
+        
+        .custom-input-wrapper select {
+          background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23064E3B%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');
+          background-repeat: no-repeat;
+          background-position: right 0.7em top 50%;
+          background-size: 0.65em auto;
+        }
+
+        .custom-input-wrapper .icon {
+          color: #064E3B;
+        }
+
       `}</style>
 
       {/* Map Container with Premium Styling */}
       <div className="rounded-3xl overflow-hidden shadow-2xl" style={{ backgroundColor: '#FFFFFF' }}>
+        {/* Application Details Section */}
+        <div style={{
+          backgroundColor: '#FFFFFF',
+          padding: '1.5rem 2.5rem',
+          borderBottom: '1px solid #E5E7EB',
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: '1.5rem',
+          flexWrap: 'wrap'
+        }}>
+          {/* Application Type Dropdown */}
+          <div className="custom-input-root">
+            <div className="custom-label-wrapper">
+              <label htmlFor="application-type">Başvuru Türü</label>
+              <div className="line" />
+            </div>
+            <div className="custom-input-wrapper">
+              <select 
+                id="application-type"
+                value={applicationType} 
+                onChange={(e) => dispatch(setApplicationType(e.target.value))}
+              >
+                <option value="" disabled>Seçiniz</option>
+                {Object.entries(APPLICATION_TYPES).map(([key, name]) => (
+                  <option key={key} value={key}>{name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
+          {/* Start Date */}
+          <div className="custom-input-root">
+            <div className="custom-label-wrapper">
+              <label htmlFor="start-date">Başlangıç Tarihi</label>
+              <div className="line" />
+            </div>
+            <div className="custom-input-wrapper" onClick={() => startDateInputRef.current.focus()}>
+              <input 
+                ref={startDateInputRef}
+                type="text"
+                onFocus={(e) => {
+                  e.target.type='date';
+                  // This is to make sure the date picker opens on Chrome
+                  if (e.target.showPicker) {
+                    e.target.showPicker();
+                  }
+                }}
+                onBlur={(e) => {
+                  if (!e.target.value) {
+                    e.target.type='text';
+                  }
+                }}
+                placeholder="gg.aa.yyyy"
+                id="start-date"
+                value={startDate || ''}
+                onChange={(e) => dispatch(setStartDate(e.target.value))}
+              />
+              <Calendar size={20} className="icon" />
+            </div>
+          </div>
+
+          {/* End Date */}
+          <div className="custom-input-root">
+            <div className="custom-label-wrapper">
+              <label htmlFor="end-date">Bitiş Tarihi</label>
+              <div className="line" />
+            </div>
+            <div className="custom-input-wrapper" onClick={() => endDateInputRef.current.focus()}>
+              <input 
+                ref={endDateInputRef}
+                type="text"
+                onFocus={(e) => {
+                  e.target.type='date';
+                  if (e.target.showPicker) {
+                    e.target.showPicker();
+                  }
+                }}
+                onBlur={(e) => {
+                  if (!e.target.value) {
+                    e.target.type='text';
+                  }
+                }}
+                placeholder="gg.aa.yyyy"
+                id="end-date"
+                value={endDate || ''}
+                onChange={(e) => dispatch(setEndDate(e.target.value))}
+              />
+              <Calendar size={20} className="icon" />
+            </div>
+          </div>
+        </div>
+
         {/* Map with Gradient Background */}
         <div style={{
           padding: 0,
@@ -561,21 +747,21 @@ const InteractiveWorldMap = () => {
           {/* CTA Button */}
           <button
             onClick={handleStartApplication}
-            disabled={!originCountry || !destinationCountry?.code}
+            disabled={!originCountry || !destinationCountry?.code || !startDate || !endDate || !applicationType}
             className={`
               inline-flex items-center gap-2 px-6 py-3 text-base font-semibold rounded-full
               transition-all duration-300 transform
-              ${originCountry && destinationCountry?.code
+              ${originCountry && destinationCountry?.code && startDate && endDate && applicationType
                 ? 'hover:scale-105 cursor-pointer'
                 : 'cursor-not-allowed opacity-50'
               }
             `}
             style={{
-              background: originCountry && destinationCountry?.code
+              background: originCountry && destinationCountry?.code && startDate && endDate && applicationType
                 ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
                 : '#CCCCCC',
               color: '#FFFFFF',
-              boxShadow: originCountry && destinationCountry?.code
+              boxShadow: originCountry && destinationCountry?.code && startDate && endDate && applicationType
                 ? '0 6px 20px rgba(16, 185, 129, 0.4)'
                 : 'none',
               border: 'none',

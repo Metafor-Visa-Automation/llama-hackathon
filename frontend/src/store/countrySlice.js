@@ -3,6 +3,9 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   originCountry: 'TR', // Default to Turkey
   destinationCountry: null, // Will store { code: 'FR', name: 'Fransa' }
+  startDate: null,
+  endDate: null,
+  applicationType: '',
 };
 
 const countrySlice = createSlice({
@@ -16,13 +19,32 @@ const countrySlice = createSlice({
       // Payload should be an object with { code, name }
       state.destinationCountry = action.payload;
     },
+    setStartDate: (state, action) => {
+      state.startDate = action.payload;
+    },
+    setEndDate: (state, action) => {
+      state.endDate = action.payload;
+    },
+    setApplicationType: (state, action) => {
+      state.applicationType = action.payload;
+    },
     resetCountries: (state) => {
       state.originCountry = 'TR';
       state.destinationCountry = null;
+      state.startDate = null;
+      state.endDate = null;
+      state.applicationType = '';
     },
   },
 });
 
-export const { setOriginCountry, setDestinationCountry, resetCountries } = countrySlice.actions;
+export const { 
+  setOriginCountry, 
+  setDestinationCountry, 
+  setStartDate,
+  setEndDate,
+  setApplicationType,
+  resetCountries 
+} = countrySlice.actions;
 export default countrySlice.reducer;
 
