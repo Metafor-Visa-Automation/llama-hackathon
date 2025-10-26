@@ -3,14 +3,15 @@ User Document Management API Endpoints
 Handles document upload, listing, updating, and deletion
 """
 
-from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File, Query
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException, status, Depends, UploadFile, File, Query, BackgroundTasks
+from fastapi.responses import FileResponse, Response
 from app.core.firebase import db
 from app.models.schemas import (
     UserDocumentUpload, UserDocumentUpdate, UserDocumentResponse, 
-    UserDocumentInDB, DocumentType, DocumentStatus
+    DocumentType, DocumentStatus
 )
 from app.services.security import get_current_user, UserInDB
+from app.services.groq_ocr_service import GroqOCRService
 from datetime import datetime
 from typing import List, Optional
 import uuid
@@ -21,18 +22,206 @@ from firebase_admin import storage
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+# Initialize Groq OCR service
+groq_ocr_service = GroqOCRService()
 
-@router.post("/documents/upload", response_model=UserDocumentResponse, status_code=status.HTTP_201_CREATED)
+
+async def process_document_with_ocr(doc_id: str, file_content: bytes, mime_type: str, document_type: str, file_name: str, user_id: str):
+    """
+    Background task to process document with OCR and update user profile
+    """
+    try:
+        logger.info(f"Starting OCR processing for document {doc_id}")
+        
+        # Check if Groq OCR is available
+        if not groq_ocr_service.is_available():
+            logger.warning(f"Groq OCR service not available for document {doc_id}")
+            # Update status to indicate OCR not available
+            db.collection("user_documents").document(doc_id).update({
+                "status": DocumentStatus.VALIDATED.value,
+                "ocr_result": {"error": "OCR service not available"},
+                "updated_at": datetime.utcnow()
+            })
+            return
+        
+        # Extract data using Groq OCR
+        ocr_result = groq_ocr_service.extract_document_data(
+            file_data=file_content,
+            mime_type=mime_type,
+            document_type=document_type,
+            file_name=file_name
+        )
+        
+        # Update document with OCR results
+        update_data = {
+            "ocr_result": ocr_result,
+            "updated_at": datetime.utcnow()
+        }
+        
+        if ocr_result.get("success"):
+            update_data["status"] = DocumentStatus.VALIDATED.value
+            extracted_data = ocr_result.get("extracted_data", {})
+            
+            # Try to extract common fields for document
+            if document_type == "passport":
+                if "expiryDate" in extracted_data:
+                    update_data["expiry_date"] = extracted_data["expiryDate"]
+                if "issueDate" in extracted_data:
+                    update_data["issued_date"] = extracted_data["issueDate"]
+            elif document_type == "travel_insurance":
+                if "coverageEndDate" in extracted_data:
+                    update_data["expiry_date"] = extracted_data["coverageEndDate"]
+            
+            # Update user profile with extracted personal information
+            await _update_user_profile_from_ocr(user_id, document_type, extracted_data)
+            
+            logger.info(f"OCR processing successful for document {doc_id}")
+        else:
+            update_data["status"] = DocumentStatus.REJECTED.value
+            logger.warning(f"OCR processing failed for document {doc_id}: {ocr_result.get('error')}")
+        
+        db.collection("user_documents").document(doc_id).update(update_data)
+        
+    except Exception as e:
+        logger.error(f"Error in OCR background task for document {doc_id}: {str(e)}")
+        # Update document status to failed
+        db.collection("user_documents").document(doc_id).update({
+            "status": DocumentStatus.REJECTED.value,
+            "ocr_result": {"error": str(e)},
+            "updated_at": datetime.utcnow()
+        })
+
+
+async def _update_user_profile_from_ocr(user_id: str, document_type: str, extracted_data: dict):
+    """
+    Update user profile with information extracted from OCR
+    
+    Args:
+        user_id: User ID
+        document_type: Type of document processed
+        extracted_data: Data extracted from OCR
+    """
+    try:
+        user_ref = db.collection("users").document(user_id)
+        user_doc = user_ref.get()
+        
+        if not user_doc.exists:
+            logger.warning(f"User {user_id} not found, skipping profile update")
+            return
+        
+        user_updates = {}
+        
+        # Extract info based on document type
+        if document_type == "passport":
+            # Update passport information
+            if "passportNumber" in extracted_data:
+                user_updates["passport_number"] = extracted_data["passportNumber"]
+            if "surname" in extracted_data and "givenName" in extracted_data:
+                user_updates["name"] = extracted_data["givenName"]
+                user_updates["surname"] = extracted_data["surname"]
+            if "dateOfBirth" in extracted_data:
+                user_updates["date_of_birth"] = extracted_data["dateOfBirth"]
+            if "countryCode" in extracted_data:
+                user_updates["nationality"] = extracted_data["countryCode"]
+            if "expiryDate" in extracted_data:
+                user_updates["passport_expiry_date"] = extracted_data["expiryDate"]
+            if "issueDate" in extracted_data:
+                user_updates["passport_issue_date"] = extracted_data["issueDate"]
+                
+        elif document_type in ["id_card", "kimlikon"]:
+            # Update ID card information
+            if "idNumber" in extracted_data:
+                user_updates["tc_kimlik_no"] = extracted_data["idNumber"]
+            if "fullName" in extracted_data:
+                # Split full name if needed
+                parts = extracted_data["fullName"].split()
+                if len(parts) >= 2:
+                    user_updates["name"] = " ".join(parts[:-1])
+                    user_updates["surname"] = parts[-1]
+            if "dateOfBirth" in extracted_data:
+                user_updates["date_of_birth"] = extracted_data["dateOfBirth"]
+            if "placeOfBirth" in extracted_data:
+                user_updates["place_of_birth"] = extracted_data["placeOfBirth"]
+            if "nationality" in extracted_data:
+                user_updates["nationality"] = extracted_data["nationality"]
+                
+        elif document_type == "birth_certificate" or document_type == "dogumsertifikasi":
+            # Update birth certificate information
+            if "fullName" in extracted_data:
+                parts = extracted_data["fullName"].split()
+                if len(parts) >= 2:
+                    user_updates["name"] = " ".join(parts[:-1])
+                    user_updates["surname"] = parts[-1]
+            if "dateOfBirth" in extracted_data:
+                user_updates["date_of_birth"] = extracted_data["dateOfBirth"]
+            if "placeOfBirth" in extracted_data:
+                user_updates["place_of_birth"] = extracted_data["placeOfBirth"]
+            if "tcKimlikNo" in extracted_data:
+                user_updates["tc_kimlik_no"] = extracted_data["tcKimlikNo"]
+            if "fatherName" in extracted_data:
+                user_updates["father_name"] = extracted_data["fatherName"]
+            if "motherName" in extracted_data:
+                user_updates["mother_name"] = extracted_data["motherName"]
+                
+        elif document_type in ["drivers_license", "surucuon"]:
+            # Update driver's license information
+            if "licenseNumber" in extracted_data:
+                user_updates["drivers_license_number"] = extracted_data["licenseNumber"]
+            if "fullName" in extracted_data:
+                parts = extracted_data["fullName"].split()
+                if len(parts) >= 2:
+                    user_updates["name"] = " ".join(parts[:-1])
+                    user_updates["surname"] = parts[-1]
+            if "dateOfBirth" in extracted_data:
+                user_updates["date_of_birth"] = extracted_data["dateOfBirth"]
+                
+        elif document_type == "diploma":
+            # Update education information
+            if "institutionName" in extracted_data:
+                user_updates["last_education_institution"] = extracted_data["institutionName"]
+            if "degreeType" in extracted_data and "major" in extracted_data:
+                user_updates["last_degree"] = f"{extracted_data['degreeType']} in {extracted_data['major']}"
+            if "graduationDate" in extracted_data:
+                user_updates["graduation_date"] = extracted_data["graduationDate"]
+            if "gpa" in extracted_data:
+                user_updates["gpa"] = extracted_data["gpa"]
+        
+        # Only update if we have new data
+        if user_updates:
+            user_updates["updated_at"] = datetime.utcnow()
+            user_ref.update(user_updates)
+            logger.info(f"Updated user {user_id} profile with {len(user_updates)} fields from {document_type}")
+        else:
+            logger.info(f"No relevant user profile updates from {document_type}")
+            
+    except Exception as e:
+        logger.error(f"Error updating user profile from OCR: {str(e)}")
+        # Don't raise - profile update failure shouldn't fail the OCR process
+
+
+@router.post("/upload", response_model=UserDocumentResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
+    background_tasks: BackgroundTasks,
     document_type: DocumentType,
     document_title: str,
     file: UploadFile = File(...),
     notes: Optional[str] = None,
     tags: Optional[str] = None,
+    auto_ocr: bool = True,
     current_user: UserInDB = Depends(get_current_user)
 ):
     """
-    Upload a new document
+    Upload a new document with automatic OCR processing
+    
+    Args:
+        background_tasks: FastAPI background tasks
+        document_type: Type of document being uploaded
+        document_title: Title/description of the document
+        file: The document file
+        notes: Optional notes about the document
+        tags: Comma-separated tags
+        auto_ocr: Whether to automatically process with OCR (default: True)
+        current_user: Current authenticated user
     """
     try:
         # Validate file
@@ -94,6 +283,19 @@ async def upload_document(
         # Save to Firestore
         db.collection("user_documents").document(doc_id).set(doc_data)
         
+        # Trigger OCR processing in background if enabled
+        if auto_ocr:
+            logger.info(f"Scheduling OCR processing for document {doc_id}")
+            background_tasks.add_task(
+                process_document_with_ocr,
+                doc_id=doc_id,
+                file_content=file_content,
+                mime_type=file.content_type or "application/octet-stream",
+                document_type=document_type.value,
+                file_name=file.filename,
+                user_id=current_user.uid
+            )
+        
         return UserDocumentResponse(**doc_data)
         
     except HTTPException:
@@ -106,7 +308,97 @@ async def upload_document(
         )
 
 
-@router.get("/documents", response_model=List[UserDocumentResponse])
+@router.post("/{doc_id}/process-ocr", response_model=dict)
+async def trigger_ocr_processing(
+    doc_id: str,
+    background_tasks: BackgroundTasks,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Manually trigger OCR processing for an existing document
+    """
+    try:
+        # Check if document exists
+        doc_ref = db.collection("user_documents").document(doc_id)
+        doc = doc_ref.get()
+        
+        if not doc.exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+        
+        doc_data = doc.to_dict()
+        
+        # Check if user owns this document
+        if doc_data.get("user_id") != current_user.uid:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to process this document"
+            )
+        
+        # Check if Groq OCR is available
+        if not groq_ocr_service.is_available():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="OCR service is not available. Please set GROQ_API_KEY environment variable."
+            )
+        
+        # Download file from storage
+        bucket = storage.bucket()
+        storage_path = doc_data.get("storage_path")
+        
+        if not storage_path:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Document storage path not found"
+            )
+        
+        blob = bucket.blob(storage_path)
+        
+        if not blob.exists():
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document file not found in storage"
+            )
+        
+        # Download file content
+        file_content = blob.download_as_bytes()
+        
+        # Update status to processing
+        doc_ref.update({
+            "status": DocumentStatus.PENDING_VALIDATION.value,
+            "updated_at": datetime.utcnow()
+        })
+        
+        # Schedule OCR processing
+        background_tasks.add_task(
+            process_document_with_ocr,
+            doc_id=doc_id,
+            file_content=file_content,
+            mime_type=doc_data.get("mime_type", "application/octet-stream"),
+            document_type=doc_data.get("doc_type"),
+            file_name=doc_data.get("file_name"),
+            user_id=current_user.uid
+        )
+        
+        return {
+            "message": "OCR processing started",
+            "doc_id": doc_id,
+            "status": "processing"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error triggering OCR processing: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to trigger OCR processing: {str(e)}"
+        )
+
+
+@router.get("", response_model=List[UserDocumentResponse])
 async def get_user_documents(
     current_user: UserInDB = Depends(get_current_user),
     document_type: Optional[DocumentType] = Query(None, description="Filter by document type"),
@@ -118,30 +410,33 @@ async def get_user_documents(
     Get user's documents with optional filtering
     """
     try:
-        # Build query
-        query = db.collection("user_documents").where("user_id", "==", current_user.uid)
+        # Build query - using filter parameter to avoid deprecation warning
+        query = db.collection("user_documents").where(filter=("user_id", "==", current_user.uid))
         
         if document_type:
-            query = query.where("doc_type", "==", document_type.value)
+            query = query.where(filter=("doc_type", "==", document_type.value))
         
         if status_filter:
-            query = query.where("status", "==", status_filter.value)
+            query = query.where(filter=("status", "==", status_filter.value))
         
-        # Order by upload date (newest first)
-        query = query.order_by("uploaded_at", direction="DESCENDING")
-        
-        # Apply pagination
-        query = query.offset(offset).limit(limit)
-        
-        # Execute query
+        # Get all documents for the user
         docs = query.stream()
         
+        # Convert to list and sort in Python to avoid index requirement
         documents = []
         for doc in docs:
             doc_data = doc.to_dict()
             documents.append(UserDocumentResponse(**doc_data))
         
-        return documents
+        # Sort by upload date (newest first) in Python
+        documents.sort(key=lambda x: x.uploaded_at if x.uploaded_at else datetime.min, reverse=True)
+        
+        # Apply pagination in Python
+        start_idx = offset
+        end_idx = offset + limit
+        paginated_documents = documents[start_idx:end_idx]
+        
+        return paginated_documents
         
     except Exception as e:
         logger.error(f"Error getting user documents: {str(e)}")
@@ -151,7 +446,7 @@ async def get_user_documents(
         )
 
 
-@router.get("/documents/{doc_id}", response_model=UserDocumentResponse)
+@router.get("/{doc_id}", response_model=UserDocumentResponse)
 async def get_document(
     doc_id: str,
     current_user: UserInDB = Depends(get_current_user)
@@ -191,7 +486,7 @@ async def get_document(
         )
 
 
-@router.put("/documents/{doc_id}", response_model=UserDocumentResponse)
+@router.put("/{doc_id}", response_model=UserDocumentResponse)
 async def update_document(
     doc_id: str,
     document_update: UserDocumentUpdate,
@@ -251,7 +546,7 @@ async def update_document(
         )
 
 
-@router.delete("/documents/{doc_id}", response_model=dict)
+@router.delete("/{doc_id}", response_model=dict)
 async def delete_document(
     doc_id: str,
     current_user: UserInDB = Depends(get_current_user)
@@ -305,7 +600,7 @@ async def delete_document(
         )
 
 
-@router.get("/documents/{doc_id}/download", response_class=FileResponse)
+@router.get("/{doc_id}/download", response_class=FileResponse)
 async def download_document(
     doc_id: str,
     current_user: UserInDB = Depends(get_current_user)
@@ -373,7 +668,7 @@ async def download_document(
         )
 
 
-@router.get("/documents/stats", response_model=dict)
+@router.get("/stats", response_model=dict)
 async def get_document_stats(
     current_user: UserInDB = Depends(get_current_user)
 ):
@@ -427,4 +722,65 @@ async def get_document_stats(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get document statistics"
+        )
+
+
+@router.get("/{doc_id}/ocr-analysis", response_model=dict)
+async def get_document_ocr_analysis(
+    doc_id: str,
+    current_user: UserInDB = Depends(get_current_user)
+):
+    """
+    Get OCR analysis results for a specific document
+    
+    Returns the extracted data, confidence score, and validation details from OCR processing
+    """
+    try:
+        # Check if document exists
+        doc_ref = db.collection("user_documents").document(doc_id)
+        doc = doc_ref.get()
+        
+        if not doc.exists:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+        
+        doc_data = doc.to_dict()
+        
+        # Check if user owns this document
+        if doc_data.get("user_id") != current_user.uid:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have permission to access this document"
+            )
+        
+        # Get OCR result
+        ocr_result = doc_data.get("ocr_result")
+        
+        if ocr_result is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="OCR analysis not available for this document. The document may still be processing or OCR was not enabled during upload."
+            )
+        
+        # Return OCR analysis with document context
+        return {
+            "doc_id": doc_id,
+            "document_title": doc_data.get("document_title"),
+            "doc_type": doc_data.get("doc_type"),
+            "status": doc_data.get("status"),
+            "file_name": doc_data.get("file_name"),
+            "ocr_result": ocr_result,
+            "uploaded_at": doc_data.get("uploaded_at"),
+            "updated_at": doc_data.get("updated_at")
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting OCR analysis: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to get OCR analysis"
         )

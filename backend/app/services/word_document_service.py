@@ -16,11 +16,19 @@ class WordDocumentService:
     """Service for editing Word documents with form data"""
     
     def __init__(self):
-        self.template_path = "schengen-visa-application-form_ocred.docx"
-        self.output_dir = "generated_documents"
+        # Get the directory where this service file is located
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.template_path = os.path.join(current_dir, "schengen-visa-application-form_ocred.docx")
+        
+        # Set output directory to backend/generated_documents
+        backend_dir = os.path.dirname(os.path.dirname(current_dir))
+        self.output_dir = os.path.join(backend_dir, "generated_documents")
         
         # Ensure output directory exists
         os.makedirs(self.output_dir, exist_ok=True)
+        
+        logger.info(f"Template path: {self.template_path}")
+        logger.info(f"Output directory: {self.output_dir}")
     
     def edit_document(self, user_data: Dict[str, Any], filename: Optional[str] = None) -> str:
         """
@@ -41,7 +49,9 @@ class WordDocumentService:
             # Load the document
             doc = Document(self.template_path)
             
-            logger.info(f"Document has {len(doc.paragraphs)} paragraphs")
+            logger.info(f"Document has {len(doc.paragraphs)} paragraphs and {len(doc.tables)} tables")
+            logger.info(f"Received {len(user_data)} fields to replace")
+            logger.info(f"Fields: {list(user_data.keys())}")
             
             # Process paragraphs
             self._process_paragraphs(doc, user_data)
@@ -67,31 +77,34 @@ class WordDocumentService:
     
     def _process_paragraphs(self, doc: Document, user_data: Dict[str, Any]) -> None:
         """Process paragraphs in the document"""
+        replacements_made = 0
         for paragraph in doc.paragraphs:
-            text = paragraph.text
-            
-            # Replace all fields
-            for field_num in range(1, 35):
-                field_key = f"FIELD{field_num}"
-                if field_key in text:
-                    replacement_value = user_data.get(field_key, "")
-                    paragraph.text = paragraph.text.replace(field_key, replacement_value)
-                    logger.debug(f"Found and replaced {field_key}: {text[:50]}")
+            # Process each run to preserve formatting
+            for run in paragraph.runs:
+                for field_key, field_value in user_data.items():
+                    if field_key in run.text:
+                        run.text = run.text.replace(field_key, str(field_value))
+                        replacements_made += 1
+                        logger.info(f"Replaced {field_key} with '{field_value}' in paragraph")
+        
+        logger.info(f"Made {replacements_made} replacements in paragraphs")
     
     def _process_tables(self, doc: Document, user_data: Dict[str, Any]) -> None:
         """Process tables in the document"""
+        replacements_made = 0
         for table in doc.tables:
             for row in table.rows:
                 for cell in row.cells:
-                    text = cell.text
-                    
-                    # Replace all fields
-                    for field_num in range(1, 35):
-                        field_key = f"FIELD{field_num}"
-                        if field_key in text:
-                            replacement_value = user_data.get(field_key, "")
-                            cell.text = cell.text.replace(field_key, replacement_value)
-                            logger.debug(f"Found and replaced {field_key} in table: {text[:50]}")
+                    # Process each paragraph in the cell
+                    for paragraph in cell.paragraphs:
+                        for run in paragraph.runs:
+                            for field_key, field_value in user_data.items():
+                                if field_key in run.text:
+                                    run.text = run.text.replace(field_key, str(field_value))
+                                    replacements_made += 1
+                                    logger.info(f"Replaced {field_key} with '{field_value}' in table")
+        
+        logger.info(f"Made {replacements_made} replacements in tables")
     
     def _generate_timestamp(self) -> str:
         """Generate timestamp for unique filenames"""

@@ -1,0 +1,582 @@
+openapi: 3.0.3
+info:
+  title: Schengen Form Filling API
+  description: |
+    AI-powered automatic form filling for Schengen visa applications.
+    
+    This API uses Groq's Llama 4 Scout model to intelligently fill out the 
+    Harmonised Schengen Visa Application Form based on user profile data and 
+    application information.
+    
+    ## Features
+    - Automatically fills up to 61 form fields
+    - Validates data formats (dates, phone numbers, etc.)
+    - Returns both text fields and boolean checkboxes
+    - Provides detailed validation with errors and warnings
+    - Field descriptions and documentation
+    
+    ## Authentication
+    All endpoints require Bearer token authentication.
+  version: 1.0.0
+  contact:
+    email: support@visaprep.ai
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Development server
+  - url: https://api.visaprep.ai/v1
+    description: Production server
+
+tags:
+  - name: AI Form Filling
+    description: AI-powered Schengen form filling operations
+
+security:
+  - bearerAuth: []
+
+paths:
+  /ai/form-filling/ai/fill-schengen-form:
+    post:
+      tags:
+        - AI Form Filling
+      summary: Fill Schengen Form with AI
+      description: |
+        Automatically fills a Schengen visa application form using AI and user/application data.
+        
+        The AI analyzes the provided data and fills the appropriate fields in the Harmonised 
+        Schengen Visa Application Form. It handles:
+        - Personal information (name, date of birth, nationality)
+        - Passport details (number, issue/expiry dates)
+        - Contact information (address, phone, email)
+        - Travel information (destination, dates, purpose)
+        - Checkboxes (gender, marital status, entry type, etc.)
+      operationId: fillSchengenForm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIFormFillingRequest'
+            examples:
+              tourist:
+                summary: Tourist Application
+                value:
+                  user_data:
+                    surname: "YILMAZ"
+                    name: "AHMET"
+                    email: "ahmet.yilmaz@example.com"
+                    phone: "+90 555 123 4567"
+                    date_of_birth: "15-03-1995"
+                    place_of_birth: "Istanbul"
+                    nationality: "Turkish"
+                    passport_number: "U12345678"
+                    passport_issue_date: "01-01-2020"
+                    passport_expiry_date: "01-01-2030"
+                    tc_kimlik_no: "12345678901"
+                    profile_type: "TOURIST"
+                  application_data:
+                    destination_country: "Germany"
+                    purpose: "Tourism"
+                    travel_dates:
+                      arrival: "15-06-2025"
+                      departure: "30-06-2025"
+                    duration: "15 days"
+                    entry_type: "Single Entry"
+              business:
+                summary: Business Application
+                value:
+                  user_data:
+                    surname: "DEMIR"
+                    name: "AYSE"
+                    email: "ayse.demir@company.com"
+                    phone: "+90 532 987 6543"
+                    date_of_birth: "20-08-1988"
+                    place_of_birth: "Ankara"
+                    nationality: "Turkish"
+                    passport_number: "U87654321"
+                    passport_issue_date: "15-05-2021"
+                    passport_expiry_date: "15-05-2031"
+                    profile_type: "BUSINESS"
+                  application_data:
+                    destination_country: "France"
+                    purpose: "Business"
+                    travel_dates:
+                      arrival: "01-07-2025"
+                      departure: "15-07-2025"
+                    duration: "14 days"
+                    entry_type: "Multiple Entry"
+      responses:
+        '200':
+          description: Form successfully filled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIFormFillingResponse'
+              examples:
+                success:
+                  summary: Successful Form Fill
+                  value:
+                    success: true
+                    filled_fields:
+                      field1: "YILMAZ"
+                      field2: "YILMAZ"
+                      field3: "AHMET"
+                      field4: "15-03-1995"
+                      field5: "Istanbul"
+                      field6: "Turkey"
+                      field7: "Turkish"
+                      field11: "12345678901"
+                      field13: "U12345678"
+                      field14: "01-01-2020"
+                      field15: "01-01-2030"
+                      field16: "Turkey"
+                      field22: "Email: ahmet.yilmaz@example.com"
+                      field23: "+90 555 123 4567"
+                      field31: "Germany"
+                      field32: "Germany"
+                      field33: "15-06-2025"
+                      field34: "30-06-2025"
+                      sex_male: true
+                      sex_female: false
+                      passport_type_ordinary: true
+                      purpose_tourism: true
+                      entry_single: true
+                    metadata:
+                      form_type: "schengen_visa_application"
+                      fields_filled: 24
+                      total_fields: 61
+                      model: "meta-llama/llama-4-scout-17b-16e-instruct"
+                      filled_at: "2025-10-26T10:30:00.000Z"
+                      user_email: "ahmet.yilmaz@example.com"
+                      destination: "Germany"
+        '400':
+          description: Bad request - Invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Invalid date format in user data"
+        '401':
+          description: Unauthorized - Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIFormFillingResponse'
+              example:
+                success: false
+                error: "Form filling service is not available. Please set GROQ_API_KEY."
+                filled_fields: {}
+
+  /ai/form-filling/ai/form-fields:
+    get:
+      tags:
+        - AI Form Filling
+      summary: Get Form Field Descriptions
+      description: |
+        Returns descriptions of all 61 Schengen form fields.
+        
+        Use this endpoint to understand what each field represents in the 
+        Harmonised Schengen Visa Application Form. Helpful for building UIs 
+        or understanding the form structure.
+      operationId: getFormFields
+      responses:
+        '200':
+          description: Form field descriptions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+              example:
+                field1: "Surname (Family name)"
+                field2: "Surname at birth"
+                field3: "First name(s)"
+                field4: "Date of birth"
+                field5: "Place of birth"
+                field6: "Country of birth"
+                field7: "Current nationality"
+                field11: "National identity number"
+                field13: "Travel document number"
+                field14: "Travel document issue date"
+                field15: "Travel document valid until"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ai/form-filling/ai/validate-form:
+    post:
+      tags:
+        - AI Form Filling
+      summary: Validate Filled Form
+      description: |
+        Validates a filled Schengen form and returns errors and warnings.
+        
+        Performs comprehensive validation including:
+        - Required field presence checks
+        - Date format validation (DD-MM-YYYY)
+        - Passport expiry date warnings
+        - Data consistency checks
+      operationId: validateForm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateFormRequest'
+            example:
+              filled_fields:
+                field1: "YILMAZ"
+                field3: "AHMET"
+                field4: "15-03-1995"
+                field7: "Turkish"
+                field13: "U12345678"
+                field15: "01-01-2030"
+                field22: "Istanbul, Turkey, Email: ahmet@example.com"
+                field23: "+90 555 123 4567"
+                field31: "Germany"
+                field33: "15-06-2025"
+                field34: "30-06-2025"
+      responses:
+        '200':
+          description: Validation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateFormResponse'
+              examples:
+                valid:
+                  summary: Valid Form
+                  value:
+                    valid: true
+                    errors: []
+                    warnings:
+                      - "Please verify passport is valid for at least 3 months after departure date"
+                    fields_checked: 11
+                invalid:
+                  summary: Invalid Form
+                  value:
+                    valid: false
+                    errors:
+                      - "Required field field1 (Surname (Family name)) is missing"
+                      - "Field field4 has invalid date format. Expected DD-MM-YYYY, got: 1995-03-15"
+                    warnings:
+                      - "Please verify passport is valid for at least 3 months after departure date"
+                    fields_checked: 11
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /ai/form-filling/ai/service-status:
+    get:
+      tags:
+        - AI Form Filling
+      summary: Check Service Availability
+      description: |
+        Checks if the AI form filling service is available.
+        
+        Verifies that the Groq API key is configured and the service is 
+        operational. Useful for health checks and troubleshooting.
+      operationId: checkServiceStatus
+      responses:
+        '200':
+          description: Service status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceStatusResponse'
+              examples:
+                available:
+                  summary: Service Available
+                  value:
+                    available: true
+                    service: "Schengen Form Filling Service"
+                    model: "meta-llama/llama-4-scout-17b-16e-instruct"
+                    status: "operational"
+                unavailable:
+                  summary: Service Unavailable
+                  value:
+                    available: false
+                    service: "Schengen Form Filling Service"
+                    status: "unavailable"
+                    error: "GROQ_API_KEY not configured"
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from /auth/login endpoint
+
+  schemas:
+    TravelDates:
+      type: object
+      required:
+        - arrival
+        - departure
+      properties:
+        arrival:
+          type: string
+          format: date
+          pattern: '^\d{2}-\d{2}-\d{4}$'
+          description: Arrival date in DD-MM-YYYY format
+          example: "15-06-2025"
+        departure:
+          type: string
+          format: date
+          pattern: '^\d{2}-\d{2}-\d{4}$'
+          description: Departure date in DD-MM-YYYY format
+          example: "30-06-2025"
+
+    UserDataForAI:
+      type: object
+      required:
+        - surname
+        - name
+        - email
+        - date_of_birth
+        - place_of_birth
+        - nationality
+        - passport_number
+        - passport_issue_date
+        - passport_expiry_date
+      properties:
+        surname:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: Last name / Family name
+          example: "YILMAZ"
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: First name(s)
+          example: "AHMET"
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: "ahmet.yilmaz@example.com"
+        phone:
+          type: string
+          description: Phone number with country code
+          example: "+90 555 123 4567"
+        date_of_birth:
+          type: string
+          pattern: '^\d{2}-\d{2}-\d{4}$'
+          description: Date of birth in DD-MM-YYYY format
+          example: "15-03-1995"
+        place_of_birth:
+          type: string
+          description: Place of birth
+          example: "Istanbul"
+        nationality:
+          type: string
+          description: Nationality
+          example: "Turkish"
+        passport_number:
+          type: string
+          description: Passport number
+          example: "U12345678"
+        passport_issue_date:
+          type: string
+          pattern: '^\d{2}-\d{2}-\d{4}$'
+          description: Passport issue date in DD-MM-YYYY format
+          example: "01-01-2020"
+        passport_expiry_date:
+          type: string
+          pattern: '^\d{2}-\d{2}-\d{4}$'
+          description: Passport expiry date in DD-MM-YYYY format
+          example: "01-01-2030"
+        tc_kimlik_no:
+          type: string
+          description: Turkish national ID number (optional)
+          example: "12345678901"
+        profile_type:
+          type: string
+          enum: [STUDENT, WORKER, TOURIST, BUSINESS]
+          description: Profile type
+          example: "TOURIST"
+
+    ApplicationDataForAI:
+      type: object
+      required:
+        - destination_country
+        - purpose
+        - travel_dates
+      properties:
+        destination_country:
+          type: string
+          description: Destination country
+          example: "Germany"
+        purpose:
+          type: string
+          enum: [Tourism, Business, Study, Work, Family Visit, Medical, Transit]
+          description: Purpose of travel
+          example: "Tourism"
+        travel_dates:
+          $ref: '#/components/schemas/TravelDates'
+        duration:
+          type: string
+          description: Duration of stay
+          example: "15 days"
+        entry_type:
+          type: string
+          enum: [Single Entry, Two Entries, Multiple Entry]
+          description: Entry type
+          example: "Single Entry"
+
+    AIFormFillingRequest:
+      type: object
+      required:
+        - user_data
+        - application_data
+      properties:
+        user_data:
+          $ref: '#/components/schemas/UserDataForAI'
+        application_data:
+          $ref: '#/components/schemas/ApplicationDataForAI'
+
+    AIFormFillingResponse:
+      type: object
+      required:
+        - success
+        - filled_fields
+      properties:
+        success:
+          type: boolean
+          description: Whether the form filling was successful
+        filled_fields:
+          type: object
+          additionalProperties: true
+          description: Filled form fields (strings, booleans, or null)
+        metadata:
+          type: object
+          properties:
+            form_type:
+              type: string
+              example: "schengen_visa_application"
+            fields_filled:
+              type: integer
+              example: 24
+            total_fields:
+              type: integer
+              example: 61
+            model:
+              type: string
+              example: "meta-llama/llama-4-scout-17b-16e-instruct"
+            filled_at:
+              type: string
+              format: date-time
+            user_email:
+              type: string
+            destination:
+              type: string
+        error:
+          type: string
+          description: Error message if success is false
+
+    ValidateFormRequest:
+      type: object
+      required:
+        - filled_fields
+      properties:
+        filled_fields:
+          type: object
+          additionalProperties: true
+          description: Filled form fields to validate
+
+    ValidateFormResponse:
+      type: object
+      required:
+        - valid
+        - errors
+        - warnings
+        - fields_checked
+      properties:
+        valid:
+          type: boolean
+          description: Whether the form is valid
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of validation errors
+        warnings:
+          type: array
+          items:
+            type: string
+          description: List of validation warnings
+        fields_checked:
+          type: integer
+          description: Number of fields checked
+
+    ServiceStatusResponse:
+      type: object
+      required:
+        - available
+        - service
+        - status
+      properties:
+        available:
+          type: boolean
+          description: Whether the service is available
+        service:
+          type: string
+          description: Service name
+        model:
+          type: string
+          description: AI model being used
+        status:
+          type: string
+          enum: [operational, unavailable, error]
+          description: Current service status
+        error:
+          type: string
+          description: Error message if unavailable
+
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+          description: Error message
+        status_code:
+          type: integer
+          description: HTTP status code

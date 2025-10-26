@@ -1,0 +1,233 @@
+{
+  "info": {
+    "name": "Schengen Form Filling API",
+    "description": "AI-powered automatic form filling for Schengen visa applications using Llama 4 Scout",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{access_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Fill Schengen Form - Tourist",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/ai/form-filling/ai/fill-schengen-form",
+          "host": ["{{base_url}}"],
+          "path": ["ai", "form-filling", "ai", "fill-schengen-form"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_data\": {\n    \"surname\": \"YILMAZ\",\n    \"name\": \"AHMET\",\n    \"email\": \"ahmet.yilmaz@example.com\",\n    \"phone\": \"+90 555 123 4567\",\n    \"date_of_birth\": \"15-03-1995\",\n    \"place_of_birth\": \"Istanbul\",\n    \"nationality\": \"Turkish\",\n    \"passport_number\": \"U12345678\",\n    \"passport_issue_date\": \"01-01-2020\",\n    \"passport_expiry_date\": \"01-01-2030\",\n    \"tc_kimlik_no\": \"12345678901\",\n    \"profile_type\": \"TOURIST\"\n  },\n  \"application_data\": {\n    \"destination_country\": \"Germany\",\n    \"purpose\": \"Tourism\",\n    \"travel_dates\": {\n      \"arrival\": \"15-06-2025\",\n      \"departure\": \"30-06-2025\"\n    },\n    \"duration\": \"15 days\",\n    \"entry_type\": \"Single Entry\"\n  }\n}"
+        },
+        "description": "Fill a Schengen visa form for tourist application to Germany"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Fill Schengen Form - Business",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/ai/form-filling/ai/fill-schengen-form",
+          "host": ["{{base_url}}"],
+          "path": ["ai", "form-filling", "ai", "fill-schengen-form"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_data\": {\n    \"surname\": \"DEMIR\",\n    \"name\": \"AYSE\",\n    \"email\": \"ayse.demir@company.com\",\n    \"phone\": \"+90 532 987 6543\",\n    \"date_of_birth\": \"20-08-1988\",\n    \"place_of_birth\": \"Ankara\",\n    \"nationality\": \"Turkish\",\n    \"passport_number\": \"U87654321\",\n    \"passport_issue_date\": \"15-05-2021\",\n    \"passport_expiry_date\": \"15-05-2031\",\n    \"profile_type\": \"BUSINESS\"\n  },\n  \"application_data\": {\n    \"destination_country\": \"France\",\n    \"purpose\": \"Business\",\n    \"travel_dates\": {\n      \"arrival\": \"01-07-2025\",\n      \"departure\": \"15-07-2025\"\n    },\n    \"duration\": \"14 days\",\n    \"entry_type\": \"Multiple Entry\"\n  }\n}"
+        },
+        "description": "Fill a Schengen visa form for business trip to France"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Fill Schengen Form - Student",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/ai/form-filling/ai/fill-schengen-form",
+          "host": ["{{base_url}}"],
+          "path": ["ai", "form-filling", "ai", "fill-schengen-form"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_data\": {\n    \"surname\": \"KARA\",\n    \"name\": \"MEHMET\",\n    \"email\": \"mehmet.kara@student.com\",\n    \"phone\": \"+90 545 111 2233\",\n    \"date_of_birth\": \"10-05-2000\",\n    \"place_of_birth\": \"Izmir\",\n    \"nationality\": \"Turkish\",\n    \"passport_number\": \"U11223344\",\n    \"passport_issue_date\": \"20-02-2022\",\n    \"passport_expiry_date\": \"20-02-2032\",\n    \"profile_type\": \"STUDENT\"\n  },\n  \"application_data\": {\n    \"destination_country\": \"Netherlands\",\n    \"purpose\": \"Study\",\n    \"travel_dates\": {\n      \"arrival\": \"01-09-2025\",\n      \"departure\": \"30-06-2026\"\n    },\n    \"duration\": \"10 months\",\n    \"entry_type\": \"Multiple Entry\"\n  }\n}"
+        },
+        "description": "Fill a Schengen visa form for student visa to Netherlands"
+      },
+      "response": []
+    },
+    {
+      "name": "4. Validate Filled Form - Valid",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/ai/form-filling/ai/validate-form",
+          "host": ["{{base_url}}"],
+          "path": ["ai", "form-filling", "ai", "validate-form"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"filled_fields\": {\n    \"field1\": \"YILMAZ\",\n    \"field3\": \"AHMET\",\n    \"field4\": \"15-03-1995\",\n    \"field7\": \"Turkish\",\n    \"field13\": \"U12345678\",\n    \"field15\": \"01-01-2030\",\n    \"field22\": \"Istanbul, Turkey, Email: ahmet@example.com\",\n    \"field23\": \"+90 555 123 4567\",\n    \"field31\": \"Germany\",\n    \"field33\": \"15-06-2025\",\n    \"field34\": \"30-06-2025\"\n  }\n}"
+        },
+        "description": "Validate a properly filled form with all required fields"
+      },
+      "response": []
+    },
+    {
+      "name": "5. Validate Filled Form - Missing Fields",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/ai/form-filling/ai/validate-form",
+          "host": ["{{base_url}}"],
+          "path": ["ai", "form-filling", "ai", "validate-form"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"filled_fields\": {\n    \"field1\": \"YILMAZ\",\n    \"field3\": \"AHMET\",\n    \"field4\": \"15-03-1995\"\n  }\n}"
+        },
+        "description": "Validate a form with missing required fields - should return errors"
+      },
+      "response": []
+    },
+    {
+      "name": "6. Validate Filled Form - Invalid Date Format",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/ai/form-filling/ai/validate-form",
+          "host": ["{{base_url}}"],
+          "path": ["ai", "form-filling", "ai", "validate-form"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"filled_fields\": {\n    \"field1\": \"YILMAZ\",\n    \"field3\": \"AHMET\",\n    \"field4\": \"1995-03-15\",\n    \"field7\": \"Turkish\",\n    \"field13\": \"U12345678\",\n    \"field15\": \"2030-01-01\",\n    \"field22\": \"Istanbul, Turkey\",\n    \"field23\": \"+90 555 123 4567\",\n    \"field31\": \"Germany\",\n    \"field33\": \"2025-06-15\",\n    \"field34\": \"2025-06-30\"\n  }\n}"
+        },
+        "description": "Validate a form with invalid date format (YYYY-MM-DD instead of DD-MM-YYYY)"
+      },
+      "response": []
+    },
+    {
+      "name": "7. Get Form Field Descriptions",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/ai/form-filling/ai/form-fields",
+          "host": ["{{base_url}}"],
+          "path": ["ai", "form-filling", "ai", "form-fields"]
+        },
+        "description": "Get descriptions of all 61 Schengen form fields"
+      },
+      "response": []
+    },
+    {
+      "name": "8. Check Service Status",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/ai/form-filling/ai/service-status",
+          "host": ["{{base_url}}"],
+          "path": ["ai", "form-filling", "ai", "service-status"]
+        },
+        "description": "Check if the AI form filling service is available and operational"
+      },
+      "response": []
+    },
+    {
+      "name": "0. Login (Get Access Token)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "var jsonData = pm.response.json();",
+              "pm.environment.set(\"access_token\", jsonData.access_token);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/auth/login",
+          "host": ["{{base_url}}"],
+          "path": ["auth", "login"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"your-email@example.com\",\n  \"password\": \"your-password\"\n}"
+        },
+        "description": "Login to get access token. Update email and password with your credentials."
+      },
+      "response": []
+    }
+  ]
+}

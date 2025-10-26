@@ -33,6 +33,7 @@ class TaskStatus(str, Enum):
 
 class DocumentStatus(str, Enum):
     PENDING_VALIDATION = "PENDING_VALIDATION"
+    VALIDATED = "VALIDATED"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
 
@@ -894,3 +895,27 @@ class ErrorResponse(BaseModel):
 
 class ValidationErrorResponse(BaseModel):
     detail: List[Dict[str, Any]]
+
+
+# Letter Generation Schemas
+class LetterGenerationRequest(BaseModel):
+    """Request model for generating visa application letters"""
+    application_id: Optional[str] = Field(None, description="Application ID to generate letter for")
+    application_data: Optional[Dict[str, Any]] = Field(None, description="Custom application data if no application_id")
+    letter_type: str = Field("cover_letter", description="Type of letter (cover_letter, explanation_letter, etc.)")
+    language: str = Field("en", description="Language code (en, tr, de, fr, etc.)")
+    custom_instructions: Optional[str] = Field(None, description="Additional instructions for letter generation")
+
+
+class LetterGenerationResponse(BaseModel):
+    """Response model for generated letters"""
+    letter_id: str
+    letter_content: str
+    letter_type: str
+    language: str
+    word_count: int
+    created_at: datetime
+    metadata: Dict[str, Any]
+    
+    class Config:
+        from_attributes = True

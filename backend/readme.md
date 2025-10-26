@@ -603,6 +603,122 @@ generateWordDocument(formData);
 
 ## 🔍 **OCR Service Improvements**
 
+### **Groq Vision OCR Integration**
+
+The backend now includes advanced OCR capabilities using Groq's Llama Vision API for automated document extraction.
+
+#### **Key Features**
+- **Automatic OCR Processing**: Documents are automatically processed when uploaded
+- **Structured Data Extraction**: Extracts specific fields based on document type
+- **Vision AI**: Uses Llama 3.2 Vision model for accurate text and data extraction
+- **Background Processing**: OCR runs asynchronously without blocking uploads
+- **Manual Trigger**: Can re-process documents on demand
+
+#### **Supported Document Types**
+- **Passport**: Extracts passport number, names, dates, nationality
+- **Bank Statement**: Extracts account details, balance, transaction period
+- **Travel Insurance**: Extracts policy details, coverage amounts, validity dates
+- **Property Deed**: Extracts owner info, property details, location
+- **Tax Return**: Extracts tax office, amounts, tax year
+- **Hotel Reservation**: Extracts booking details, dates, guest information
+- **Business/Invitation Letter**: Extracts company details, visit purpose, dates
+
+#### **Setup OCR Service**
+
+1. **Install Dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Set Groq API Key**:
+   ```env
+   GROQ_API_KEY=your_groq_api_key_here
+   ```
+   
+   Get your API key from: https://console.groq.com/
+
+3. **Install System Dependencies** (for PDF support):
+   ```powershell
+   # Windows: Download Poppler from
+   # https://github.com/oschwartz10612/poppler-windows/releases/
+   # Extract and add to PATH
+   ```
+
+#### **OCR API Endpoints**
+
+**Upload Document with Auto-OCR**:
+```bash
+POST /api/v1/documents/upload
+- Automatically triggers OCR processing
+- Returns document info immediately
+- OCR results saved when processing completes
+```
+
+**Manual OCR Trigger**:
+```bash
+POST /api/v1/documents/{doc_id}/process-ocr
+- Manually trigger OCR on existing documents
+- Useful for reprocessing or retrying failed extractions
+```
+
+**Get Document with OCR Results**:
+```bash
+GET /api/v1/documents/{doc_id}
+- Returns document metadata and OCR results
+- Check ocr_result field for extracted data
+```
+
+#### **Example Usage**
+
+**Upload with Automatic OCR**:
+```bash
+curl -X POST http://localhost:8000/api/v1/documents/upload \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "document_type=passport" \
+  -F "document_title=My Passport" \
+  -F "file=@passport.jpg" \
+  -F "auto_ocr=true"
+```
+
+**Check OCR Results**:
+```bash
+curl http://localhost:8000/api/v1/documents/{doc_id} \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Response with OCR Results**:
+```json
+{
+  "doc_id": "123e4567-e89b-12d3-a456-426614174000",
+  "status": "VALIDATED",
+  "ocr_result": {
+    "success": true,
+    "extracted_data": {
+      "passportNumber": "U12345678",
+      "surname": "YILMAZ",
+      "givenName": "AHMET",
+      "dateOfBirth": "1990-01-01",
+      "expiryDate": "2030-10-20",
+      "countryCode": "TUR"
+    },
+    "model": "llama-3.2-90b-vision-preview"
+  }
+}
+```
+
+#### **Document Status Flow**
+```
+PENDING_VALIDATION → (OCR Processing) → VALIDATED or VALIDATION_FAILED
+```
+
+#### **For Detailed OCR Documentation**
+See [OCR_INTEGRATION.md](./OCR_INTEGRATION.md) for complete integration guide including:
+- Setup instructions
+- API examples
+- Frontend integration
+- Error handling
+- Troubleshooting
+
 ### **Enhanced Image Preprocessing**
 The OCR service has been improved with better image preprocessing for higher accuracy:
 
