@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.api.v1.endpoints import (
-    auth, users, applications, user_documents, letter_generation, ai_form_filling
+    auth, users, applications, user_documents, letter_generation, ai_form_filling, ai_visa
 )
 
 api_router = APIRouter()
@@ -12,3 +12,4 @@ api_router.include_router(applications.router, prefix="/applications", tags=["ap
 api_router.include_router(user_documents.router, prefix="/documents", tags=["Documents & OCR"])
 api_router.include_router(letter_generation.router, prefix="/letters", tags=["Letter Generation"])
 api_router.include_router(ai_form_filling.router, prefix="/ai", tags=["AI Form Filling"])
+api_router.include_router(ai_visa.router, prefix="/ai", tags=["AI Visa Services"])
