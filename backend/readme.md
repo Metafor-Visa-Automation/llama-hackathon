@@ -78,6 +78,11 @@ APP_VERSION="1.0.0"
 DEBUG=True
 ```
 
+## Diagrams
+
+<img width="1246" height="1500" alt="image" src="https://github.com/user-attachments/assets/82e37a47-a26e-4296-a612-a167e9cf7d70" />,
+
+<img width="1246" height="1500" alt="image" src="https://github.com/user-attachments/assets/82e37a47-a26e-4296-a612-a167e9cf7d70" />
 ## 🔐 Authentication
 
 The API uses Firebase Authentication with JWT tokens:
@@ -1179,3 +1184,5 @@ CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "
 - [Firebase Admin SDK](https://firebase.google.com/docs/admin)
 - [Pydantic Documentation](https://pydantic-docs.helpmanual.io/)
 - [Firestore Security Rules](https://firebase.google.com/docs/firestore/security/get-started)
+
+
