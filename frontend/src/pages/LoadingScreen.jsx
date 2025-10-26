@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import PageTransition from '../components/PageTransition';
 import vibeBg from '../assets/vibe-bg1.webp';
+import { createApplication } from '../store/applicationSlice';
+import mockResponseData from '../ai_responses/response-final.json';
 
 /**
  * LoadingScreen Component
@@ -13,7 +15,16 @@ import vibeBg from '../assets/vibe-bg1.webp';
  */
 const LoadingScreen = () => {
   const navigate = useNavigate();
-  const { destinationCountry } = useSelector((state) => state.country);
+  const dispatch = useDispatch();
+  
+  const { 
+    destinationCountry, 
+    startDate, 
+    endDate, 
+    applicationType 
+  } = useSelector((state) => state.country);
+  const { user } = useSelector((state) => state.auth);
+
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [loadingComplete, setLoadingComplete] = useState(false);
 
@@ -40,7 +51,18 @@ const LoadingScreen = () => {
   // Simulate loading (replace with actual AI API call)
   useEffect(() => {
     const loadingTimer = setTimeout(() => {
+      // Create the application in Redux state
+      dispatch(createApplication({
+        mockResponseData,
+        user,
+        destinationCountry,
+        startDate,
+        endDate,
+        applicationType
+      }));
+      
       setLoadingComplete(true);
+      
       // Navigate to fill-form after showing success message
       setTimeout(() => {
         navigate('/fill-form');
@@ -48,7 +70,7 @@ const LoadingScreen = () => {
     }, 5000); // 5 seconds simulated loading
 
     return () => clearTimeout(loadingTimer);
-  }, [navigate]);
+  }, [navigate, dispatch, user, destinationCountry, startDate, endDate, applicationType]);
 
   return (
     <PageTransition>

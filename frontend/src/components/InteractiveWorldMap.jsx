@@ -90,6 +90,16 @@ const InteractiveWorldMap = () => {
   const endDateInputRef = useRef(null);
 
   /**
+   * Handle origin country change from dropdown
+   */
+  const handleOriginChange = (countryCode) => {
+    dispatch(setOriginCountry({
+      code: countryCode,
+      name: ORIGIN_COUNTRIES[countryCode]
+    }));
+  };
+
+  /**
    * Load SimpleMaps scripts dynamically
    */
   useEffect(() => {
@@ -300,7 +310,7 @@ const InteractiveWorldMap = () => {
    * Handle start application button click
    */
   const handleStartApplication = () => {
-    if (!originCountry || !destinationCountry?.code) {
+    if (!originCountry?.code || !destinationCountry?.code || !startDate || !endDate || !applicationType) {
       return;
     }
 
@@ -313,7 +323,7 @@ const InteractiveWorldMap = () => {
 
     // User is authenticated, redirect to loading screen
     console.log('Starting application:', {
-      from: ORIGIN_COUNTRIES[originCountry],
+      from: originCountry.name,
       to: destinationCountry.name
     });
     navigate('/loading-screen');
@@ -657,9 +667,9 @@ const InteractiveWorldMap = () => {
             <InputLabel id="origin-country-label" shrink>Nereden</InputLabel>
             <Select
               labelId="origin-country-label"
-              value={originCountry}
+              value={originCountry?.code || ''}
               label="Nereden"
-              onChange={(e) => dispatch(setOriginCountry(e.target.value))}
+              onChange={(e) => handleOriginChange(e.target.value)}
               notched
             >
               {Object.entries(ORIGIN_COUNTRIES).map(([code, name]) => (
@@ -747,21 +757,21 @@ const InteractiveWorldMap = () => {
           {/* CTA Button */}
           <button
             onClick={handleStartApplication}
-            disabled={!originCountry || !destinationCountry?.code || !startDate || !endDate || !applicationType}
+            disabled={!originCountry?.code || !destinationCountry?.code || !startDate || !endDate || !applicationType}
             className={`
               inline-flex items-center gap-2 px-6 py-3 text-base font-semibold rounded-full
               transition-all duration-300 transform
-              ${originCountry && destinationCountry?.code && startDate && endDate && applicationType
+              ${originCountry?.code && destinationCountry?.code && startDate && endDate && applicationType
                 ? 'hover:scale-105 cursor-pointer'
                 : 'cursor-not-allowed opacity-50'
               }
             `}
             style={{
-              background: originCountry && destinationCountry?.code && startDate && endDate && applicationType
+              background: originCountry?.code && destinationCountry?.code && startDate && endDate && applicationType
                 ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
                 : '#CCCCCC',
               color: '#FFFFFF',
-              boxShadow: originCountry && destinationCountry?.code && startDate && endDate && applicationType
+              boxShadow: originCountry?.code && destinationCountry?.code && startDate && endDate && applicationType
                 ? '0 6px 20px rgba(16, 185, 129, 0.4)'
                 : 'none',
               border: 'none',

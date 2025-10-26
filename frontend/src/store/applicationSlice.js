@@ -33,7 +33,14 @@ const applicationSlice = createSlice({
   initialState,
   reducers: {
     createApplication: (state, action) => {
-      const { mockResponseData, user, destinationCountry } = action.payload;
+      const { 
+        mockResponseData, 
+        user, 
+        destinationCountry, 
+        startDate, 
+        endDate, 
+        applicationType 
+      } = action.payload;
 
       // Map action_steps to application_steps with completed field
       const applicationSteps = mockResponseData.action_steps.map(step => ({
@@ -62,8 +69,9 @@ const applicationSlice = createSlice({
         application_name: `${destinationCountry?.name || 'Visa'} Application`,
         country_code: destinationCountry?.code || '',
         travel_purpose: mockResponseData.travel_purpose || '',
-        application_start_date: now,
-        application_end_date: null, // Will be set when application is completed
+        application_start_date: startDate,
+        application_end_date: endDate,
+        application_type: applicationType,
         status: 'in_progress',
         application_steps: applicationSteps,
         created_at: now,

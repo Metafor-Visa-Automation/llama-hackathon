@@ -25,9 +25,9 @@ import {
   createApplication,
   completeApplicationStep,
   incompleteApplicationStep,
-  resetApplication,
   updateApplication,
 } from '../store/applicationSlice';
+import { Pencil } from 'lucide-react';
 
 /**
  * FillForm Page Component - Cards Style
@@ -57,6 +57,26 @@ const FillForm = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false); // For document upload
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [applicationName, setApplicationName] = useState('');
+
+  useEffect(() => {
+    if (application) {
+      setApplicationName(application.application_name || `${destinationCountry?.name || 'Visa'} Application`);
+    }
+  }, [application, destinationCountry]);
+
+  const handleTitleBlur = () => {
+    setIsEditingTitle(false);
+    dispatch(updateApplication({ application_name: applicationName }));
+  };
+
+  const handleTitleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleTitleBlur();
+    }
+  };
 
   /**
    * Process action steps from AI response into question format
@@ -514,24 +534,75 @@ const FillForm = () => {
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
               }}
             >
-              <h1
+              <div
                 style={{
-                  fontSize: '2rem',
-                  fontWeight: '800',
-                  color: '#1a1a1a',
-                  marginBottom: '0.5rem',
-                  fontFamily: '"Playfair Display", serif',
+                  flex: '1',
+                  textAlign: 'center',
                 }}
               >
-                {destinationCountry?.name ? `${destinationCountry.name} Vize Başvurunuz` : 'Vize Başvurunuz'}
-              </h1>
-              <p style={{
-                color: '#666666',
-                fontSize: '1.1rem',
-                fontFamily: '"Playfair Display", serif',
-              }}>
-                Hoşgeldin {user?.name}, lütfen {destinationCountry?.name ? `${destinationCountry.name} vizesi için` : ''} soruları cevapla
-              </p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                  {isEditingTitle ? (
+                    <input
+                      type="text"
+                      value={applicationName}
+                      onChange={(e) => setApplicationName(e.target.value)}
+                      onBlur={handleTitleBlur}
+                      onKeyDown={handleTitleKeyDown}
+                      autoFocus
+                      style={{
+                        fontSize: '2rem',
+                        fontWeight: '800',
+                        color: '#1a1a1a',
+                        fontFamily: '"Playfair Display", serif',
+                        border: 'none',
+                        outline: 'none',
+                        width: '100%',
+                        backgroundColor: 'transparent',
+                        borderBottom: '2px solid #10B981',
+                      }}
+                    />
+                  ) : (
+                    <h1
+                      style={{
+                        fontSize: '2rem',
+                        fontWeight: '800',
+                        color: '#1a1a1a',
+                        marginBottom: '0.5rem',
+                        fontFamily: '"Playfair Display", serif',
+                      }}
+                    >
+                      {applicationName}
+                    </h1>
+                  )}
+                  {!isEditingTitle && (
+                    <button 
+                      onClick={() => setIsEditingTitle(true)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '0.5rem',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      className="hover:bg-gray-100 transition-colors"
+                    >
+                      <Pencil size={20} color="#666666" />
+                    </button>
+                  )}
+                </div>
+                <p
+                  style={{
+                    color: '#666666',
+                    fontSize: '1rem',
+                    fontFamily: '"Playfair Display", serif',
+                  }}
+                >
+                  Hoşgeldin {user?.name}, lütfen {destinationCountry?.name ? `${destinationCountry.name} vizesi için` : ''} soruları cevapla
+                </p>
+              </div>
             </motion.div>
           )}
 
