@@ -96,3 +96,8 @@ Yapay zeka, başvuruyla çelişebilecek veya riskli sosyal medya içeriklerini t
 - Mert Çetin  
 - Toprak Necat Gök  
 - Ali Furkan Kaya  
+
+# App Diagram
+![WhatsApp Görsel 2025-10-26 saat 11 31 31_b3b71f04](https://github.com/user-attachments/assets/906467a0-4d8d-4dcd-a6fb-5ba9375f32b8)
+
+Teknik readme dosyaları için frontend/readme, AI/readme, backend/readme dosyalarına bakabilirsiniz.
