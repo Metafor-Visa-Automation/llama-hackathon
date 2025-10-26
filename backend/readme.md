@@ -1,4 +1,5 @@
-# VisaPrep AI Backend
+# Otovize backend
+
 
 A FastAPI-based backend service for intelligent visa application assistance with Firebase integration.
 
