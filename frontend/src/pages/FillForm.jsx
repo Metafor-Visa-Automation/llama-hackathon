@@ -218,6 +218,9 @@ const FillForm = () => {
    */
   const uploadDocument = async (file) => {
     try {
+      console.log('🔐 Upload Debug - Token:', token);
+      console.log('👤 Upload Debug - User:', user);
+
       const formData = new FormData();
       formData.append('file', file);
 
@@ -231,16 +234,18 @@ const FillForm = () => {
       });
 
       const data = await response.json();
+      console.log('📤 Upload Response Status:', response.status);
+      console.log('📤 Upload Response Data:', data);
 
       if (response.status === 201 && data.doc_id) {
-        console.log('Document uploaded successfully:', data);
+        console.log('✅ Document uploaded successfully:', data);
         return { success: true, data };
       } else {
-        console.error('Document upload failed:', data);
+        console.error('❌ Document upload failed:', data);
         return { success: false, error: data };
       }
     } catch (error) {
-      console.error('Document upload error:', error);
+      console.error('💥 Document upload error:', error);
       return { success: false, error };
     }
   };

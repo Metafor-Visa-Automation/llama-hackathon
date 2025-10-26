@@ -66,6 +66,19 @@ const Login = () => {
         expiresIn: data.expires_in
       }));
 
+      // Ensure user exists in backend database
+      try {
+        await fetch('/api/v1/users/me', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${data.access_token}`
+          }
+        });
+        console.log('✅ User verified in database');
+      } catch (error) {
+        console.warn('⚠️ User verification failed:', error);
+      }
+
       // Navigate to landing page
       navigate('/');
     } catch (err) {
