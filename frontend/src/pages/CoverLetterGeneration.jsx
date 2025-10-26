@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion'; // eslint-disable-line no-unused-vars
 import PageTransition from '../components/PageTransition';
 import vibeBg from '../assets/vibe-bg1.webp';
@@ -13,6 +14,8 @@ import {
   Stars as StarsIcon,
   Lightbulb as LightbulbIcon
 } from '@mui/icons-material';
+import { Snackbar, Alert } from '@mui/material';
+import { resetApplication } from '../store/applicationSlice';
 
 // Simulated AI-generated cover letter (will be replaced with actual API call)
 const GENERATED_COVER_LETTER = `Sayın Konsolosluk Yetkilileri,
@@ -40,9 +43,26 @@ Saygılarımla,
  */
 const CoverLetterGeneration = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { application } = useSelector((state) => state.application);
   const [isLoading, setIsLoading] = useState(true);
   const [coverLetter, setCoverLetter] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [toastOpen, setToastOpen] = useState(false);
+
+  // Show success toast if application was just saved
+  useEffect(() => {
+    if (application && application.app_id) {
+      setToastOpen(true);
+
+      // Reset application state after showing the message
+      const timer = setTimeout(() => {
+        dispatch(resetApplication());
+      }, 6000); // After toast disappears
+
+      return () => clearTimeout(timer);
+    }
+  }, [application, dispatch]);
 
   // Simulate AI generation process
   useEffect(() => {
@@ -64,8 +84,22 @@ const CoverLetterGeneration = () => {
     document.body.removeChild(element);
   };
 
+  const handleToastClose = () => {
+    setToastOpen(false);
+  };
+
   return (
     <PageTransition>
+      <Snackbar
+        open={toastOpen}
+        autoHideDuration={6000}
+        onClose={handleToastClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleToastClose} severity="success" sx={{ width: '100%', fontFamily: '"Playfair Display", serif' }}>
+          '{application?.application_name}' başvurunuz başarıyla kaydedildi!
+        </Alert>
+      </Snackbar>
       <div 
         className="min-h-screen flex items-center justify-center px-4 py-8"
         style={{

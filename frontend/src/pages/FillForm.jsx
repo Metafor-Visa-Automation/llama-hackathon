@@ -10,6 +10,7 @@ import vibeBg from '../assets/vibe-bg3.png';
 import { ArrowBack, FlightTakeoff as FlightTakeoffIcon } from '@mui/icons-material';
 // TODO: Replace with actual AI service call
 import mockResponseData from '../ai_responses/response-final.json';
+import { saveApplication } from '../services/applicationService';
 import {
   setQuestions,
   setAnswer,
@@ -25,6 +26,7 @@ import {
   completeApplicationStep,
   incompleteApplicationStep,
   resetApplication,
+  updateApplication,
 } from '../store/applicationSlice';
 
 /**
@@ -37,6 +39,7 @@ const FillForm = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user, token } = useSelector((state) => state.auth);
+  const { application } = useSelector((state) => state.application);
   // eslint-disable-next-line no-unused-vars
   const { originCountry, destinationCountry } = useSelector((state) => state.country);
   
@@ -53,6 +56,7 @@ const FillForm = () => {
   const [direction, setDirection] = useState(0); // For animation direction
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false); // For document upload
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   /**
    * Process action steps from AI response into question format
@@ -141,7 +145,6 @@ const FillForm = () => {
     return () => {
       console.log('🧹 FillForm unmounting - cleaning up state');
       dispatch(resetForm());
-      dispatch(resetApplication());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array - only runs on mount/unmount
@@ -314,11 +317,40 @@ const FillForm = () => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     console.log('Form submitted:', { answers, documents });
-    // TODO: Send to backend/AI for processing
-    // This will include both text answers and uploaded documents
-    navigate('/cover-letter-generation');
+    if (!application) {
+      console.error("Application data is not available to submit.");
+      alert("Uygulama verisi bulunamadı. Lütfen tekrar deneyin.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const applicationToSend = {
+        application_name: application.application_name,
+        country_code: application.country_code,
+        travel_purpose: application.travel_purpose,
+        application_start_date: application.application_start_date,
+        application_end_date: application.application_end_date || new Date().toISOString(),
+        application_steps: application.application_steps,
+      };
+
+      const result = await saveApplication(applicationToSend, token);
+
+      if (result.success) {
+        dispatch(updateApplication(result.data));
+        navigate('/cover-letter-generation');
+      } else {
+        alert('Uygulama kaydedilemedi. Lütfen tekrar deneyin.');
+        console.error("Failed to save application:", result.error);
+      }
+    } catch (error) {
+      alert('Uygulama kaydedilirken bir hata oluştu.');
+      console.error("Error during application save:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const isCurrentQuestionAnswered = () => {
@@ -532,6 +564,7 @@ const FillForm = () => {
                   onPrevious={handlePrevious}
                   onSubmit={handleSubmit}
                   isUploading={isUploading}
+                  isSubmitting={isSubmitting}
                 />
               </motion.div>
             </AnimatePresence>

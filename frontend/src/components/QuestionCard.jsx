@@ -55,7 +55,8 @@ const QuestionCard = ({
   onNext,
   onPrevious,
   onSubmit,
-  isUploading = false
+  isUploading = false,
+  isSubmitting = false
 }) => {
   const isLastQuestion = currentIndex === totalQuestions - 1;
   const isFirstQuestion = currentIndex === 0;
@@ -678,7 +679,8 @@ const QuestionCard = ({
         ) : (
           <Button
             onClick={onSubmit}
-            endIcon={<Send />}
+            disabled={isSubmitting}
+            endIcon={isSubmitting ? <CircularProgress size={20} sx={{ color: '#FFFFFF' }} /> : <Send />}
             sx={{
               background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
               color: '#FFFFFF',
@@ -694,10 +696,14 @@ const QuestionCard = ({
                 transform: 'translateY(-2px)',
                 boxShadow: '0 8px 25px rgba(16, 185, 129, 0.5)',
               },
+              '&:disabled': {
+                background: 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)',
+                color: '#FFFFFF',
+              },
               transition: 'all 0.3s ease',
             }}
           >
-            Devam Et
+            {isSubmitting ? 'Kaydediliyor...' : 'Devam Et'}
           </Button>
         )}
       </div>
